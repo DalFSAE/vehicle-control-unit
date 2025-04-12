@@ -2,7 +2,7 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include "stdbool.h"
-#include "usbd_cdc_if.h"
+// #include "usbd_cdc_if.h"
 
 #include "app_main.h"
 #include "sensor_control.h"

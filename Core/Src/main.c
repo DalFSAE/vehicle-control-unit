@@ -20,11 +20,10 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "adc.h"
+#include "can.h"
 #include "dac.h"
 #include "dma.h"
-#include "spi.h"
 #include "tim.h"
-#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -79,11 +78,14 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-    HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
   app_config(); 
   /* USER CODE END Init */
+  
+  volatile int stopHere = 0;
+  while (stopHere) { }
 
   /* Configure the system clock */
   SystemClock_Config();
@@ -95,12 +97,13 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_SPI1_Init();
   MX_ADC1_Init();
   MX_DAC_Init();
   MX_TIM2_Init();
+  MX_CAN1_Init();
+  MX_CAN2_Init();
   /* USER CODE BEGIN 2 */
-  MX_USB_DEVICE_Init();
+//   MX_USB_DEVICE_Init();
   /* USER CODE END 2 */
 
   /* Init scheduler */

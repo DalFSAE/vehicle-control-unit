@@ -81,6 +81,16 @@ void Error_Handler(void);
 #define SPI1_MOSI_GPIO_Port GPIOA
 #define BOOT1_Pin GPIO_PIN_2
 #define BOOT1_GPIO_Port GPIOB
+#define VBAT_EN_SW0_Pin GPIO_PIN_7
+#define VBAT_EN_SW0_GPIO_Port GPIOE
+#define VBAT_EN_SW1_Pin GPIO_PIN_8
+#define VBAT_EN_SW1_GPIO_Port GPIOE
+#define VBAT_EN_SW2_Pin GPIO_PIN_9
+#define VBAT_EN_SW2_GPIO_Port GPIOE
+#define VBAT_EN_SW3_Pin GPIO_PIN_10
+#define VBAT_EN_SW3_GPIO_Port GPIOE
+#define VBAT_EN_SW4_Pin GPIO_PIN_11
+#define VBAT_EN_SW4_GPIO_Port GPIOE
 #define CLK_IN_Pin GPIO_PIN_10
 #define CLK_IN_GPIO_Port GPIOB
 #define LD4_Pin GPIO_PIN_12
@@ -105,20 +115,8 @@ void Error_Handler(void);
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
-#define I2S3_SCK_Pin GPIO_PIN_10
-#define I2S3_SCK_GPIO_Port GPIOC
-#define I2S3_SD_Pin GPIO_PIN_12
-#define I2S3_SD_GPIO_Port GPIOC
-#define Audio_RST_Pin GPIO_PIN_4
-#define Audio_RST_GPIO_Port GPIOD
-#define OTG_FS_OverCurrent_Pin GPIO_PIN_5
-#define OTG_FS_OverCurrent_GPIO_Port GPIOD
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
-#define Audio_SCL_Pin GPIO_PIN_6
-#define Audio_SCL_GPIO_Port GPIOB
-#define Audio_SDA_Pin GPIO_PIN_9
-#define Audio_SDA_GPIO_Port GPIOB
 #define MEMS_INT2_Pin GPIO_PIN_1
 #define MEMS_INT2_GPIO_Port GPIOE
 
