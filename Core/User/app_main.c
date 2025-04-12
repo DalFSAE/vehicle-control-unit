@@ -55,17 +55,11 @@ struct transition state_transitions[] = {
 void statusLedsTask(void *argument) {
     (void)argument;
     
-    int debug = 0;
-    
+    uint32_t debug = 0;
+    uint32_t cycleCount = 0;
+
     for(;;) {
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-        
-        // testing relays...
-        if (debug) {
-            relay_toggle(RELAY_EN_0);
-        }
-
-
         osDelay(250);
     }
 }
@@ -76,12 +70,15 @@ void app_config(){
     return;
 }
 
-int entry_state(void){    
+int entry_state(void){ 
+    // todo preform checks
     return SM_OKAY;
 }
 
 int neutral_state(void){
     // Check if forward or reverse selected
+    
+    // todo add switch check
     enable_throttle(false);
     return SM_DIR_FORWARD;
 }
@@ -120,11 +117,23 @@ state_codes_t lookup_transitions(state_codes_t cur_state, ret_codes_t rc){
 void stateMachineTask(void *argument){
     (void)argument; // fixes compiler warning 
 
+    uint32_t debug = 0;
+
     state_codes_t cur_state = ENTRY_STATE;
 	ret_codes_t rc;
 	int (*state_fun)(void);
     
     dms_printf("[DEBUG] State machine task started\n\r");
+
+    if(debug) {
+        relay_init();
+        relay_enable(RELAY0);
+        relay_enable(RELAY1);
+        relay_enable(RELAY2);
+        relay_enable(RELAY3);
+        relay_enable(RELAY4);
+    }
+    
 
     for(;;) {
         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);

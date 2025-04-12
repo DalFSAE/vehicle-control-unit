@@ -21,7 +21,8 @@
         "io_control.h": "c",
         "tests.h": "c",
         "dms_defines.h": "c",
-        "dms_logging.h": "c"
+        "dms_logging.h": "c",
+        "xutility": "c"
     },
     "cSpell.words": [
         "AHBCLK",
