@@ -6,4 +6,8 @@
 #define BRAKE_LIGHT_PIN GPIO_PIN_13
 #define BRAKE_LIGHT_THRESH 0.15
 
+
+#define RELAY_COUNT 5
+
+
  #endif

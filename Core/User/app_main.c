@@ -6,6 +6,7 @@
 
 #include "app_main.h"
 #include "sensor_control.h"
+#include "io_control.h"
 #include "dms_logging.h"
 
 #include "stdio.h"
@@ -56,6 +57,8 @@ void statusLedsTask(void *argument) {
     for(;;) {
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
         osDelay(100);
+        // relay_toggle(RELAY_EN_0);
+        // HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_1);
     }
 }
 
