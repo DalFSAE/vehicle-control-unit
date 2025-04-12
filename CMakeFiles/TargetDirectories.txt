@@ -1,0 +1,5 @@
+C:/Users/ashto/Documents/GitHub/VCU-FW/CMakeFiles/DMS-24-RTOS-VCU.dir
+C:/Users/ashto/Documents/GitHub/VCU-FW/CMakeFiles/edit_cache.dir
+C:/Users/ashto/Documents/GitHub/VCU-FW/CMakeFiles/rebuild_cache.dir
+C:/Users/ashto/Documents/GitHub/VCU-FW/cmake/stm32cubemx/CMakeFiles/edit_cache.dir
+C:/Users/ashto/Documents/GitHub/VCU-FW/cmake/stm32cubemx/CMakeFiles/rebuild_cache.dir
