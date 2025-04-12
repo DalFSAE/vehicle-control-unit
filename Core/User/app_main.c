@@ -54,11 +54,19 @@ struct transition state_transitions[] = {
 
 void statusLedsTask(void *argument) {
     (void)argument;
+    
+    int debug = 0;
+    
     for(;;) {
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-        osDelay(100);
-        // relay_toggle(RELAY_EN_0);
-        // HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_1);
+        
+        // testing relays...
+        if (debug) {
+            relay_toggle(RELAY_EN_0);
+        }
+
+
+        osDelay(250);
     }
 }
 

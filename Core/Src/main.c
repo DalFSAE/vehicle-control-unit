@@ -83,9 +83,6 @@ int main(void)
   /* USER CODE BEGIN Init */
   app_config(); 
   /* USER CODE END Init */
-  
-  volatile int stopHere = 0;
-  while (stopHere) { }
 
   /* Configure the system clock */
   SystemClock_Config();
