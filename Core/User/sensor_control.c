@@ -204,7 +204,7 @@ bool check_faults(pedalStatus_t *pedalStatus, SensorInfo_t *sensors){
 bool check_brake_light(float brakeLight){
     // Check brake light 
     if (brakeLight > BRAKE_LIGHT_THRESH){
-        HAL_GPIO_WritePin(BREAK_LIGHT_PORT, BRAKE_LIGHT_PIN, GPIO_PIN_SET);
+        // HAL_GPIO_WritePin(BREAK_LIGHT_PORT, BRAKE_LIGHT_PIN, GPIO_PIN_SET);
         return true;
     }
     // TODO Enable brake light if deceleration rate exceeds 1.3m/s2 (approximately 0.13 g)
@@ -228,6 +228,28 @@ void process_adc(SensorInfo_t *sensors){
     // Do scaling and linear approximations as necessary 
     return;
  }
+
+void output_throttle(SensorInfo_t *sensors) {
+    set_throttle(sensors[APPS1].normalizedValue); 
+
+    static uint32_t count = 0;
+    if (count > 10) {
+
+        int apps1 = (int)(sensors[APPS1].normalizedValue * 100);
+        int apps2 = (int)(sensors[APPS2].normalizedValue * 100);
+        int fbps = (int)(sensors[FBPS].normalizedValue * 100);
+        int rbps = (int)(sensors[RBPS].normalizedValue * 100);
+
+        dms_printf( "[SENSOR] APPS1: %d%% \n"
+                    "[SENSOR] APPS2: %d%% \n"
+                    "[SENSOR] FBPS:  %d%% \n"
+                    "[SENSOR] RPBS:  %d%% \n\n\r",
+                    apps1, apps2, fbps, rbps);
+        count = 0;
+    }
+    count++;
+}
+
 
 void sensorInputTask(void *argument) {
     (void)argument;
@@ -262,26 +284,10 @@ void sensorInputTask(void *argument) {
         }
         
         // throttle Output
+        // todo move to function
         outputThrottle = true; // DEBUG !!
         if (outputThrottle == true){
-            set_throttle(sensors[APPS1].normalizedValue); 
-
-            static uint32_t count = 0;
-            if (count > 10) {
-
-                int apps1 = (int)(sensors[APPS1].normalizedValue * 100);
-                int apps2 = (int)(sensors[APPS2].normalizedValue * 100);
-                int fbps = (int)(sensors[FBPS].normalizedValue * 100);
-                int rbps = (int)(sensors[RBPS].normalizedValue * 100);
-
-                dms_printf( "[SENSOR] APPS1: %d%% \n"
-                            "[SENSOR] APPS2: %d%% \n"
-                            "[SENSOR] FBPS:  %d%% \n"
-                            "[SENSOR] RPBS:  %d%% \n\n\r",
-                            apps1, apps2, fbps, rbps);
-                count = 0;
-            }
-            count++;
+            output_throttle(sensors);
   
         }
         
