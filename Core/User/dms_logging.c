@@ -1,6 +1,6 @@
 #include "dms_logging.h"
 
-#include "usbd_cdc_if.h"
+// #include "usbd_cdc_if.h" 
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -9,6 +9,8 @@
 
 
 void dms_printf(const char *format, ...){ 
+    
+    /* 
     // TODO: MPU will crash if two print statements are called dirrectly after each other
     static char USB_buf[USB_BUF_SIZE];
     va_list args;
@@ -19,7 +21,7 @@ void dms_printf(const char *format, ...){
     // Transmit the formatted string over USB
     uint16_t len = strlen(USB_buf);
     CDC_Transmit_FS((uint8_t*)USB_buf, len);
-    
-    HAL_Delay(1);
+    */
+    // HAL_Delay(1);
 
 }
