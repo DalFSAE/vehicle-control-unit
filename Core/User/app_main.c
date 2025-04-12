@@ -107,7 +107,7 @@ state_codes_t lookup_transitions(state_codes_t cur_state, ret_codes_t rc){
 }
 
 void stateMachineTask(void *argument){
-    (void)argument;
+    (void)argument; // fixes compiler warning 
 
     state_codes_t cur_state = ENTRY_STATE;
 	ret_codes_t rc;
