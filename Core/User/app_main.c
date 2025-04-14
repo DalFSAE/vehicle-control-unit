@@ -59,6 +59,35 @@ void statusLedsTask(void *argument) {
     uint32_t cycleCount = 0;
 
     for(;;) {
+
+
+            if (debug == 1) {
+            relay_toggle(RELAY0);
+            debug = 0;
+        }
+        if (debug == 2) {
+            relay_toggle(RELAY1);
+            debug = 0;
+        }
+        if (debug == 3) {
+            relay_toggle(RELAY2);
+            debug = 0;
+        }
+        if (debug == 4) {
+            relay_toggle(RELAY3);
+            debug = 0;
+        }
+        if (debug == 5) {
+            relay_toggle(RELAY4);
+            debug = 0;
+        }
+
+        if (debug == 6) {
+            int foo = 0;
+            set_dac_out(foo); 
+
+        }
+
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
         osDelay(250);
     }

@@ -44,4 +44,6 @@ void enable_throttle(bool enable);
 
 void sensor_init();
 
+void set_dac_out(uint32_t dacOut);
+
  #endif

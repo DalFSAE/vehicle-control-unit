@@ -60,4 +60,3 @@ uint32_t relay_get_state(RelayChannel_t ch) {
 }
 
 
-

@@ -124,20 +124,16 @@ PDP_StatusTypeDef sensor_out_of_range(float normalizedValue, float  minRange, fl
 }
 
 
-// TODO: Update to use RTOS notif 
-void enable_throttle(bool enable){
-    // g_pedal.throttleOutputEnabled = enable;
-    if (!enable){
-        HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, CUT_MOTOR_SIGNAL);
-    }
-    return;
-}
-
-
-/// @brief Set's ADC output value for throttle 
+// TODO: Update to use RT for throttle 
 /// @param throttlePercent throttle percent [0, 1.0]
 void set_throttle(float throttlePercent){
     uint32_t dacOut = denormalize(throttlePercent, ADC_RESOLUTION_MIN, ADC_RESOLUTION_MAX);
+    HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dacOut);  
+}
+
+// TODO:  
+/// @param dacOut
+void set_dac_out(uint32_t dacOut){
     HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dacOut);  
 }
 
@@ -230,7 +226,7 @@ void process_adc(SensorInfo_t *sensors){
  }
 
 void output_throttle(SensorInfo_t *sensors) {
-    set_throttle(sensors[APPS1].normalizedValue); 
+    // set_throttle(sensors[APPS1].normalizedValue); 
 
     static uint32_t count = 0;
     if (count > 10) {
@@ -312,3 +308,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
     // HAL_GPIO_TogglePin(BREAK_LIGHT_PORT, BRAKE_LIGHT_PIN);
 }
 
+
+void enable_throttle(bool enable) {
+    return;
+}
