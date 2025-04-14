@@ -60,3 +60,26 @@ uint32_t relay_get_state(RelayChannel_t ch) {
 }
 
 
+// Digital IO Pins
+
+void dio_write(DIO_Channel_t ch, bool level)
+{
+    GPIO_TypeDef *port; uint16_t pin;
+    dio_map(ch, &port, &pin);
+    if (port) HAL_GPIO_WritePin(port, pin,
+                                level ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+
+void dio_toggle(DIO_Channel_t ch)
+{
+    GPIO_TypeDef *port; uint16_t pin;
+    dio_map(ch, &port, &pin);
+    if (port) HAL_GPIO_TogglePin(port, pin);
+}
+
+bool dio_read(DIO_Channel_t ch)
+{
+    GPIO_TypeDef *port; uint16_t pin;
+    dio_map(ch, &port, &pin);
+    return port ? (HAL_GPIO_ReadPin(port, pin) == GPIO_PIN_SET) : false;
+}

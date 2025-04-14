@@ -22,5 +22,14 @@ void relay_disable(RelayChannel_t ch);
 void relay_toggle(RelayChannel_t ch);
 uint32_t relay_get_state(RelayChannel_t ch);
 
+// Digital Pins 
 
-//
+typedef enum {
+    DIO_D0 = 0, DIO_D1, DIO_D2, DIO_D3,
+    DIO_D4,     DIO_D5, DIO_D6, DIO_D7
+} DIO_Channel_t;
+
+// helpers 
+void dio_write (DIO_Channel_t ch, bool level);   // high / low  
+void dio_toggle(DIO_Channel_t ch);               // flip output 
+bool dio_read  (DIO_Channel_t ch);               // true = high 
