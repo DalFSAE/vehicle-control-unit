@@ -128,8 +128,8 @@ PDP_StatusTypeDef sensor_out_of_range(float normalizedValue, float  minRange, fl
 // TODO: Update to use RT for throttle 
 /// @param throttlePercent throttle percent [0, 1.0]
 void set_throttle(float throttlePercent){
-    // uint32_t dacOut = denormalize(throttlePercent, ADC_RESOLUTION_MIN, ADC_RESOLUTION_MAX);
-    // HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dacOut);  
+    uint32_t dacOut = denormalize(throttlePercent, ADC_RESOLUTION_MIN, ADC_RESOLUTION_MAX);
+    HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dacOut);  
 }
 
 // TODO:  
@@ -229,7 +229,8 @@ void process_adc(SensorInfo_t *sensors){
 
 void output_throttle(SensorInfo_t *sensors) {
 
-    set_throttle(sensors[APPS1].normalizedValue); 
+    // set_throttle(sensors[APPS1].normalizedValue); 
+    set_dac_out(sensors[APPS1].currentAdcValue);
 
     static uint32_t count = 0;
     if (count > 10) {
