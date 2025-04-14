@@ -128,8 +128,8 @@ PDP_StatusTypeDef sensor_out_of_range(float normalizedValue, float  minRange, fl
 // TODO: Update to use RT for throttle 
 /// @param throttlePercent throttle percent [0, 1.0]
 void set_throttle(float throttlePercent){
-    uint32_t dacOut = denormalize(throttlePercent, ADC_RESOLUTION_MIN, ADC_RESOLUTION_MAX);
-    HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dacOut);  
+    // uint32_t dacOut = denormalize(throttlePercent, ADC_RESOLUTION_MIN, ADC_RESOLUTION_MAX);
+    // HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dacOut);  
 }
 
 // TODO:  
@@ -213,7 +213,7 @@ bool check_brake_light(float brakeLight){
 void process_adc(SensorInfo_t *sensors){
     
     sensors[FBPS].currentAdcValue  = adc_buf[1];
-    sensors[RBPS].currentAdcValue  = adc_buf[0];
+    sensors[RBPS].currentAdcValue  = adc_buf[0];    // todo. fix
     // curr sensor = adc_buf[1]
     sensors[APPS1].currentAdcValue = adc_buf[2];
     sensors[APPS2].currentAdcValue = adc_buf[3];
@@ -228,7 +228,8 @@ void process_adc(SensorInfo_t *sensors){
  }
 
 void output_throttle(SensorInfo_t *sensors) {
-    // set_throttle(sensors[APPS1].normalizedValue); 
+
+    set_throttle(sensors[APPS1].normalizedValue); 
 
     static uint32_t count = 0;
     if (count > 10) {
