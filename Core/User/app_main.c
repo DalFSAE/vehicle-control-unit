@@ -103,7 +103,7 @@ void app_config(){
 int entry_state(void){ 
 
     // wait
-    osDelay(2500);
+    // osDelay(1000);
 
     // todo preform checks
 

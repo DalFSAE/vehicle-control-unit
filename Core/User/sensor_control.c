@@ -213,14 +213,14 @@ bool check_brake_light(float brakeLight){
 void process_adc(SensorInfo_t *sensors){
     
     sensors[FBPS].currentAdcValue  = adc_buf[1];
+    sensors[RBPS].currentAdcValue  = adc_buf[0];
     // curr sensor = adc_buf[1]
     sensors[APPS1].currentAdcValue = adc_buf[2];
-    sensors[APPS2].currentAdcValue = adc_buf[5];
-    sensors[RBPS].currentAdcValue  = adc_buf[3];
+    sensors[APPS2].currentAdcValue = adc_buf[3];
     
     // sensors[FBPS].currentAdcValue = sensors[APPS2].currentAdcValue; // FOR TESTING so that pedal checks can be done !! 
 
-        for (int i = 0; i < NUM_SENSORS; ++i){
+    for (int i = 0; i < NUM_SENSORS; ++i){
         sensors[i].normalizedValue = adc_to_normalized(sensors[i].currentAdcValue, sensors[i].voltageMin, sensors[i].voltageMax, ADC_RESOLUTION_MAX);
     }
     // Do scaling and linear approximations as necessary 
