@@ -34,6 +34,7 @@ typedef enum {
     APPS2,
     FBPS,
     RBPS,
+    CUR,
     NUM_SENSORS  // This is optional, but useful to denote the number of sensors
 } SensorType_t;
 

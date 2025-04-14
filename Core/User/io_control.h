@@ -6,11 +6,11 @@
 // Enum for relay channels
 // todo: update with channel function
 typedef enum {
-    RELAY0,
-    RELAY1,
-    RELAY2,
-    RELAY3,
-    RELAY4,
+    RELAY_ALWAYS_ON,
+    RELAY_BRAKE_LIGHT,
+    RELAY_INVERTER,
+    RELAY_FANS,
+    RELAY_SDC,
 } RelayChannel_t;
 
 

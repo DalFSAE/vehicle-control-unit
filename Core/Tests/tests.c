@@ -5,26 +5,26 @@
 
 
 void test_relays(void) {
-    uint32_t stateRelay0 = relay_get_state(RELAY0);
-    uint32_t stateRelay1 = relay_get_state(RELAY1);
-    uint32_t stateRelay2 = relay_get_state(RELAY2);
-    uint32_t stateRelay3 = relay_get_state(RELAY3);
-    uint32_t stateRelay4 = relay_get_state(RELAY4);
+    uint32_t stateRelay0 = relay_get_state(RELAY_ALWAYS_ON);
+    uint32_t stateRelay1 = relay_get_state(RELAY_BRAKE_LIGHT);
+    uint32_t stateRelay2 = relay_get_state(RELAY_INVERTER);
+    uint32_t stateRelay3 = relay_get_state(RELAY_FANS);
+    uint32_t stateRelay4 = relay_get_state(RELAY_SDC);
     
-    relay_toggle(RELAY0);
+    relay_toggle(RELAY_ALWAYS_ON);
     osDelay(50);
-    relay_toggle(RELAY1);
+    relay_toggle(RELAY_BRAKE_LIGHT);
     osDelay(50);
-    relay_toggle(RELAY2);
+    relay_toggle(RELAY_INVERTER);
     osDelay(50);
-    relay_toggle(RELAY3);
+    relay_toggle(RELAY_FANS);
     osDelay(50);
-    relay_toggle(RELAY4);
+    relay_toggle(RELAY_SDC);
     
-    stateRelay0 = relay_get_state(RELAY0);
-    stateRelay1 = relay_get_state(RELAY1);
-    stateRelay2 = relay_get_state(RELAY2);
-    stateRelay3 = relay_get_state(RELAY3);
-    stateRelay4 = relay_get_state(RELAY4);
+    stateRelay0 = relay_get_state(RELAY_ALWAYS_ON);
+    stateRelay1 = relay_get_state(RELAY_BRAKE_LIGHT);
+    stateRelay2 = relay_get_state(RELAY_INVERTER);
+    stateRelay3 = relay_get_state(RELAY_FANS);
+    stateRelay4 = relay_get_state(RELAY_SDC);
 }
 

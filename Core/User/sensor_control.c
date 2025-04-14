@@ -12,10 +12,11 @@
 #include "app_main.h"
 #include "dms_logging.h"
 #include "dms_defines.h"
+#include "io_control.h"
 
 #define ADC_RESOLUTION_MAX 4096
 #define ADC_RESOLUTION_MIN 0
-#define ADC_BUFFER_LEN 6 // Should be equal to the number of ADC channels
+#define ADC_BUFFER_LEN 8 // Should be equal to the number of ADC channels
 
 #define OFFSET_THRESHOLD 10 // Percent 
 
@@ -200,25 +201,26 @@ bool check_faults(pedalStatus_t *pedalStatus, SensorInfo_t *sensors){
 bool check_brake_light(float brakeLight){
     // Check brake light 
     if (brakeLight > BRAKE_LIGHT_THRESH){
-        // HAL_GPIO_WritePin(BREAK_LIGHT_PORT, BRAKE_LIGHT_PIN, GPIO_PIN_SET);
+        relay_enable(RELAY_BRAKE_LIGHT);
         return true;
     }
     // TODO Enable brake light if deceleration rate exceeds 1.3m/s2 (approximately 0.13 g)
-    
-    HAL_GPIO_WritePin(BREAK_LIGHT_PORT, BRAKE_LIGHT_PIN, GPIO_PIN_RESET);
+    relay_disable(RELAY_BRAKE_LIGHT);
+
     return false;
 }
 
 void process_adc(SensorInfo_t *sensors){
     
-    sensors[APPS1].currentAdcValue = adc_buf[0];
-    sensors[APPS2].currentAdcValue = adc_buf[1];
-    sensors[FBPS].currentAdcValue  = adc_buf[2];
+    sensors[FBPS].currentAdcValue  = adc_buf[1];
+    // curr sensor = adc_buf[1]
+    sensors[APPS1].currentAdcValue = adc_buf[2];
+    sensors[APPS2].currentAdcValue = adc_buf[5];
     sensors[RBPS].currentAdcValue  = adc_buf[3];
     
-    sensors[FBPS].currentAdcValue = sensors[APPS2].currentAdcValue; // FOR TESTING so that pedal checks can be done !! 
+    // sensors[FBPS].currentAdcValue = sensors[APPS2].currentAdcValue; // FOR TESTING so that pedal checks can be done !! 
 
-    for (int i = 0; i < NUM_SENSORS; ++i){
+        for (int i = 0; i < NUM_SENSORS; ++i){
         sensors[i].normalizedValue = adc_to_normalized(sensors[i].currentAdcValue, sensors[i].voltageMin, sensors[i].voltageMax, ADC_RESOLUTION_MAX);
     }
     // Do scaling and linear approximations as necessary 

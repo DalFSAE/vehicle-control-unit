@@ -14,11 +14,11 @@ typedef struct {
 
 
 static const RelayGPIO_t relay_map[RELAY_COUNT] = {
-    [RELAY0] = {VBAT_EN_SW0_GPIO_Port, VBAT_EN_SW0_Pin},
-    [RELAY1] = {VBAT_EN_SW1_GPIO_Port, VBAT_EN_SW1_Pin},
-    [RELAY2] = {VBAT_EN_SW2_GPIO_Port, VBAT_EN_SW2_Pin},
-    [RELAY3] = {VBAT_EN_SW3_GPIO_Port, VBAT_EN_SW3_Pin},
-    [RELAY4] = {VBAT_EN_SW4_GPIO_Port, VBAT_EN_SW4_Pin},
+    [RELAY_ALWAYS_ON] = {VBAT_EN_SW0_GPIO_Port, VBAT_EN_SW0_Pin},
+    [RELAY_BRAKE_LIGHT] = {VBAT_EN_SW1_GPIO_Port, VBAT_EN_SW1_Pin},
+    [RELAY_INVERTER] = {VBAT_EN_SW2_GPIO_Port, VBAT_EN_SW2_Pin},
+    [RELAY_FANS] = {VBAT_EN_SW3_GPIO_Port, VBAT_EN_SW3_Pin},
+    [RELAY_SDC] = {VBAT_EN_SW4_GPIO_Port, VBAT_EN_SW4_Pin},
 };
 
 void relay_init(void) {
