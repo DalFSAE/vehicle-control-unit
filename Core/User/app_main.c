@@ -89,6 +89,18 @@ void statusLedsTask(void *argument) {
 
         }
 
+        if (debug == 7) {
+            dio_write(DIO_D4, true);
+            dio_write(DIO_D5, true);
+            dio_write(DIO_D6, true);
+        }
+
+        if (debug == 8) { 
+            dio_write(DIO_D4, false);
+            dio_write(DIO_D5, false);
+            dio_write(DIO_D6, false);
+        }
+
         // more debug
         bool d0 = dio_read(DIO_D0);
         bool d1 = dio_read(DIO_D1);

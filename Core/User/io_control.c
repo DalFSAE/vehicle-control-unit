@@ -78,7 +78,9 @@ static inline void dio_map(DIO_Channel_t ch,
 }
 
 void dio_init(void) {
-    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, GPIO_PIN_SET);\
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, GPIO_PIN_SET);
+    dio_write(DIO_D2, true);
+    
 }
 
 void dio_write(DIO_Channel_t ch, bool level) {
