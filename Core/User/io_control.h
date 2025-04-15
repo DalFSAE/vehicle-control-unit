@@ -30,6 +30,7 @@ typedef enum {
 } DIO_Channel_t;
 
 // helpers 
+void dio_init(void);
 void dio_write (DIO_Channel_t ch, bool level);   // high / low  
 void dio_toggle(DIO_Channel_t ch);               // flip output 
 bool dio_read  (DIO_Channel_t ch);               // true = high 
