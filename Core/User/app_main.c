@@ -89,6 +89,19 @@ void statusLedsTask(void *argument) {
 
         }
 
+        // more debug
+        bool d0 = dio_read(DIO_D0);
+        bool d1 = dio_read(DIO_D1);
+        bool d2 = dio_read(DIO_D2);
+        bool d3 = dio_read(DIO_D3);
+        bool d4 = dio_read(DIO_D4);
+        bool d5 = dio_read(DIO_D5);
+        bool d6 = dio_read(DIO_D6);
+        bool d7 = dio_read(DIO_D7);
+
+
+
+
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
         osDelay(250);
     }

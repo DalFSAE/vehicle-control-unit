@@ -127,6 +127,8 @@ void Error_Handler(void);
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
 #define SWCLK_GPIO_Port GPIOA
+#define DIO_EN_Pin GPIO_PIN_12
+#define DIO_EN_GPIO_Port GPIOC
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 #define CAN_SDC_RELAY_Pin GPIO_PIN_7
