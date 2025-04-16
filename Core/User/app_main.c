@@ -100,6 +100,14 @@ void statusLedsTask(void *argument) {
             dio_write(DIO_D5, false);
             dio_write(DIO_D6, false);
         }
+        if (debug == 9) { 
+            dio_write(DIO_D0, true);
+            dio_write(DIO_D1, true);
+            dio_write(DIO_D2, true);
+            dio_write(DIO_D3, true);
+
+        }
+
 
         // more debug
         bool d0 = dio_read(DIO_D0);
