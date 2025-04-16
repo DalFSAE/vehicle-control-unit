@@ -70,7 +70,7 @@ void statusLedsTask(void *argument) {
         }
         if (debug == 2) {
             relay_toggle(RELAY_BRAKE_LIGHT);
-            debug = 0;
+            // debug = 0;
         }
         if (debug == 3) {
             relay_toggle(RELAY_INVERTER);
@@ -90,40 +90,51 @@ void statusLedsTask(void *argument) {
         }
 
         if (debug == 7) {
-            dio_write(DIO_D4, true);
-            dio_write(DIO_D5, true);
-            dio_write(DIO_D6, true);
+            dio_write(MC_FORWARD_SW, false);
         }
 
         if (debug == 8) { 
-            dio_write(DIO_D4, false);
-            dio_write(DIO_D5, false);
-            dio_write(DIO_D6, false);
+            dio_write(MC_REGEN_SW, false);
+
         }
         if (debug == 9) { 
-            dio_write(DASH_RTD_BUTTON, true);
-            dio_write(DIO_D1, true);
-            dio_write(DIO_D2, true);
-            dio_write(DIO_D3, true);
-
+            dio_write(MC_BRAKE_SW, false);
         }
-
+        if (debug == 10) {
+            dio_write(MC_FORWARD_SW, true);
+            dio_write(MC_REGEN_SW, true);
+            dio_write(MC_BRAKE_SW, true);
+        }
+        if (debug == 11) {
+            dio_write(BUZZER, true);
+        }
+        if (debug == 12) {
+            dio_write(BUZZER, false);
+        }
 
         // more debug
         bool d0 = dio_read(DASH_RTD_BUTTON);
         bool d1 = dio_read(DIO_D1);
         bool d2 = dio_read(DIO_D2);
         bool d3 = dio_read(DIO_D3);
-        bool d4 = dio_read(DIO_D4);
-        bool d5 = dio_read(DIO_D5);
-        bool d6 = dio_read(DIO_D6);
-        bool d7 = dio_read(DASH_FWRD_SW);
+        bool d4 = dio_read(MC_FORWARD_SW);
+        bool d5 = dio_read(MC_REGEN_SW);
+        bool d6 = dio_read(MC_BRAKE_SW);
+        bool d7 = dio_read(DASH_SWITCH);
 
 
 
 
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-        osDelay(250);
+        osDelay(1000);
+    }
+}
+
+void buzzer(void) {
+    static uint32_t start_time = 0;
+
+    if (HAL_GetTick() - start_time >= 1000) {
+        dio_write(BUZZER, true);
     }
 }
 
@@ -141,7 +152,7 @@ int entry_state(void){
     // todo preform checks
 
     relay_enable(RELAY_ALWAYS_ON);  // enable always on power (dash, pack, RTML, pumps)
-    relay_enable(RELAY_INVERTER);
+    // relay_enable(RELAY_INVERTER); // now controlled by switch
     dio_init();
     return SM_OKAY;
 }
@@ -152,9 +163,11 @@ int neutral_state(void){
     // todo add switch check
     enable_throttle(false);
 
-    bool switchStatus = dio_read(DASH_FWRD_SW);
-
+    bool switchStatus = dio_read(DASH_RTD_BUTTON);
+    // todo check brake status 
     if (!switchStatus) {
+        
+        dio_write(BUZZER, true); // start the buzzer
         return SM_DIR_FORWARD;
     }
     return SM_OKAY;
@@ -162,6 +175,20 @@ int neutral_state(void){
 }
 
 int forward_state(void){
+    // turn off buzzer after 1 seconds
+    static bool buzzer_timer_active = false;
+    static uint32_t buzzer_start_time = 0;
+
+    if (!buzzer_timer_active) {
+        buzzer_start_time = HAL_GetTick();  // Start 1-second timer
+        buzzer_timer_active = true;
+    }
+
+    if (buzzer_timer_active && (HAL_GetTick() - buzzer_start_time >= 1000)) {
+        dio_write(BUZZER, false);  // Turn off buzzer after 1s
+        buzzer_timer_active = false;  // Reset for next transition
+    }
+
     // Check if neutral or reverse sw is selected
     enable_throttle(true);
     return SM_OKAY;
@@ -192,6 +219,15 @@ state_codes_t lookup_transitions(state_codes_t cur_state, ret_codes_t rc){
 	return (state_codes_t)SM_ERROR;
 }
 
+void check_inputs(void) {
+    if (!dio_read(DASH_SWITCH)) {
+        relay_enable(RELAY_INVERTER);
+    }
+    else {
+        relay_disable(RELAY_INVERTER);
+    }
+}
+
 void stateMachineTask(void *argument){
     (void)argument; // fixes compiler warning 
 
@@ -204,17 +240,20 @@ void stateMachineTask(void *argument){
     dms_printf("[DEBUG] State machine task started\n\r");
 
     if(debug) {
-        relay_init();
-        relay_enable(RELAY_ALWAYS_ON);
-        relay_enable(RELAY_BRAKE_LIGHT);
-        relay_enable(RELAY_INVERTER);
-        relay_enable(RELAY_FANS);
-        relay_enable(RELAY_SDC);
+        // relay_init();
+        // relay_enable(RELAY_ALWAYS_ON);
+        // relay_enable(RELAY_BRAKE_LIGHT);
+        // relay_enable(RELAY_INVERTER);
+        // relay_enable(RELAY_FANS);
+        // relay_enable(RELAY_SDC);
     }
     
 
     for(;;) {
         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
+
+        check_inputs(); // check inputs, unrelated to state machine. todo: move to unique task?
+        // state machine 
 	    state_fun = state[cur_state];       
 	    rc = state_fun();                   // runs the corresponding state function, and returns the state code
 	    cur_state = lookup_transitions(cur_state, rc);

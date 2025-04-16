@@ -202,11 +202,14 @@ bool check_brake_light(float brakeLight){
     // Check brake light 
     if (brakeLight > BRAKE_LIGHT_THRESH){
         relay_enable(RELAY_BRAKE_LIGHT);
+        dio_write(MC_BRAKE_SW, false); 
         return true;
     }
+
     // TODO Enable brake light if deceleration rate exceeds 1.3m/s2 (approximately 0.13 g)
     relay_disable(RELAY_BRAKE_LIGHT);
-
+    dio_write(MC_BRAKE_SW, true); // true == 0 on the MC
+    
     return false;
 }
 

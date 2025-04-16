@@ -29,10 +29,11 @@ typedef enum {
     DIO_D1, 
     DIO_D2, 
     DIO_D3,
-    DIO_D4,
-    DIO_D5, 
-    DIO_D6, 
-    DASH_FWRD_SW
+    MC_FORWARD_SW,
+    MC_REGEN_SW, 
+    MC_BRAKE_SW, 
+    DASH_SWITCH,
+    BUZZER
 } DIO_Channel_t;
 
 // helpers 
