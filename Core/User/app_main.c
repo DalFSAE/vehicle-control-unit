@@ -101,7 +101,7 @@ void statusLedsTask(void *argument) {
             dio_write(DIO_D6, false);
         }
         if (debug == 9) { 
-            dio_write(DIO_D0, true);
+            dio_write(DASH_RTD_BUTTON, true);
             dio_write(DIO_D1, true);
             dio_write(DIO_D2, true);
             dio_write(DIO_D3, true);
@@ -110,14 +110,14 @@ void statusLedsTask(void *argument) {
 
 
         // more debug
-        bool d0 = dio_read(DIO_D0);
+        bool d0 = dio_read(DASH_RTD_BUTTON);
         bool d1 = dio_read(DIO_D1);
         bool d2 = dio_read(DIO_D2);
         bool d3 = dio_read(DIO_D3);
         bool d4 = dio_read(DIO_D4);
         bool d5 = dio_read(DIO_D5);
         bool d6 = dio_read(DIO_D6);
-        bool d7 = dio_read(DIO_D7);
+        bool d7 = dio_read(DASH_FWRD_SW);
 
 
 
@@ -151,7 +151,14 @@ int neutral_state(void){
     
     // todo add switch check
     enable_throttle(false);
-    return SM_DIR_FORWARD;
+
+    bool switchStatus = dio_read(DASH_FWRD_SW);
+
+    if (!switchStatus) {
+        return SM_DIR_FORWARD;
+    }
+    return SM_OKAY;
+    
 }
 
 int forward_state(void){
@@ -214,9 +221,7 @@ void stateMachineTask(void *argument){
         
         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
 
-        enable_throttle(false);
-
-        
+        // enable_throttle(false);
         osDelay(10);
     }
 }

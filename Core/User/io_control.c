@@ -65,14 +65,14 @@ uint32_t relay_get_state(RelayChannel_t ch) {
 static inline void dio_map(DIO_Channel_t ch,
     GPIO_TypeDef **port, uint16_t *pin) {
     switch (ch) {
-        case DIO_D0: *port = GPIOD; *pin = GPIO_PIN_0; break;   // button
+        case DASH_RTD_BUTTON: *port = GPIOD; *pin = GPIO_PIN_0; break;   // button
         case DIO_D1: *port = GPIOD; *pin = GPIO_PIN_1; break;
         case DIO_D2: *port = GPIOD; *pin = GPIO_PIN_2; break;
         case DIO_D3: *port = GPIOD; *pin = GPIO_PIN_3; break;
         case DIO_D4: *port = GPIOD; *pin = GPIO_PIN_4; break;
         case DIO_D5: *port = GPIOD; *pin = GPIO_PIN_5; break;
         case DIO_D6: *port = GPIOD; *pin = GPIO_PIN_6; break;
-        case DIO_D7: *port = GPIOD; *pin = GPIO_PIN_7; break;
+        case DASH_FWRD_SW: *port = GPIOD; *pin = GPIO_PIN_7; break;
         default:     *port = NULL;  *pin = 0;          break;
     }
 }
