@@ -94,11 +94,11 @@ void statusLedsTask(void *argument) {
         }
 
         if (debug == 8) { 
-            dio_write(MC_REGEN_SW, false);
+            dio_write(CAN_WATCHDOG, false);
 
         }
         if (debug == 9) { 
-            dio_write(MC_BRAKE_SW, false);
+            dio_write(CAN_WATCHDOG, true);
         }
         if (debug == 10) {
             dio_write(MC_FORWARD_SW, true);
@@ -106,10 +106,9 @@ void statusLedsTask(void *argument) {
             dio_write(MC_BRAKE_SW, true);
         }
         if (debug == 11) {
-            dio_write(BUZZER, true);
-        }
-        if (debug == 12) {
-            dio_write(BUZZER, false);
+            dio_write(MC_FORWARD_SW, false);
+            dio_write(MC_REGEN_SW, false);
+            dio_write(MC_BRAKE_SW, false);
         }
 
         // more debug
@@ -121,12 +120,14 @@ void statusLedsTask(void *argument) {
         bool d5 = dio_read(MC_REGEN_SW);
         bool d6 = dio_read(MC_BRAKE_SW);
         bool d7 = dio_read(DASH_SWITCH);
+        bool sdc = dio_read(CAN_WATCHDOG);
+
 
 
 
 
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-        osDelay(1000);
+         osDelay(1000);
     }
 }
 
@@ -151,9 +152,10 @@ int entry_state(void){
 
     // todo preform checks
 
-    relay_enable(RELAY_ALWAYS_ON);  // enable always on power (dash, pack, RTML, pumps)
     // relay_enable(RELAY_INVERTER); // now controlled by switch
     dio_init();
+    dio_write(CAN_WATCHDOG, true);  // enable the shutdown circuit 
+    relay_enable(RELAY_ALWAYS_ON);  // enable always on power (dash, pack, RTML, pumps)
     return SM_OKAY;
 }
 
@@ -167,7 +169,9 @@ int neutral_state(void){
     // todo check brake status 
     if (!switchStatus) {
         
-        dio_write(BUZZER, true); // start the buzzer
+        dio_write(BUZZER, true);            // start the buzzer
+        dio_write(MC_FORWARD_SW, false);    // put the MC in forward 
+
         return SM_DIR_FORWARD;
     }
     return SM_OKAY;
