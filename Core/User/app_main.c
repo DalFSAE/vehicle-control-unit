@@ -165,9 +165,10 @@ int neutral_state(void){
     // todo add switch check
     enable_throttle(false);
 
-    bool switchStatus = dio_read(DASH_RTD_BUTTON);
-    // todo check brake status 
-    if (!switchStatus) {
+    bool buttonStatus = dio_read(DASH_RTD_BUTTON);
+    bool switchStatus = dio_read(DASH_SWITCH);
+
+    if (!switchStatus && !buttonStatus) {
         
         dio_write(BUZZER, true);            // start the buzzer
         dio_write(MC_FORWARD_SW, false);    // put the MC in forward 
@@ -192,6 +193,15 @@ int forward_state(void){
         dio_write(BUZZER, false);  // Turn off buzzer after 1s
         buzzer_timer_active = false;  // Reset for next transition
     }
+
+    bool buttonStatus = dio_read(DASH_RTD_BUTTON);
+    bool switchStatus = dio_read(DASH_SWITCH);
+    
+    if (switchStatus) {
+        dio_write(MC_FORWARD_SW, true);    // put the MC in neutral 
+        return SM_VEHICLE_STOPPED;
+    }
+
 
     // Check if neutral or reverse sw is selected
     enable_throttle(true);
