@@ -110,12 +110,20 @@ void statusLedsTask(void *argument) {
             dio_write(MC_REGEN_SW, false);
             dio_write(MC_BRAKE_SW, false);
         }
+        if (debug == 12) {
+            dio_write(TSSI_EN, false);
+        }
+        if (debug == 13) {
+            dio_write(TSSI_EN, true);
+        }
+
+
 
         // more debug
         bool d0 = dio_read(DASH_RTD_BUTTON);
         bool d1 = dio_read(DIO_D1);
-        bool d2 = dio_read(DIO_D2);
-        bool d3 = dio_read(DIO_D3);
+        bool d2 = dio_read(BMS_STATUS);
+        bool d3 = dio_read(TSSI_EN);
         bool d4 = dio_read(MC_FORWARD_SW);
         bool d5 = dio_read(MC_REGEN_SW);
         bool d6 = dio_read(MC_BRAKE_SW);
@@ -123,7 +131,7 @@ void statusLedsTask(void *argument) {
         bool sdc = dio_read(CAN_WATCHDOG);
 
          HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-         osDelay(1000);
+          osDelay(1000);
     }
 }
 
@@ -151,6 +159,7 @@ int entry_state(void){
     // relay_enable(RELAY_INVERTER); // now controlled by switch
     dio_init();
     dio_write(CAN_WATCHDOG, true);  // enable the shutdown circuit 
+    dio_write(TSSI_EN, true);       // disable TSSI light
     relay_enable(RELAY_ALWAYS_ON);  // enable always on power (dash, pack, RTML, pumps)
     
     return SM_OKAY;
@@ -236,6 +245,13 @@ void check_inputs(void) {
     }
     else {
         relay_disable(RELAY_INVERTER);
+    }
+
+    if (dio_read(BMS_STATUS)) {
+        dio_write(TSSI_EN, false);
+    }
+    else {
+        dio_write(TSSI_EN, true);
     }
 }
 

@@ -26,9 +26,9 @@ uint32_t relay_get_state(RelayChannel_t ch);
 
 typedef enum {
     DASH_RTD_BUTTON = 0, 
-    DIO_D1, 
-    DIO_D2, 
-    DIO_D3,
+    DIO_D1,     
+    BMS_STATUS,          // true = bms fault, false = BMS Latched    
+    TSSI_EN,             // false = Flash TSSI
     MC_FORWARD_SW,
     MC_REGEN_SW, 
     MC_BRAKE_SW, 

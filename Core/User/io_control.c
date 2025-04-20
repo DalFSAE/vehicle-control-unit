@@ -67,8 +67,8 @@ static inline void dio_map(DIO_Channel_t ch,
     switch (ch) {
         case DASH_RTD_BUTTON: *port = GPIOD; *pin = GPIO_PIN_0; break;   // button
         case DIO_D1: *port = GPIOD; *pin = GPIO_PIN_1; break;
-        case DIO_D2: *port = GPIOD; *pin = GPIO_PIN_2; break;
-        case DIO_D3: *port = GPIOD; *pin = GPIO_PIN_3; break;
+        case BMS_STATUS: *port = GPIOD; *pin = GPIO_PIN_2; break;
+        case TSSI_EN: *port = GPIOD; *pin = GPIO_PIN_3; break;
         case MC_FORWARD_SW: *port = GPIOD; *pin = GPIO_PIN_4; break;
         case MC_REGEN_SW: *port = GPIOD; *pin = GPIO_PIN_5; break;
         case MC_BRAKE_SW: *port = GPIOD; *pin = GPIO_PIN_6; break;
