@@ -122,11 +122,7 @@ void statusLedsTask(void *argument) {
         bool d7 = dio_read(DASH_SWITCH);
         bool sdc = dio_read(CAN_WATCHDOG);
 
-
-
-
-
-        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
          osDelay(1000);
     }
 }
@@ -156,6 +152,7 @@ int entry_state(void){
     dio_init();
     dio_write(CAN_WATCHDOG, true);  // enable the shutdown circuit 
     relay_enable(RELAY_ALWAYS_ON);  // enable always on power (dash, pack, RTML, pumps)
+    
     return SM_OKAY;
 }
 
