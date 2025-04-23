@@ -28,6 +28,8 @@ int (*state[])(void) = {
     end_state
 };
 
+extern bool brakePressed;
+
 
 struct transition {
 	state_codes_t src_state;
@@ -161,6 +163,7 @@ int entry_state(void){
     dio_write(CAN_WATCHDOG, true);  // enable the shutdown circuit 
     dio_write(TSSI_EN, true);       // disable TSSI light
     relay_enable(RELAY_ALWAYS_ON);  // enable always on power (dash, pack, RTML, pumps)
+    relay_enable(RELAY_INVERTER);
     
     return SM_OKAY;
 }
@@ -169,12 +172,12 @@ int neutral_state(void){
     // Check if forward or reverse selected
     
     // todo add switch check
-    enable_throttle(false);
+        enable_throttle(false);
 
     bool buttonStatus = dio_read(DASH_RTD_BUTTON);
     bool switchStatus = dio_read(DASH_SWITCH);
 
-    if (!switchStatus && !buttonStatus) {
+    if (!switchStatus && !buttonStatus && brakePressed) {
         
         dio_write(BUZZER, true);            // start the buzzer
         dio_write(MC_FORWARD_SW, false);    // put the MC in forward 
@@ -203,10 +206,12 @@ int forward_state(void){
     bool buttonStatus = dio_read(DASH_RTD_BUTTON);
     bool switchStatus = dio_read(DASH_SWITCH);
     
-    if (switchStatus) {
-        dio_write(MC_FORWARD_SW, true);    // put the MC in neutral 
-        return SM_VEHICLE_STOPPED;
-    }
+    // if (switchStatus && buttonStatus && brakePressed) {
+    //     dio_write(MC_FORWARD_SW, true);    // put the MC in neutral 
+    //     dio_write(BUZZER, false);  // Turn off buzzer after 1s
+    //     return SM_VEHICLE_STOPPED;
+        
+    // }
 
 
     // Check if neutral or reverse sw is selected
@@ -240,7 +245,7 @@ state_codes_t lookup_transitions(state_codes_t cur_state, ret_codes_t rc){
 }
 
 void check_inputs(void) {
-    if (!dio_read(DASH_SWITCH)) {
+    if (read_dash_switch_filtered()) {
         relay_enable(RELAY_INVERTER);
     }
     else {

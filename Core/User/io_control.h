@@ -5,6 +5,12 @@
 
 // Enum for relay channels
 // todo: update with channel function
+
+#define SWITCH_ON_LEVEL     0          // active-low
+#define SWITCH_OFF_LEVEL    1
+#define DEBOUNCE_SAMPLES    4          // 4 × 10 ms = 40 ms
+#define OFF_HOLDOFF_MS      200        // must stay OFF this long
+
 typedef enum {
     RELAY_ALWAYS_ON,
     RELAY_BRAKE_LIGHT,
@@ -42,3 +48,5 @@ void dio_write (DIO_Channel_t ch, bool level);   // high / low
 void dio_toggle(DIO_Channel_t ch);               // flip output 
 bool dio_read  (DIO_Channel_t ch);               // true = high 
 void dio_init(void);
+
+static bool read_dash_switch_filtered(void);

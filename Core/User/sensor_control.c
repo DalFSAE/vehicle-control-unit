@@ -29,6 +29,8 @@ extern DAC_HandleTypeDef hdac;
 
 extern osThreadId_t sensor_inputHandle;
 
+volatile bool brakePressed = false;
+
 volatile uint16_t adc_buf[ADC_BUFFER_LEN];
 
 typedef struct pedalStatus_s {
@@ -203,12 +205,14 @@ bool check_brake_light(float brakeLight){
     if (brakeLight > BRAKE_LIGHT_THRESH){
         relay_enable(RELAY_BRAKE_LIGHT);
         dio_write(MC_BRAKE_SW, false); 
+        brakePressed = true;
         return true;
     }
 
     // TODO Enable brake light if deceleration rate exceeds 1.3m/s2 (approximately 0.13 g)
     relay_disable(RELAY_BRAKE_LIGHT);
     dio_write(MC_BRAKE_SW, true); // true == 0 on the MC
+    brakePressed = false;
     
     return false;
 }

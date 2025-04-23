@@ -22,7 +22,8 @@
         "tests.h": "c",
         "dms_defines.h": "c",
         "dms_logging.h": "c",
-        "xutility": "c"
+        "xutility": "c",
+        "math.h": "c"
     },
     "cSpell.words": [
         "AHBCLK",
