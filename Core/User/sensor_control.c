@@ -120,7 +120,7 @@ PDP_StatusTypeDef pedal_plasability_check(pedalStatus_t *pedal, float apps, floa
 /// @param maxRange Maximum threshold to cause a fault [greater than 0]
 /// @return PDP_StatusTypeDef
 PDP_StatusTypeDef sensor_out_of_range(float normalizedValue, float  minRange, float maxRange){
-    if (normalizedValue > maxRange || normalizedValue > minRange){
+    if (normalizedValue < minRange || normalizedValue > maxRange){
         return PDP_ERROR;
     } 
     return PDP_OKAY;

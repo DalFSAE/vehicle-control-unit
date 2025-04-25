@@ -107,3 +107,68 @@ bool dio_read(DIO_Channel_t ch) {
     dio_map(ch, &port, &pin);
     return port ? (HAL_GPIO_ReadPin(port, pin) == GPIO_PIN_SET) : false;
 }
+
+
+/*****************************************************************
+*  Simple 1-bit software debounce + asymmetric OFF delay
+*****************************************************************/
+
+
+static bool     sw_stable     = false;
+static uint8_t  sw_cnt        = 0;
+static uint32_t off_start_ms  = 0;
+
+bool read_dash_switch_filtered(void)
+{
+   bool raw = dio_read(DASH_SWITCH);          // true = HIGH (OFF), false = LOW (ON)
+
+   /* ─── Debounce ─────────────────────────────────────────── */
+   if (raw == sw_stable)                      // still the same level
+   {
+       sw_cnt = 0;                            // reset counter
+   } 
+   else if (++sw_cnt >= DEBOUNCE_SAMPLES)     // changed & stayed for N samples
+   {
+       sw_stable = raw;
+       sw_cnt    = 0;
+       if (sw_stable == SWITCH_OFF_LEVEL)     // just went OFF → start hold-off timer
+           off_start_ms = HAL_GetTick();
+   }
+
+   /* ─── OFF hysteresis ───────────────────────────────────── */
+   if (sw_stable == SWITCH_OFF_LEVEL)
+   {
+       if (HAL_GetTick() - off_start_ms < OFF_HOLDOFF_MS)
+           return SWITCH_ON_LEVEL;            // still within grace period → report ON
+   }
+
+   return sw_stable;
+}
+
+
+// Buzzer Controls 
+
+static uint32_t  _beep_start;
+static uint32_t  _beep_duration;
+static bool      _beep_active;
+
+void buzzer_init(void) {
+    dio_write(BUZZER, false);
+    _beep_active = false;
+}
+
+void buzzer_beep(uint32_t duration_ms) {
+    _beep_start    = HAL_GetTick();
+    _beep_duration = duration_ms;
+    _beep_active   = true;
+    dio_write(BUZZER, true);
+}
+
+void buzzer_update(void) {
+    if (_beep_active &&
+        (HAL_GetTick() - _beep_start >= _beep_duration))
+    {
+        dio_write(BUZZER, false);
+        _beep_active = false;
+    }
+}

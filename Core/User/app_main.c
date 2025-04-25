@@ -137,17 +137,10 @@ void statusLedsTask(void *argument) {
     }
 }
 
-void buzzer(void) {
-    static uint32_t start_time = 0;
-
-    if (HAL_GetTick() - start_time >= 1000) {
-        dio_write(BUZZER, true);
-    }
-}
-
 void app_config(){
 	// HAL_TIM_Base_Start(&htim2);
 	// HAL_DAC_Start(&hdac, DAC1_CHANNEL_1);
+    buzzer_init();
     return;
 }
 
@@ -175,13 +168,11 @@ int neutral_state(void){
         enable_throttle(false);
 
     bool buttonStatus = dio_read(DASH_RTD_BUTTON);
-    bool switchStatus = dio_read(DASH_SWITCH);
+    bool switchStatus = read_dash_switch_filtered();
 
     if (!switchStatus && !buttonStatus && brakePressed) {
-        
-        dio_write(BUZZER, true);            // start the buzzer
+        buzzer_beep(1000); 
         dio_write(MC_FORWARD_SW, false);    // put the MC in forward 
-
         return SM_DIR_FORWARD;
     }
     return SM_OKAY;
@@ -189,29 +180,15 @@ int neutral_state(void){
 }
 
 int forward_state(void){
-    // turn off buzzer after 1 seconds
-    static bool buzzer_timer_active = false;
-    static uint32_t buzzer_start_time = 0;
-
-    if (!buzzer_timer_active) {
-        buzzer_start_time = HAL_GetTick();  // Start 1-second timer
-        buzzer_timer_active = true;
-    }
-
-    if (buzzer_timer_active && (HAL_GetTick() - buzzer_start_time >= 1000)) {
-        dio_write(BUZZER, false);  // Turn off buzzer after 1s
-        buzzer_timer_active = false;  // Reset for next transition
-    }
 
     bool buttonStatus = dio_read(DASH_RTD_BUTTON);
-    bool switchStatus = dio_read(DASH_SWITCH);
+    bool switchStatus = read_dash_switch_filtered();
     
-    // if (switchStatus && buttonStatus && brakePressed) {
-    //     dio_write(MC_FORWARD_SW, true);    // put the MC in neutral 
-    //     dio_write(BUZZER, false);  // Turn off buzzer after 1s
-    //     return SM_VEHICLE_STOPPED;
-        
-    // }
+    if (switchStatus) {
+        dio_write(MC_FORWARD_SW, true);    // put the MC in neutral 
+        return SM_VEHICLE_STOPPED;
+     
+    }
 
 
     // Check if neutral or reverse sw is selected
@@ -245,7 +222,7 @@ state_codes_t lookup_transitions(state_codes_t cur_state, ret_codes_t rc){
 }
 
 void check_inputs(void) {
-    if (read_dash_switch_filtered()) {
+    if (!read_dash_switch_filtered()) {
         relay_enable(RELAY_INVERTER);
     }
     else {
@@ -258,6 +235,7 @@ void check_inputs(void) {
     else {
         dio_write(TSSI_EN, true);
     }
+    
 }
 
 void stateMachineTask(void *argument){
@@ -285,6 +263,7 @@ void stateMachineTask(void *argument){
         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
 
         check_inputs(); // check inputs, unrelated to state machine. todo: move to unique task?
+        buzzer_update(); 
         // state machine 
 	    state_fun = state[cur_state];       
 	    rc = state_fun();                   // runs the corresponding state function, and returns the state code

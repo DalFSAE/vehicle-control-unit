@@ -48,5 +48,7 @@ void dio_write (DIO_Channel_t ch, bool level);   // high / low
 void dio_toggle(DIO_Channel_t ch);               // flip output 
 bool dio_read  (DIO_Channel_t ch);               // true = high 
 void dio_init(void);
-
-static bool read_dash_switch_filtered(void);
+bool read_dash_switch_filtered(void);
+void buzzer_init(void);
+void buzzer_beep(uint32_t duration_ms);
+void buzzer_update(void);
