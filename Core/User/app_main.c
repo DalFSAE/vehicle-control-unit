@@ -158,6 +158,9 @@ int entry_state(void){
     relay_enable(RELAY_ALWAYS_ON);  // enable always on power (dash, pack, RTML, pumps)
     relay_enable(RELAY_INVERTER);
     
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_RESET);
+
     return SM_OKAY;
 }
 
