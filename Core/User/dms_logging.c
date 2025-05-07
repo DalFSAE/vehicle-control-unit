@@ -8,6 +8,8 @@
 #define USB_BUF_SIZE 256
 
 
+// TODO: Incorporate CAN into logging
+
 void dms_printf(const char *format, ...){ 
     
     /* 

@@ -64,64 +64,9 @@ void statusLedsTask(void *argument) {
 
 
     for(;;) {
+    
+        // keeping for now... Any debug data should be moved to a CAN output
 
-
-        if (debug == 1) {
-            relay_toggle(RELAY_ALWAYS_ON);
-            debug = 0;
-        }
-        if (debug == 2) {
-            relay_toggle(RELAY_BRAKE_LIGHT);
-            // debug = 0;
-        }
-        if (debug == 3) {
-            relay_toggle(RELAY_INVERTER);
-            debug = 0;
-        }
-        if (debug == 4) {
-            relay_toggle(RELAY_FANS);
-            debug = 0;
-        }
-        if (debug == 5) {
-            relay_toggle(RELAY_SDC);
-            debug = 0;
-        }
-        if (debug == 6) {
-            set_dac_out(foo); 
-
-        }
-
-        if (debug == 7) {
-            dio_write(MC_FORWARD_SW, false);
-        }
-
-        if (debug == 8) { 
-            dio_write(CAN_WATCHDOG, false);
-
-        }
-        if (debug == 9) { 
-            dio_write(CAN_WATCHDOG, true);
-        }
-        if (debug == 10) {
-            dio_write(MC_FORWARD_SW, true);
-            dio_write(MC_REGEN_SW, true);
-            dio_write(MC_BRAKE_SW, true);
-        }
-        if (debug == 11) {
-            dio_write(MC_FORWARD_SW, false);
-            dio_write(MC_REGEN_SW, false);
-            dio_write(MC_BRAKE_SW, false);
-        }
-        if (debug == 12) {
-            dio_write(TSSI_EN, false);
-        }
-        if (debug == 13) {
-            dio_write(TSSI_EN, true);
-        }
-
-
-
-        // more debug
         bool d0 = dio_read(DASH_RTD_BUTTON);
         bool d1 = dio_read(DIO_D1);
         bool d2 = dio_read(BMS_STATUS);
@@ -252,21 +197,12 @@ void stateMachineTask(void *argument){
     
     dms_printf("[DEBUG] State machine task started\n\r");
 
-    if(debug) {
-        // relay_init();
-        // relay_enable(RELAY_ALWAYS_ON);
-        // relay_enable(RELAY_BRAKE_LIGHT);
-        // relay_enable(RELAY_INVERTER);
-        // relay_enable(RELAY_FANS);
-        // relay_enable(RELAY_SDC);
-    }
-    
-
     for(;;) {
         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
 
         check_inputs(); // check inputs, unrelated to state machine. todo: move to unique task?
         buzzer_update(); 
+        
         // state machine 
 	    state_fun = state[cur_state];       
 	    rc = state_fun();                   // runs the corresponding state function, and returns the state code
