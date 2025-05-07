@@ -34,6 +34,7 @@ typedef enum {
     APPS2,
     FBPS,
     RBPS,
+    CUR,
     NUM_SENSORS  // This is optional, but useful to denote the number of sensors
 } SensorType_t;
 
@@ -43,5 +44,7 @@ typedef enum {
 void enable_throttle(bool enable);
 
 void sensor_init();
+
+void set_dac_out(uint32_t dacOut);
 
  #endif

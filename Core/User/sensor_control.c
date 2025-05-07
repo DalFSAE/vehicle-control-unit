@@ -12,10 +12,11 @@
 #include "app_main.h"
 #include "dms_logging.h"
 #include "dms_defines.h"
+#include "io_control.h"
 
 #define ADC_RESOLUTION_MAX 4096
 #define ADC_RESOLUTION_MIN 0
-#define ADC_BUFFER_LEN 6 // Should be equal to the number of ADC channels
+#define ADC_BUFFER_LEN 8 // Should be equal to the number of ADC channels
 
 #define OFFSET_THRESHOLD 10 // Percent 
 
@@ -27,6 +28,8 @@ extern TIM_HandleTypeDef htim2;
 extern DAC_HandleTypeDef hdac;
 
 extern osThreadId_t sensor_inputHandle;
+
+volatile bool brakePressed = false;
 
 volatile uint16_t adc_buf[ADC_BUFFER_LEN];
 
@@ -117,27 +120,23 @@ PDP_StatusTypeDef pedal_plasability_check(pedalStatus_t *pedal, float apps, floa
 /// @param maxRange Maximum threshold to cause a fault [greater than 0]
 /// @return PDP_StatusTypeDef
 PDP_StatusTypeDef sensor_out_of_range(float normalizedValue, float  minRange, float maxRange){
-    if (normalizedValue > maxRange || normalizedValue > minRange){
+    if (normalizedValue < minRange || normalizedValue > maxRange){
         return PDP_ERROR;
     } 
     return PDP_OKAY;
 }
 
 
-// TODO: Update to use RTOS notif 
-void enable_throttle(bool enable){
-    // g_pedal.throttleOutputEnabled = enable;
-    if (!enable){
-        HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, CUT_MOTOR_SIGNAL);
-    }
-    return;
-}
-
-
-/// @brief Set's ADC output value for throttle 
+// TODO: Update to use RT for throttle 
 /// @param throttlePercent throttle percent [0, 1.0]
 void set_throttle(float throttlePercent){
     uint32_t dacOut = denormalize(throttlePercent, ADC_RESOLUTION_MIN, ADC_RESOLUTION_MAX);
+    HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dacOut);  
+}
+
+// TODO:  
+/// @param dacOut
+void set_dac_out(uint32_t dacOut){
     HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dacOut);  
 }
 
@@ -204,23 +203,29 @@ bool check_faults(pedalStatus_t *pedalStatus, SensorInfo_t *sensors){
 bool check_brake_light(float brakeLight){
     // Check brake light 
     if (brakeLight > BRAKE_LIGHT_THRESH){
-        HAL_GPIO_WritePin(BREAK_LIGHT_PORT, BRAKE_LIGHT_PIN, GPIO_PIN_SET);
+        relay_enable(RELAY_BRAKE_LIGHT);
+        dio_write(MC_BRAKE_SW, false); 
+        brakePressed = true;
         return true;
     }
+
     // TODO Enable brake light if deceleration rate exceeds 1.3m/s2 (approximately 0.13 g)
+    relay_disable(RELAY_BRAKE_LIGHT);
+    dio_write(MC_BRAKE_SW, true); // true == 0 on the MC
+    brakePressed = false;
     
-    HAL_GPIO_WritePin(BREAK_LIGHT_PORT, BRAKE_LIGHT_PIN, GPIO_PIN_RESET);
     return false;
 }
 
 void process_adc(SensorInfo_t *sensors){
     
-    sensors[APPS1].currentAdcValue = adc_buf[0];
-    sensors[APPS2].currentAdcValue = adc_buf[1];
-    sensors[FBPS].currentAdcValue  = adc_buf[2];
-    sensors[RBPS].currentAdcValue  = adc_buf[3];
+    sensors[FBPS].currentAdcValue  = adc_buf[1];
+    sensors[RBPS].currentAdcValue  = adc_buf[0];    // todo. fix
+    // curr sensor = adc_buf[1]
+    sensors[APPS1].currentAdcValue = adc_buf[2];
+    sensors[APPS2].currentAdcValue = adc_buf[3];
     
-    sensors[FBPS].currentAdcValue = sensors[APPS2].currentAdcValue; // FOR TESTING so that pedal checks can be done !! 
+    // sensors[FBPS].currentAdcValue = sensors[APPS2].currentAdcValue; // FOR TESTING so that pedal checks can be done !! 
 
     for (int i = 0; i < NUM_SENSORS; ++i){
         sensors[i].normalizedValue = adc_to_normalized(sensors[i].currentAdcValue, sensors[i].voltageMin, sensors[i].voltageMax, ADC_RESOLUTION_MAX);
@@ -228,6 +233,30 @@ void process_adc(SensorInfo_t *sensors){
     // Do scaling and linear approximations as necessary 
     return;
  }
+
+void output_throttle(SensorInfo_t *sensors) {
+
+    // set_throttle(sensors[APPS1].normalizedValue); 
+    set_dac_out(sensors[APPS1].currentAdcValue);
+
+    static uint32_t count = 0;
+    if (count > 10) {
+
+        int apps1 = (int)(sensors[APPS1].normalizedValue * 100);
+        int apps2 = (int)(sensors[APPS2].normalizedValue * 100);
+        int fbps = (int)(sensors[FBPS].normalizedValue * 100);
+        int rbps = (int)(sensors[RBPS].normalizedValue * 100);
+
+        dms_printf( "[SENSOR] APPS1: %d%% \n"
+                    "[SENSOR] APPS2: %d%% \n"
+                    "[SENSOR] FBPS:  %d%% \n"
+                    "[SENSOR] RPBS:  %d%% \n\n\r",
+                    apps1, apps2, fbps, rbps);
+        count = 0;
+    }
+    count++;
+}
+
 
 void sensorInputTask(void *argument) {
     (void)argument;
@@ -262,26 +291,10 @@ void sensorInputTask(void *argument) {
         }
         
         // throttle Output
+        // todo move to function
         outputThrottle = true; // DEBUG !!
         if (outputThrottle == true){
-            set_throttle(sensors[APPS1].normalizedValue); 
-
-            static uint32_t count = 0;
-            if (count > 10) {
-
-                int apps1 = (int)(sensors[APPS1].normalizedValue * 100);
-                int apps2 = (int)(sensors[APPS2].normalizedValue * 100);
-                int fbps = (int)(sensors[FBPS].normalizedValue * 100);
-                int rbps = (int)(sensors[RBPS].normalizedValue * 100);
-
-                dms_printf( "[SENSOR] APPS1: %d%% \n"
-                            "[SENSOR] APPS2: %d%% \n"
-                            "[SENSOR] FBPS:  %d%% \n"
-                            "[SENSOR] RPBS:  %d%% \n\n\r",
-                            apps1, apps2, fbps, rbps);
-                count = 0;
-            }
-            count++;
+            output_throttle(sensors);
   
         }
         
@@ -306,3 +319,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
     // HAL_GPIO_TogglePin(BREAK_LIGHT_PORT, BRAKE_LIGHT_PIN);
 }
 
+
+void enable_throttle(bool enable) {
+    return;
+}

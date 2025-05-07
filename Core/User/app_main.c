@@ -2,10 +2,11 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include "stdbool.h"
-#include "usbd_cdc_if.h"
+// #include "usbd_cdc_if.h"
 
 #include "app_main.h"
 #include "sensor_control.h"
+#include "io_control.h"
 #include "dms_logging.h"
 
 #include "stdio.h"
@@ -26,6 +27,8 @@ int (*state[])(void) = {
     reverse_state, 
     end_state
 };
+
+extern bool brakePressed;
 
 
 struct transition {
@@ -53,29 +56,144 @@ struct transition state_transitions[] = {
 
 void statusLedsTask(void *argument) {
     (void)argument;
+    
+    uint32_t debug = 0;
+    uint32_t cycleCount = 0;
+
+    int foo = 0;
+
+
     for(;;) {
-        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-        osDelay(100);
+
+
+        if (debug == 1) {
+            relay_toggle(RELAY_ALWAYS_ON);
+            debug = 0;
+        }
+        if (debug == 2) {
+            relay_toggle(RELAY_BRAKE_LIGHT);
+            // debug = 0;
+        }
+        if (debug == 3) {
+            relay_toggle(RELAY_INVERTER);
+            debug = 0;
+        }
+        if (debug == 4) {
+            relay_toggle(RELAY_FANS);
+            debug = 0;
+        }
+        if (debug == 5) {
+            relay_toggle(RELAY_SDC);
+            debug = 0;
+        }
+        if (debug == 6) {
+            set_dac_out(foo); 
+
+        }
+
+        if (debug == 7) {
+            dio_write(MC_FORWARD_SW, false);
+        }
+
+        if (debug == 8) { 
+            dio_write(CAN_WATCHDOG, false);
+
+        }
+        if (debug == 9) { 
+            dio_write(CAN_WATCHDOG, true);
+        }
+        if (debug == 10) {
+            dio_write(MC_FORWARD_SW, true);
+            dio_write(MC_REGEN_SW, true);
+            dio_write(MC_BRAKE_SW, true);
+        }
+        if (debug == 11) {
+            dio_write(MC_FORWARD_SW, false);
+            dio_write(MC_REGEN_SW, false);
+            dio_write(MC_BRAKE_SW, false);
+        }
+        if (debug == 12) {
+            dio_write(TSSI_EN, false);
+        }
+        if (debug == 13) {
+            dio_write(TSSI_EN, true);
+        }
+
+
+
+        // more debug
+        bool d0 = dio_read(DASH_RTD_BUTTON);
+        bool d1 = dio_read(DIO_D1);
+        bool d2 = dio_read(BMS_STATUS);
+        bool d3 = dio_read(TSSI_EN);
+        bool d4 = dio_read(MC_FORWARD_SW);
+        bool d5 = dio_read(MC_REGEN_SW);
+        bool d6 = dio_read(MC_BRAKE_SW);
+        bool d7 = dio_read(DASH_SWITCH);
+        bool sdc = dio_read(CAN_WATCHDOG);
+
+         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+          osDelay(1000);
     }
 }
 
 void app_config(){
 	// HAL_TIM_Base_Start(&htim2);
 	// HAL_DAC_Start(&hdac, DAC1_CHANNEL_1);
+    buzzer_init();
     return;
 }
 
-int entry_state(void){    
+int entry_state(void){ 
+
+    // wait
+    // osDelay(1000);
+
+    // todo preform checks
+
+    // relay_enable(RELAY_INVERTER); // now controlled by switch
+    dio_init();
+    dio_write(CAN_WATCHDOG, true);  // enable the shutdown circuit 
+    dio_write(TSSI_EN, true);       // disable TSSI light
+    relay_enable(RELAY_ALWAYS_ON);  // enable always on power (dash, pack, RTML, pumps)
+    relay_enable(RELAY_INVERTER);
+    
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_10, GPIO_PIN_SET);
+
     return SM_OKAY;
 }
 
 int neutral_state(void){
     // Check if forward or reverse selected
-    enable_throttle(false);
-    return SM_DIR_FORWARD;
+    
+    // todo add switch check
+        enable_throttle(false);
+
+    bool buttonStatus = dio_read(DASH_RTD_BUTTON);
+    bool switchStatus = read_dash_switch_filtered();
+
+    if (!switchStatus && !buttonStatus && brakePressed) {
+        buzzer_beep(1000); 
+        dio_write(MC_FORWARD_SW, false);    // put the MC in forward 
+        return SM_DIR_FORWARD;
+    }
+    return SM_OKAY;
+    
 }
 
 int forward_state(void){
+
+    bool buttonStatus = dio_read(DASH_RTD_BUTTON);
+    bool switchStatus = read_dash_switch_filtered();
+    
+    if (switchStatus) {
+        dio_write(MC_FORWARD_SW, true);    // put the MC in neutral 
+        return SM_VEHICLE_STOPPED;
+     
+    }
+
+
     // Check if neutral or reverse sw is selected
     enable_throttle(true);
     return SM_OKAY;
@@ -106,8 +224,27 @@ state_codes_t lookup_transitions(state_codes_t cur_state, ret_codes_t rc){
 	return (state_codes_t)SM_ERROR;
 }
 
+void check_inputs(void) {
+    if (!read_dash_switch_filtered()) {
+        relay_enable(RELAY_INVERTER);
+    }
+    else {
+        relay_disable(RELAY_INVERTER);
+    }
+
+    if (dio_read(BMS_STATUS)) {
+        dio_write(TSSI_EN, false);
+    }
+    else {
+        dio_write(TSSI_EN, true);
+    }
+    
+}
+
 void stateMachineTask(void *argument){
-    (void)argument;
+    (void)argument; // fixes compiler warning 
+
+    uint32_t debug = 0;
 
     state_codes_t cur_state = ENTRY_STATE;
 	ret_codes_t rc;
@@ -115,17 +252,29 @@ void stateMachineTask(void *argument){
     
     dms_printf("[DEBUG] State machine task started\n\r");
 
+    if(debug) {
+        // relay_init();
+        // relay_enable(RELAY_ALWAYS_ON);
+        // relay_enable(RELAY_BRAKE_LIGHT);
+        // relay_enable(RELAY_INVERTER);
+        // relay_enable(RELAY_FANS);
+        // relay_enable(RELAY_SDC);
+    }
+    
+
     for(;;) {
         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
+
+        check_inputs(); // check inputs, unrelated to state machine. todo: move to unique task?
+        buzzer_update(); 
+        // state machine 
 	    state_fun = state[cur_state];       
 	    rc = state_fun();                   // runs the corresponding state function, and returns the state code
 	    cur_state = lookup_transitions(cur_state, rc);
         
         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
 
-        enable_throttle(false);
-
-        
+        // enable_throttle(false);
         osDelay(10);
     }
 }
