@@ -224,6 +224,7 @@ void process_adc(SensorInfo_t *sensors){
     // curr sensor = adc_buf[1]
     sensors[APPS1].currentAdcValue = adc_buf[2];
     sensors[APPS2].currentAdcValue = adc_buf[3];
+    sensors[CUR].currentAdcValue = adc_buf[6];
     
     // sensors[FBPS].currentAdcValue = sensors[APPS2].currentAdcValue; // FOR TESTING so that pedal checks can be done !! 
 
@@ -266,7 +267,8 @@ void sensorInputTask(void *argument) {
         [APPS1] = {"APPS1", 1.0f, 2.0f, 0, 0.0f},
         [APPS2] = {"APPS2", 1.0f, 2.0f, 0, 0.0f},
         [FBPS]  = {"FBPS" , 0.0f, 3.3f, 0, 0.0f},
-        [RBPS]  = {"RBPS" , 0.0f, 3.3f, 0, 0.0f},       
+        [RBPS]  = {"RBPS" , 0.0f, 3.3f, 0, 0.0f},      
+        [CUR]   = {"SHUNT", 0.2f, 0.252,   0.0f}, 
     };
 
     pedalStatus_t pedalStatus = {
