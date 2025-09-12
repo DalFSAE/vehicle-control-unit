@@ -258,6 +258,11 @@ void output_throttle(SensorInfo_t *sensors) {
     count++;
 }
 
+void shunt_output(SensorInfo_t *sensors){
+    int cur = (int)(sensors[CUR].currentAdcValue);
+    dms_printf("[SENSOR] CUR:   %d%%", cur);
+}
+
 
 void sensorInputTask(void *argument) {
     (void)argument;
@@ -300,6 +305,11 @@ void sensorInputTask(void *argument) {
   
         }
         
+        //Check value output from Shunt Sensor
+        if(true){
+            shunt_output(sensors);
+        }        
+
         // Cleanup         
         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET);
         // osDelay(10);
