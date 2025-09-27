@@ -1,22 +1,27 @@
-//Header file for VCU CAN
+#ifndef CAN_CONTROL.H
+#define CAN_CONTROL.H
 
-#pragma once
-#include "stdbool.h"
-#include "stdint.h"
+#include "stm32f4xx_hal.h"
+#include "stm324x9i_eval.h"
 
-/* ─────────  CAN-IDs (11-bit, standard)  ───────── */
-#define CAN_ID_HVC_STATUS   0x201U   /* Heartbeat / overall state      */
-#define CAN_ID_HV_CURRENTS  0x203U   /* HV currents (2 channels)       */
-#define CAN_ID_PC_DIAG      0x204U   /* Pre-charge diagnostic (on err) */
-#define CAN_ID_HVC_VERSION  0x205U   /* Firmware build tag (boot only) */
-#define CAN_ID_HV_VOLTAGES  0x206U   /* Pack + TS voltages             */
+/* Definition for CANx clock resources */
+#define CANx                            CAN1
+#define CANx_CLK_ENABLE()               _HAL_RCC_CAN1_CLK_ENABLE()
+#define CANx_GPIO_CLK_ENALBE()          _HAL_RCC_GPIOD_CLK_ENABLE()
 
-/* ─────────  Public API  ───────── */
-void can_init(void);
+#define CANx_FORCE_RESET()              _HAL_RCC_CAN1_FORCE_RESET()
+#define CANx_RELEASE_RESET()            _HAL_RCC_CAN1_RELEASE_RESET()
 
-/* Call every 10 ms  */
-void can_task_10ms(bool imd_ok, bool bms_ok, uint8_t hvc_state);
+/* Definitions for CANx Pins */
+#define CANx_TX_PIN                     GPIO_PIN_1
+#define CANx_TX_GPIO_PORT               GPIOD
+#define CANx_TX_AF                      GPIO_AF9_CAN1
+#define CANx_RX_PIN                     GPIO_PIN_10
+#define CANx_RX_GPIO_PORT               GPIOD
+#define CANx_RX_AF                      GPIO_AF9_CAN1
 
-/* Call every 50 ms  */
-void can_task_50ms(float pack_V, float ts_V,
-                   float I_ch1_A, float I_ch2_A);
+/* Definition for CAN's NVIC */
+#define CANx_RX_IRQn                    CAN1_RX0_IRQn
+#define CANx_RX_IRQHandler              CAN1_RX0_IRQHandler
+
+#endif /* CAN_CONTROL.H */

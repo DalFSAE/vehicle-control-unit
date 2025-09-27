@@ -1,130 +1,132 @@
-//Code file for VCU CAN
+#include "can_control.h"
 
-#include "can_driver.h"
-#include "fdcan.h"
-#include "string.h"          /* memcpy  */
-#include "stm32g0xx_hal.h"   /* HAL_FDCAN */
-#include "adc.h"
+/* From https://github.com/STMicroelectronics/STM32CubeF4/tree/master/Projects/STM324xG_EVAL/Examples/CAN/CAN_Networking */
 
-#define CAN_ID_SHUNT_SENSOR 0X207U /* SHUNT SENSOR RAW VALUE */
+int main(void)
+{
+    HAL_Init();
+    SystemClock_Config();
+    CAN_Config();
 
-static uint16_t shunt_raw = 0;
 
-static void shunt_read(void){
-    if HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK) {
-        shunt_raw = HAL_ADC_GetValue(&hadc1);
+
+
+    while(1)
+    {
+        TxData[0] = ;
+        TxData[1] = ;
+
+        if (HAL_CAN_AddTxMessage(&CanHandle, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+        {
+            Error_Handler();
+        }
+        HAL_Delay(10);
     }
-    HAL_ADC_Stop(&hadc1);
 }
 
-extern FDCAN_HandleTypeDef hfdcan1;   /* created by CubeMX (standard CAN 500 kbit/s) */
-
-/* ─────────  Helpers  ───────── */
-static void tx_std(uint16_t id, const void *data, uint8_t dlc);
-
-static FDCAN_TxHeaderTypeDef hdr = {
-    .IdType             = FDCAN_STANDARD_ID,
-    .TxFrameType        = FDCAN_DATA_FRAME,
-    .ErrorStateIndicator= FDCAN_ESI_ACTIVE,
-    .BitRateSwitch      = FDCAN_BRS_OFF,
-    .FDFormat           = FDCAN_CLASSIC_CAN,
-    .TxEventFifoControl = FDCAN_NO_TX_EVENTS,
-    .MessageMarker      = 0
-};
-
-/* ─────────  Public functions  ───────── */
-
-void can_init(void)
+static void SystemClock_Config(void)
 {
-    /* Start peripheral */
-    HAL_FDCAN_Start(&hfdcan1);
+    RCC_ClkInitTypeDef RCC_ClkInitStruct;
+    RCC_OscInitTypeDef RCC_OscInitStruct;
 
-    /* Global filter: accept everything (change when Rx filters are added) */
-    HAL_FDCAN_ConfigGlobalFilter(&hfdcan1,
-        FDCAN_FILTER_DISABLE,  /* std  */
-        FDCAN_FILTER_DISABLE,  /* ext  */
-        FDCAN_REJECT_REMOTE,
-        FDCAN_REJECT_REMOTE);
+    _HAL_RCC_PWR_CLK_ENABLE();
+    _HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-    /* Optionally send version / build tag once at boot                  */
-    const char tag[8] = "HVC204C";      /* ≤ 8 ASCII chars               */
-    tx_std(CAN_ID_HVC_VERSION, tag, 8); /* DLC-8                         */
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+    RCC_OscInitStruct.PLL.PLLM = 25;
+    RCC_OscInitStruct.PLL.PLLN = 336;
+    RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+    RCC_OscInitStruct.PLL.PLLQ = 7;
+    HAL_RCC_OscConfig(&RCC_OscInitStruct);
+  
+    RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;  
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;  
+    HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);
+
+    if (HAL_GetREVID() >= 0x1001)
+    {
+      __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
+    }
 }
 
-/* ---------- 10-ms heartbeat ---------- */
-void can_task_10ms(bool imd_ok, bool bms_ok, uint8_t hvc_state)
+static void Error_Handler(void)
 {
-    uint8_t buf[3] = { hvc_state,
-                       imd_ok ? 1u : 0u,
-                       bms_ok ? 1u : 0u };
-    tx_std(CAN_ID_HVC_STATUS, buf, 3);
+    while(1){}
 }
 
-/* ---------- 50-ms slow data ---------- */
-void can_task_50ms(float pack_V, float ts_V,
-                   float I_ch1_A, float I_ch2_A)
+static void CAN_Config(void)
 {
-    /* Voltages (0.1 V resolution) */
-    uint16_t v_pack = (uint16_t)(pack_V * 10.0f);
-    uint16_t v_ts   = (uint16_t)(ts_V   * 10.0f);
-    uint8_t  volt[4];
-    memcpy(volt,     &v_pack, 2);
-    memcpy(volt + 2, &v_ts,   2);
-    tx_std(CAN_ID_HV_VOLTAGES, volt, 4);
+  CAN_FilterTypeDef  sFilterConfig;
 
-    /* Currents (0.1 A, signed) */
-    int16_t i1 = (int16_t)(I_ch1_A * 10.0f);
-    int16_t i2 = (int16_t)(I_ch2_A * 10.0f);
-    uint8_t  curr[4];
-    memcpy(curr,     &i1, 2);
-    memcpy(curr + 2, &i2, 2);
-    tx_std(CAN_ID_HV_CURRENTS, curr, 4);
+  /*##-1- Configure the CAN peripheral */
+  CanHandle.Instance = CANx;
 
+  CanHandle.Init.TimeTriggeredMode = DISABLE;
+  CanHandle.Init.AutoBusOff = DISABLE;
+  CanHandle.Init.AutoWakeUp = DISABLE;
+  CanHandle.Init.AutoRetransmission = ENABLE;
+  CanHandle.Init.ReceiveFifoLocked = DISABLE;
+  CanHandle.Init.TransmitFifoPriority = DISABLE;
+  CanHandle.Init.Mode = CAN_MODE_NORMAL;
+  CanHandle.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  CanHandle.Init.TimeSeg1 = CAN_BS1_4TQ;
+  CanHandle.Init.TimeSeg2 = CAN_BS2_2TQ;
+  CanHandle.Init.Prescaler = 6;
 
-    /* Shunt raw ADC value */
-    shunt_read();
-    uint8_t shunt[2];
-    memcpy(shunt, &shunt_raw, 2);
-    tx_std(CAN_ID_SHUNT_SENSOR, shunt, 2);
+  if (HAL_CAN_Init(&CanHandle) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /*##-2- Configure the CAN Filter */
+  sFilterConfig.FilterBank = 0;
+  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  sFilterConfig.FilterIdHigh = 0x0000;
+  sFilterConfig.FilterIdLow = 0x0000;
+  sFilterConfig.FilterMaskIdHigh = 0x0000;
+  sFilterConfig.FilterMaskIdLow = 0x0000;
+  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+  sFilterConfig.FilterActivation = ENABLE;
+  sFilterConfig.SlaveStartFilterBank = 14;
+
+  if (HAL_CAN_ConfigFilter(&CanHandle, &sFilterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /*##-3- Start the CAN peripheral */
+  if (HAL_CAN_Start(&CanHandle) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /*##-4- Activate CAN RX notification */
+  if (HAL_CAN_ActivateNotification(&CanHandle, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /*##-5- Configure Transmission process */
+  TxHeader.StdId = 0x321;
+  TxHeader.ExtId = 0x01;
+  TxHeader.RTR = CAN_RTR_DATA;
+  TxHeader.IDE = CAN_ID_STD;
+  TxHeader.DLC = 2;
+  TxHeader.TransmitGlobalTime = DISABLE;
 }
 
-/* ─────────  Internal transmit helper  ───────── */
-static void tx_std(uint16_t id, const void *data, uint8_t len)
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
-    hdr.Identifier = id;
-    /* CAN DLC table: 0,1,2,3,4,5,6,7,8 bytes → FDCAN_DLC_BYTES_n  */
-    static const uint8_t dlc_lut[9] = {
-        FDCAN_DLC_BYTES_0, FDCAN_DLC_BYTES_1, FDCAN_DLC_BYTES_2,
-        FDCAN_DLC_BYTES_3, FDCAN_DLC_BYTES_4, FDCAN_DLC_BYTES_5,
-        FDCAN_DLC_BYTES_6, FDCAN_DLC_BYTES_7, FDCAN_DLC_BYTES_8 };
-    hdr.DataLength = dlc_lut[len];
-
-    HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, &hdr, (uint8_t *)data);
+  /* Get RX message */
+  if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
-
-
-/* Testing output change 
-
-// Parameters - change to your chosen values
-#define ADC_MAX_COUNTS   4095.0f
-#define VREF_ADC         3.3f      // ADC reference voltage
-#define GAIN_INA         50.0f    // INA213 gain selected (50/75/100/200/500/1000)
-#define R_SHUNT_OHMS     0.003f    // 3 mΩ -> 0.003 ohm
-#define VOUT_OFFSET      0.0f      // if using mid-rail offset for bidirectional, set appropriately
-
-// adc_raw is uint16_t ADC sample 0..4095
-static float adc_to_current_amp(uint16_t adc_raw)
-{
-    // Convert ADC counts to voltage at ADC input
-    float v_adc = ((float)adc_raw / ADC_MAX_COUNTS) * VREF_ADC;
-
-    // If INA output is offset (mid-rail) you must subtract offset here:
-    float v_shunt = (v_adc - VOUT_OFFSET) / GAIN_INA; // small V across shunt
-
-    // Current (I = Vshunt / Rshunt)
-    float current = v_shunt / R_SHUNT_OHMS;
-
-    return current; // amps (can be negative if bidir and offset used)
-}
-    
-*/
