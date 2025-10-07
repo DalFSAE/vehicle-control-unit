@@ -2,8 +2,13 @@
 
 /* From https://github.com/STMicroelectronics/STM32CubeF4/tree/master/Projects/STM324xG_EVAL/Examples/CAN/CAN_Networking */
 
-int main(void)
-{
+CAN_HandleTypeDef CanHandle;
+CAN_TxHeaderTypeDef TxHeader;
+
+uint8_t TxData[8]
+volatile uint8_t TxBuffer = 0; //Flag for buffer
+
+for(;;){
     HAL_Init();
     SystemClock_Config();
     CAN_Config();
@@ -13,15 +18,22 @@ int main(void)
 
     while(1)
     {
-        TxData[0] = ;
-        TxData[1] = ;
+      while(!TxBuffer);
+      TxBuffer = 0;
 
-        if (HAL_CAN_AddTxMessage(&CanHandle, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-        {
-            Error_Handler();
-        }
-        HAL_Delay(10);
+      if (HAL_CAN_AddTxMessage(&CanHandle, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+      {
+        Error_Handler();
+      }
     }
+} 
+
+static void bufferFill(void){
+  TxData[0] = ;
+  TxData[1] = ;
+  TxData[2] = ;
+  TxData[3] = ;
+  TxBuffer = 1;
 }
 
 static void SystemClock_Config(void)
