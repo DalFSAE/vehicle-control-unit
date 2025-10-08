@@ -1,3 +1,3 @@
 [submodule "hardware/DMS-26-VCU-V3.0"]
 	path = hardware/DMS-26-VCU-V3.0
-	url = https://afs-vcs-ue1.365.altium.com/git/1C03C852-4BE3-4895-8435-106486792FD6.git
+	url = https://github.com/DalFSAE/DMS-26-VCU-V3.0-mirror.git
