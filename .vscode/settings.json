@@ -1,6 +1,12 @@
 {
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/build/Debug"
+    ],
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/build/Debug/compile_commands.json",
+    "cmake.configureOnOpen": true,
     "files.associations": {
         "main.h": "c",
+        "app.h": "c",
         "app_main.h": "c",
         "stm32f4xx_hal.h": "c",
         "gpio.h": "c",
