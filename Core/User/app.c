@@ -2,6 +2,7 @@
 
 #include "cmsis_os2.h"
 #include "main.h"
+#include "relay.h"
 
 enum {
     APP_HEARTBEAT_PERIOD_MS = 250U,
@@ -24,6 +25,8 @@ void app_init(void)
     HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_RESET);
+
+    relay_init();
 }
 
 void app_create_tasks(void)
