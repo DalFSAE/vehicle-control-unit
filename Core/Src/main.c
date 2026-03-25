@@ -19,17 +19,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-#include "adc.h"
-#include "can.h"
-#include "dac.h"
-#include "dma.h"
-#include "tim.h"
-#include "usb_otg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "app_main.h"
+#include "app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -94,16 +88,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_ADC1_Init();
-  MX_CAN1_Init();
-  MX_CAN2_Init();
-  MX_TIM1_Init();
-  MX_USB_OTG_FS_USB_Init();
-  MX_TIM2_Init();
-  MX_TIM3_Init();
-  MX_TIM9_Init();
-  MX_DAC_Init();
   /* USER CODE BEGIN 2 */
   app_init();
   /* USER CODE END 2 */

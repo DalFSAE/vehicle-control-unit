@@ -11,6 +11,7 @@
 // TODO: Incorporate CAN into logging
 
 void dms_printf(const char *format, ...){ 
+    (void)format;
     
     /* 
     // TODO: MPU will crash if two print statements are called dirrectly after each other
