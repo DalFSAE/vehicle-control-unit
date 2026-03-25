@@ -1,1 +1,6 @@
 /build
+/compile_commands.json
+/CMakeCache.txt
+/CMakeFiles
+/build.ninja
+/cmake_install.cmake
