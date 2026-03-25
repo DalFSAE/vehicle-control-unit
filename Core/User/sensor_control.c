@@ -13,6 +13,7 @@
 #include "dms_logging.h"
 #include "dms_defines.h"
 #include "io_control.h"
+#include "relay.h"
 
 #define ADC_RESOLUTION_MAX 4096
 #define ADC_RESOLUTION_MIN 0

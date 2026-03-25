@@ -1,3 +1,4 @@
+#if 0
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
@@ -214,3 +215,4 @@ void stateMachineTask(void *argument){
         osDelay(10);
     }
 }
+#endif
