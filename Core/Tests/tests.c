@@ -1,6 +1,8 @@
 #include "tests.h"
 
+#include "cmsis_os2.h"
 #include "io_control.h"
+#include "relay.h"
 
 
 
@@ -27,4 +29,3 @@ void test_relays(void) {
     stateRelay3 = relay_get_state(RELAY_FANS);
     stateRelay4 = relay_get_state(RELAY_SDC);
 }
-
