@@ -99,7 +99,7 @@ int main(void)
   MX_CAN1_Init();
   MX_CAN2_Init();
   MX_TIM1_Init();
-  MX_USB_OTG_FS_USB_Init();
+  MX_USB_OTG_FS_PCD_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM9_Init();
