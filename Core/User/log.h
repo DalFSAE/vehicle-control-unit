@@ -11,11 +11,6 @@ typedef enum {
     LOG_LEVEL_ERROR
 } LogLevel_t;
 
-// LOG_MODULE must be defined before importing `log.h`:
-//  #define LOG_MODULE LOG_SRC_APP
-#define LOG_EVENT(level, event_id, a0, a1)                                     \
-    log_event_emit(level, LOG_MODULE, event_id, a0, a1)
-
 // List of possible firmware events
 typedef enum {
     EVT_BOOT = 0u,
@@ -26,10 +21,11 @@ typedef enum {
     EVT_RTD_ENTERED,
     EVT_COMMAND_REJECTED,
     EVT_TASK_CREATED,
-    EVT_COUNT
+    EVT_HEARTBEAT,
+    EVT_COUNT // must be last
 } LogEventId_t;
 
-// List of firmware module that produced a log event.
+// List of firmware modules that can produce log events.
 // Define LOG_MODULE in each .c file before including log.h:
 //   #define LOG_MODULE LOG_SRC_FSM
 typedef enum {
@@ -64,9 +60,20 @@ void log_init(void);
 // Primary event logger — auto-fills timestamp, routes to all sinks
 bool log_write(const LogEvent_t *event);
 
-// Internal target of LOG_EVENT(); fills timestamp and routes to all sinks
-bool log_event_emit(LogLevel_t level, LogSource_t source,
-                    LogEventId_t event_id, uint32_t a0, uint32_t a1);
-
-// Optional plain text interface for printf style debugging
+// Optional plain-text printf-style interface for debug output
 void log_printf(const char *format, ...);
+
+// Convenience macro — requires LOG_MODULE to be defined before including this header.
+// Falls back to LOG_SRC_UNKNOWN if LOG_MODULE is not defined.
+#ifndef LOG_MODULE
+#define LOG_MODULE LOG_SRC_UNKNOWN
+#endif
+
+#define LOG_EVENT(log_level_value, log_event_id_value, arg0_value, arg1_value) \
+    log_write(&(LogEvent_t){                                                   \
+        .event_id = (log_event_id_value),                                      \
+        .level    = (log_level_value),                                         \
+        .source   = LOG_MODULE,                                                \
+        .a0       = (arg0_value),                                              \
+        .a1       = (arg1_value),                                              \
+    })

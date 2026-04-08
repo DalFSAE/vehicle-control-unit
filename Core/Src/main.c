@@ -24,7 +24,7 @@
 #include "dac.h"
 #include "dma.h"
 #include "tim.h"
-#include "usb_otg.h"
+#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -99,7 +99,6 @@ int main(void)
   MX_CAN1_Init();
   MX_CAN2_Init();
   MX_TIM1_Init();
-  MX_USB_OTG_FS_PCD_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM9_Init();
