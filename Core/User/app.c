@@ -1,52 +1,72 @@
-#include "app.h"
+    #include "app.h"
 
-#include "cmsis_os2.h"
-#include "main.h"
-#include "relay.h"
+    #include "cmsis_os2.h"
+    #include "main.h"
+    #include "board_outputs.h"
+    #include "io_control.h"
+    #include "sensor_control.h"
+    #include "fsm.h"
 
-enum {
-    APP_HEARTBEAT_PERIOD_MS = 250U,
-    APP_HEARTBEAT_STACK_SIZE = 256U * 4U,
-};
+    enum {
+        APP_HEARTBEAT_PERIOD_MS  = 250U,
+        APP_HEARTBEAT_STACK_SIZE = 256U * 4U,
+        APP_SENSOR_STACK_SIZE    = 512U * 4U,
+        APP_FSM_STACK_SIZE       = 512U * 4U,
+    };
 
-static void app_heartbeat_task(void *argument);
+    static void app_heartbeat_task(void *argument);
 
-static osThreadId_t app_heartbeat_task_handle;
+    static osThreadId_t app_heartbeat_task_handle;
 
-static const osThreadAttr_t app_heartbeat_task_attributes = {
-    .name = "app_heartbeat",
-    .stack_size = APP_HEARTBEAT_STACK_SIZE,
-    .priority = (osPriority_t)osPriorityNormal,
-};
+    static const osThreadAttr_t app_heartbeat_task_attributes = {
+        .name       = "heartbeat",
+        .stack_size = APP_HEARTBEAT_STACK_SIZE,
+        .priority   = (osPriority_t)osPriorityLow,
+    };
 
-void app_init(void)
-{
-    HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_RESET);
+    static const osThreadAttr_t sensor_task_attributes = {
+        .name       = "sensor_input",
+        .stack_size = APP_SENSOR_STACK_SIZE,
+        .priority   = (osPriority_t)osPriorityAboveNormal,
+    };
 
-    relay_init();
-}
+    static const osThreadAttr_t fsm_task_attributes = {
+        .name       = "fsm",
+        .stack_size = APP_FSM_STACK_SIZE,
+        .priority   = (osPriority_t)osPriorityNormal,
+    };
 
-void app_create_tasks(void)
-{
-    app_heartbeat_task_handle = osThreadNew(
-        app_heartbeat_task,
-        NULL,
-        &app_heartbeat_task_attributes);
+    void app_init(void)
+    {
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LD5_GPIO_Port, LD5_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LD6_GPIO_Port, LD6_Pin, GPIO_PIN_RESET);
 
-    if (app_heartbeat_task_handle == NULL) {
-        Error_Handler();
+        board_outputs_init();
+        dio_init();
+        buzzer_init();
     }
-}
 
-static void app_heartbeat_task(void *argument)
-{
-    (void)argument;
+    void app_create_tasks(void)
+    {
+        app_heartbeat_task_handle = osThreadNew(app_heartbeat_task, NULL, &app_heartbeat_task_attributes);
+        if (app_heartbeat_task_handle == NULL) Error_Handler();
 
-    for (;;) {
-        HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-        osDelay(APP_HEARTBEAT_PERIOD_MS);
+        osThreadId_t sensor_handle = osThreadNew(sensorInputTask, NULL, &sensor_task_attributes);
+        if (sensor_handle == NULL) Error_Handler();
+        sensor_control_register_thread(sensor_handle);
+
+        osThreadId_t fsm_handle = osThreadNew(fsm_task, NULL, &fsm_task_attributes);
+        if (fsm_handle == NULL) Error_Handler();
     }
-}
+
+    static void app_heartbeat_task(void *argument)
+    {
+        (void)argument;
+
+        for (;;) {
+            HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+            osDelay(APP_HEARTBEAT_PERIOD_MS);
+        }
+    }
