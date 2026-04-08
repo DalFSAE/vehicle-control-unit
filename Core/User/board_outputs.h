@@ -3,6 +3,10 @@
 #include <stdint.h>
 
 typedef enum {
+    OUTPUT_DEBUG_LED4,
+    OUTPUT_DEBUG_LED3,
+    OUTPUT_DEBUG_LED5,
+    OUTPUT_DEBUG_LED6,
     OUTPUT_ALWAYS_ON,
     OUTPUT_BRAKE_LIGHT,
     OUTPUT_INVERTER,
