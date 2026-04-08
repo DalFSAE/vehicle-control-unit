@@ -1,0 +1,19 @@
+#pragma once
+
+#include <stdint.h>
+
+typedef enum {
+    OUTPUT_ALWAYS_ON,
+    OUTPUT_BRAKE_LIGHT,
+    OUTPUT_INVERTER,
+    OUTPUT_FANS,
+    OUTPUT_SDC,
+    OUTPUT_AUX,
+    OUTPUT_COUNT     // must be at end
+} OutputChannel_t;
+
+void board_outputs_init(void);
+void board_output_enable(OutputChannel_t ch);
+void board_output_disable(OutputChannel_t ch);
+void board_output_toggle(OutputChannel_t ch);
+uint32_t board_output_get_state(OutputChannel_t ch);
