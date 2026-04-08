@@ -1,11 +1,12 @@
-#pragma once 
+#pragma once
 
 #include "stdbool.h"
 #include <stdint.h>
+#include "vehicle_state.h"
 
 #define SWITCH_ON_LEVEL     0          // active-low
 #define SWITCH_OFF_LEVEL    1
-#define DEBOUNCE_SAMPLES    4          // 4 × 10 ms = 40 ms
+#define DEBOUNCE_SAMPLES    4          // 4 x 10 ms = 40 ms
 #define OFF_HOLDOFF_MS      200        // must stay OFF this long
 
 // Digital Pins 
@@ -32,3 +33,7 @@ bool read_dash_switch_filtered(void);
 void buzzer_init(void);
 void buzzer_beep(uint32_t duration_ms);
 void buzzer_update(void);
+
+// Set motor controller direction.
+// Define MC_FORWARD_POLARITY_INVERTED=1 in CMakeLists to swap physical forward.
+void mc_set_direction(MotorDir_t dir);

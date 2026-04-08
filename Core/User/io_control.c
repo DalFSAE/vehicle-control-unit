@@ -66,31 +66,43 @@ bool read_dash_switch_filtered(void)
 {
    bool raw = dio_read(DASH_SWITCH);          // true = HIGH (OFF), false = LOW (ON)
 
-   /* ─── Debounce ─────────────────────────────────────────── */
+   // Debounce
    if (raw == sw_stable)                      // still the same level
    {
        sw_cnt = 0;                            // reset counter
-   } 
+   }
    else if (++sw_cnt >= DEBOUNCE_SAMPLES)     // changed & stayed for N samples
    {
        sw_stable = raw;
        sw_cnt    = 0;
-       if (sw_stable == SWITCH_OFF_LEVEL)     // just went OFF → start hold-off timer
+       if (sw_stable == SWITCH_OFF_LEVEL)     // just went OFF -> start hold-off timer
            off_start_ms = HAL_GetTick();
    }
 
-   /* ─── OFF hysteresis ───────────────────────────────────── */
+   // OFF hysteresis
    if (sw_stable == SWITCH_OFF_LEVEL)
    {
        if (HAL_GetTick() - off_start_ms < OFF_HOLDOFF_MS)
-           return SWITCH_ON_LEVEL;            // still within grace period → report ON
+           return SWITCH_ON_LEVEL;            // still within grace period -> report ON
    }
 
    return sw_stable;
 }
 
 
-// Buzzer Controls 
+// Motor direction
+
+void mc_set_direction(MotorDir_t dir) {
+#if MC_FORWARD_POLARITY_INVERTED
+    bool want_forward = (dir == MOTOR_DIR_REVERSE);
+#else
+    bool want_forward = (dir == MOTOR_DIR_FORWARD);
+#endif
+    // MC forward switch is active-low: false = forward
+    dio_write(MC_FORWARD_SW, !want_forward);
+}
+
+// Buzzer Controls
 
 static uint32_t  _beep_start;
 static uint32_t  _beep_duration;
