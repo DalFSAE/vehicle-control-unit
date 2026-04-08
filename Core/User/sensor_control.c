@@ -13,7 +13,7 @@
 #include "sensor_control.h"
 #include "pedal_logic.h"
 #include "vehicle_state.h"
-#include "dms_logging.h"
+#include "log.h"
 #include "dms_defines.h"
 
 #define ADC_RESOLUTION_MAX 4096
@@ -87,7 +87,8 @@ void sensorInputTask(void *argument) {
         .sensorStatus = PDP_OKAY,
     };
 
-    dms_printf("[DEBUG] Sensor input task started\n\r");
+    // todo: remove and replace with proper logging
+    // log_printf("[DEBUG] Sensor input task started\n\r");
     for(;;) {
 
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until ADC DMA complete
