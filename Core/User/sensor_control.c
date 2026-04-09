@@ -14,7 +14,6 @@
 #include "sensor_control.h"
 #include "pedal_logic.h"
 #include "log.h"
-#include "dms_defines.h"
 #include "vehicle_state.h"
 #include "input_control.h"
 
@@ -22,9 +21,9 @@
 #define ADC_RESOLUTION_MAX 4096
 #define ADC_RESOLUTION_MIN 0
 #define ADC_BUFFER_LEN 8 // Should be equal to the number of ADC channels
+#define BRAKE_LIGHT_THRESHOLD 0.15f
 #define SENSOR_DEBUG_LOG_PERIOD_MS 100U
 #define VERBOSE false
-#define MOCK true
 
 extern ADC_HandleTypeDef hadc1;
 extern TIM_HandleTypeDef htim2;
@@ -50,7 +49,7 @@ static SensorInfo_t g_sensors[NUM_SENSORS] = {
 // updates the gloabl vehicle state with latest inputs 
 static void publish_inputs(const SensorInfo_t *sensors, uint32_t fault_flags) {
     g_vcu.brake_pressed =
-        sensors[FBPS].normalizedValue > BRAKE_LIGHT_THRESH;
+        sensors[FBPS].normalizedValue > BRAKE_LIGHT_THRESHOLD;
     g_vcu.throttle_request = sensors[APPS1].normalizedValue;
     g_vcu.fault_flags = fault_flags;
 
@@ -74,7 +73,7 @@ void process_adc(SensorInfo_t *sensors) {
         return;
     }
 
-#if MOCK
+#if MOCK_ADC
     // Known-good test values that stay within the configured sensor ranges.
     sensors[APPS1].normalizedValue = 0.25f;
     sensors[APPS2].normalizedValue = 0.27f;
