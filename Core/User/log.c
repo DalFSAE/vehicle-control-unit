@@ -104,10 +104,41 @@ static const char *log_sensor_channel_str(uint32_t sensor_channel) {
     switch ((SensorType_t)sensor_channel) {
         case APPS1: return "APPS1";
         case APPS2: return "APPS2";
-        case FBPS:  return "FBPS ";
-        case RBPS:  return "RBPS ";
-        case CUR:   return "CUR  ";
-        default: return    "ERROR";
+        case FBPS: return "FBPS ";
+        case RBPS: return "RBPS ";
+        case CUR: return "CUR  ";
+        default: return "ERROR";
+    }
+}
+
+// Keep in sync with FaultFlags_t in vehicle_state.h.
+static const char *log_fault_flag_str(uint32_t flag) {
+    switch (flag) {
+        case (1u << 0): return "APPS_DISAGREE";
+        case (1u << 1): return "PEDAL_PLAUS";
+        case (1u << 2): return "SENSOR_RANGE";
+        default: return "UNKNOWN_FAULT";
+    }
+}
+
+// Keep in sync with FaultResponse_t in fsm.h.
+static const char *log_fault_resp_str(uint32_t resp) {
+    switch (resp) {
+        case 0u: return "CUT_THROTTLE";
+        case 1u: return "RETURN_NEUTRAL";
+        default: return "UNKNOWN_RESP";
+    }
+}
+
+static const char *log_fsm_state_str(uint32_t state) {
+    // Keep in sync with FsmState_t in fsm.c.
+    switch (state) {
+        case 0u: return "ENTRY";
+        case 1u: return "STANDBY";
+        case 2u: return "NEUTRAL";
+        case 3u: return "FORWARD";
+        case 4u: return "REVERSE";
+        default: return "UNKNOWN";
     }
 }
 
@@ -124,6 +155,14 @@ static void sink_uart_event(const LogEvent_t *event) {
         len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s channel=%s value=%lu\r\n",
                        (unsigned long)event->time_ms, log_level_str(event->level), log_source_str(event->source),
                        log_event_str(event->event_id), log_sensor_channel_str(event->a0), (unsigned long)event->a1);
+    } else if (event->event_id == EVT_FAULT_SET) {
+        len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s %s -> %s\r\n", (unsigned long)event->time_ms,
+                       log_level_str(event->level), log_source_str(event->source), log_event_str(event->event_id),
+                       log_fault_flag_str(event->a0), log_fault_resp_str(event->a1));
+    } else if (event->event_id == EVT_STATE_CHANGE) {
+        len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s %s -> %s\r\n", (unsigned long)event->time_ms,
+                       log_level_str(event->level), log_source_str(event->source), log_event_str(event->event_id),
+                       log_fsm_state_str(event->a0), log_fsm_state_str(event->a1));
     } else {
         len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s a0=%lu a1=%lu\r\n", (unsigned long)event->time_ms,
                        log_level_str(event->level), log_source_str(event->source), log_event_str(event->event_id),

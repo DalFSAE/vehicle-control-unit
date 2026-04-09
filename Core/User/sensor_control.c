@@ -24,6 +24,7 @@
 #define ADC_BUFFER_LEN 8 // Should be equal to the number of ADC channels
 #define SENSOR_DEBUG_LOG_PERIOD_MS 100U
 #define VERBOSE false
+#define MOCK true
 
 extern ADC_HandleTypeDef hadc1;
 extern TIM_HandleTypeDef htim2;
@@ -69,22 +70,37 @@ void sensor_init(void) {
 }
 
 void process_adc(SensorInfo_t *sensors) {
+    if (sensors == NULL) {
+        return;
+    }
 
-    sensors[FBPS].currentAdcValue = adc_buf[1];
-    sensors[RBPS].currentAdcValue = adc_buf[0]; // todo. fix
-    // curr sensor = adc_buf[1]
+#if MOCK
+    // Known-good test values that stay within the configured sensor ranges.
+    sensors[APPS1].normalizedValue = 0.25f;
+    sensors[APPS2].normalizedValue = 0.27f;
+    sensors[FBPS].normalizedValue  = 0.05f;
+    sensors[RBPS].normalizedValue  = 0.05f;
+
+    sensors[APPS1].currentAdcValue = (int)pedal_denormalize(sensors[APPS1].normalizedValue, 0, ADC_RESOLUTION_MAX - 1);
+    sensors[APPS2].currentAdcValue = (int)pedal_denormalize(sensors[APPS2].normalizedValue, 0, ADC_RESOLUTION_MAX - 1);
+    sensors[FBPS].currentAdcValue  = (int)pedal_denormalize(sensors[FBPS].normalizedValue, 0, ADC_RESOLUTION_MAX - 1);
+    sensors[RBPS].currentAdcValue  = (int)pedal_denormalize(sensors[RBPS].normalizedValue, 0, ADC_RESOLUTION_MAX - 1);
+    return;
+#else
+    sensors[RBPS].currentAdcValue  = adc_buf[0]; // todo: confirm channel mapping
+    sensors[FBPS].currentAdcValue  = adc_buf[1];
     sensors[APPS1].currentAdcValue = adc_buf[2];
     sensors[APPS2].currentAdcValue = adc_buf[3];
 
-    // sensors[FBPS].currentAdcValue = sensors[APPS2].currentAdcValue; // FOR
-    // TESTING so that pedal checks can be done !!
-
-    for (int i = 0; i < NUM_SENSORS; ++i) {
-        sensors[i].normalizedValue = pedal_adc_to_normalized(sensors[i].currentAdcValue, sensors[i].voltageMin,
-                                                             sensors[i].voltageMax, ADC_RESOLUTION_MAX);
-    }
-    // Do scaling and linear approximations as necessary
-    return;
+    sensors[RBPS].normalizedValue = pedal_adc_to_normalized(
+        sensors[RBPS].currentAdcValue, sensors[RBPS].voltageMin, sensors[RBPS].voltageMax, ADC_RESOLUTION_MAX);
+    sensors[FBPS].normalizedValue = pedal_adc_to_normalized(
+        sensors[FBPS].currentAdcValue, sensors[FBPS].voltageMin, sensors[FBPS].voltageMax, ADC_RESOLUTION_MAX);
+    sensors[APPS1].normalizedValue = pedal_adc_to_normalized(
+        sensors[APPS1].currentAdcValue, sensors[APPS1].voltageMin, sensors[APPS1].voltageMax, ADC_RESOLUTION_MAX);
+    sensors[APPS2].normalizedValue = pedal_adc_to_normalized(
+        sensors[APPS2].currentAdcValue, sensors[APPS2].voltageMin, sensors[APPS2].voltageMax, ADC_RESOLUTION_MAX);
+#endif
 }
 
 void sensorInputTask(void *argument) {

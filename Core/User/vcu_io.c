@@ -9,22 +9,33 @@
 
 #define MOCK_IO true
 
+// returns true only on the rising edge of *signal
+// prev_state must be a persistent bool, zero-initialized
+bool rising_edge(bool signal, bool *prev_state)
+{
+    bool edge = signal && !(*prev_state);
+    *prev_state = signal;
+    return edge;
+}
+
 void vcu_read_inputs(VcuInputs *in) {
     if (in == NULL) return;
+
+    static bool rtd_prev = false;
 
 #if MOCK_IO
     // todo: connect to external interface. Possibly python over USB
     in->throttle_request    = 0.5;
     in->brake_pressed       = true;
     in->fault_flags         = g_vcu.fault_flags;
-    in->rtd_button          = g_vcu.rtd_button;
+    in->rtd_button          = rising_edge(g_vcu.rtd_button, &rtd_prev);
     in->fwrd_switch         = true;
-    in->ts_active           = false;
+    in->ts_active           = true;
 #else
     in->throttle_request    = g_vehicle.throttle_request;
     in->brake_pressed       = g_vehicle.brake_pressed;
     in->fault_flags         = g_vehicle.fault_flags;
-    in->rtd_button          = g_vehicle.rtd_button;
+    in->rtd_button          = rising_edge(read_rtd_pin(), &rtd_prev);
     in->fwrd_switch         = g_vehicle.fwrd_switch;
     in->ts_active           = g_can.ts_active; // todo: get from CAN bus
 #endif
