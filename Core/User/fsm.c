@@ -7,7 +7,9 @@
 
 #define FSM_PERIOD_MS 10u
 
+// ---------------------------------------------------------------------------
 // States & events
+// ---------------------------------------------------------------------------
 
 typedef enum {
     ST_ENTRY,   // VCU init, enable GLV relays
@@ -28,7 +30,10 @@ typedef enum {
     FSM_EV_COUNT
 } FsmEvent_t;
 
+// ---------------------------------------------------------------------------
 // Transition table: [current state][event] -> next state
+// ---------------------------------------------------------------------------
+
 static const FsmState_t transition_table[ST_COUNT][FSM_EV_COUNT] = {
     // [current state]    OK           READY        NOTREADY     RTD          RTD_REV      STOP
     [ST_ENTRY] = {ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY},
