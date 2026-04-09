@@ -1,7 +1,9 @@
+#define LOG_MODULE LOG_SRC_FSM
 #include "fsm.h"
 #include "vehicle_state.h"
 #include "vcu_io.h"
 #include "cmsis_os2.h"
+#include "log.h"
 
 #define FSM_PERIOD_MS 10u
 
@@ -30,7 +32,10 @@ static const FsmState_t transition_table[ST_COUNT][FSM_EV_COUNT] = {
     [ST_REVERSE] = {[FSM_EV_OK] = ST_REVERSE, [FSM_EV_RTD] = ST_REVERSE, [FSM_EV_STOP] = ST_NEUTRAL},
 };
 
-// Fault helper
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 
 static FsmEvent_t check_fault(const VcuInputs *in, VcuOutputs *out,
                                uint32_t flag, FaultResponse_t resp)
@@ -40,7 +45,10 @@ static FsmEvent_t check_fault(const VcuInputs *in, VcuOutputs *out,
     return (resp == FAULT_RESP_RETURN_NEUTRAL) ? FSM_EV_STOP : FSM_EV_OK;
 }
 
+// ---------------------------------------------------------------------------
 // State functions
+// ---------------------------------------------------------------------------
+
 
 static FsmEvent_t entry_state(const FaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out)
 {
@@ -58,7 +66,7 @@ static FsmEvent_t neutral_state(const FaultConfig_t *cfg, const VcuInputs *in, V
     (void)cfg;
     out->throttle_enabled = false;
 
-    if (in->dash_switch_on && in->rtd_pressed && in->brake_pressed) {
+    if (in->fwrd_switch && in->rtd_button && in->brake_pressed) {
         out->buzzer_beep_ms  = 1000;
         out->motor_direction = MOTOR_DIR_FORWARD;
         return FSM_EV_RTD;
@@ -68,7 +76,7 @@ static FsmEvent_t neutral_state(const FaultConfig_t *cfg, const VcuInputs *in, V
 
 static FsmEvent_t forward_state(const FaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out)
 {
-    if (!in->dash_switch_on) {
+    if (!in->fwrd_switch) {
         out->throttle_enabled = false;
         return FSM_EV_STOP;
     }
@@ -98,7 +106,9 @@ static const StateFn_t state_fns[ST_COUNT] = {
     [ST_REVERSE] = reverse_state,
 };
 
+// ---------------------------------------------------------------------------
 // Task
+// ---------------------------------------------------------------------------
 
 void fsm_task(void *arg)
 {
@@ -115,18 +125,27 @@ void fsm_task(void *arg)
     VcuOutputs out   = {0};
 
     for (;;) {
+        // todo: create buzzer api
         out.buzzer_beep_ms = 0; // cleared each tick; state sets if needed
 
+        // read from global state object
         vcu_read_inputs(&in);
 
         // Unconditional output mappings derived directly from inputs
+        // todo: find a better spot for these?
         out.brake_light      = in.brake_pressed;
         out.mc_brake_sw      = !in.brake_pressed;
         out.throttle_request = in.throttle_request;
 
-        FsmEvent_t ev = state_fns[state](&fault_cfg, &in, &out);
-        state = transition_table[state][ev];
+        // finite state machine
+        FsmEvent_t  ev       = state_fns[state](&fault_cfg, &in, &out);
+        FsmState_t  next     = transition_table[state][ev];
+        if (next != state) {
+            LOG_EVENT(LOG_LEVEL_INFO, EVT_STATE_CHANGE, state, next);
+        }
+        state = next;
 
+        // update global state object
         vcu_apply_outputs(&out);
 
         osDelay(FSM_PERIOD_MS);

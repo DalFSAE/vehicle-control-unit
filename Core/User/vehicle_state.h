@@ -24,30 +24,28 @@ typedef struct {
     volatile bool     fwrd_switch;
 } VcuState_t;
 
-extern VcuState_t g_vehicle;
+extern VcuState_t g_vcu;
 
 // Runtime IO types
 // Inputs consumed by the FSM each cycle
 // packed allows spoofing of data via USB interface
 typedef struct __attribute__((packed)) {
     // FaultFlags_t bitmask
-    uint32_t fault_flags;      
-    
-    // processed sensor data 
-    float    throttle_request; // [0.0, 1.0]
-    bool     brake_pressed;
-    
+    uint32_t fault_flags;
+
+    // processed sensor data
+    float throttle_request; // [0.0, 1.0]
+    bool  brake_pressed;
+
     // digital inputs
     bool rtd_button;
     bool fwrd_switch;
     bool rvrs_switch;
-    
-    // can data
-    bool ts_active;
-} 
-VcuInputs;
-_Static_assert(sizeof(VcuInputs) == 13, "VcuInputs size mismatch"); // update as needed
 
+    // data from the CANbus
+    bool ts_active;
+} VcuInputs;
+_Static_assert(sizeof(VcuInputs) == 13, "VcuInputs size mismatch"); // update as needed
 
 // Outputs produced by the FSM each cycle (applied by vcu_apply_outputs).
 typedef struct {
@@ -69,3 +67,10 @@ typedef struct {
     // Buzzer: non-zero triggers a beep of that duration; cleared each cycle.
     uint32_t buzzer_beep_ms;
 } VcuOutputs;
+
+// Data from the CAN bus, used by the FSM
+typedef struct {
+    volatile bool ts_active;
+} CanState_t;
+
+extern CanState_t g_can;
