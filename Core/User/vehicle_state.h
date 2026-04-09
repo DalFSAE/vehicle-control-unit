@@ -26,9 +26,9 @@ typedef struct {
 
 extern VcuState_t g_vcu;
 
-// Runtime IO types
-// Inputs consumed by the FSM each cycle
-// packed allows spoofing of data via USB interface
+// Primary Controller Input interface
+// Inputs consumed by the FSM each cycle.
+// Packing allows spoofing of data via a USB interface
 typedef struct __attribute__((packed)) {
     // FaultFlags_t bitmask
     uint32_t fault_flags;
