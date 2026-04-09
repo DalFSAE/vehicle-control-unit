@@ -9,6 +9,7 @@
 
 #define LOG_MODULE LOG_SRC_LOG
 #include "log.h"
+#include "sensor_types.h"
 
 #define UART_BUF_SIZE 256
 #define LOG_USB_TX_RETRY_COUNT 5U
@@ -90,11 +91,23 @@ static const char *log_event_str(LogEventId_t event_id) {
         case EVT_FAULT_SET: return "FAULT_SET";
         case EVT_FAULT_CLEAR: return "FAULT_CLEAR";
         case EVT_IO_CHANGE: return "IO_CHANGE";
+        case EVT_SENSOR_DEBUG: return "SENSOR_DEBUG";
         case EVT_RTD_ENTERED: return "RTD_ENTERED";
         case EVT_COMMAND_REJECTED: return "CMD_REJECTED";
         case EVT_TASK_CREATED: return "TASK_CREATED";
         case EVT_HEARTBEAT: return "HEARTBEAT";
         default: return "UNKNOWN_EVENT";
+    }
+}
+
+static const char *log_sensor_channel_str(uint32_t sensor_channel) {
+    switch ((SensorType_t)sensor_channel) {
+        case APPS1: return "APPS1";
+        case APPS2: return "APPS2";
+        case FBPS:  return "FBPS ";
+        case RBPS:  return "RBPS ";
+        case CUR:   return "CUR  ";
+        default: return    "ERROR";
     }
 }
 
@@ -105,11 +118,18 @@ static const char *log_event_str(LogEventId_t event_id) {
 // Formats the event as human-readable text and sends over UART.
 static void sink_uart_event(const LogEvent_t *event) {
     char buf[UART_BUF_SIZE];
-    int  len =
-        snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s a0=%lu a1=%lu\r\n",
-                 (unsigned long)event->time_ms, log_level_str(event->level),
-                 log_source_str(event->source), log_event_str(event->event_id),
-                 (unsigned long)event->a0, (unsigned long)event->a1);
+    int  len;
+
+    if (event->event_id == EVT_SENSOR_DEBUG) {
+        len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s channel=%s value=%lu\r\n",
+                       (unsigned long)event->time_ms, log_level_str(event->level), log_source_str(event->source),
+                       log_event_str(event->event_id), log_sensor_channel_str(event->a0), (unsigned long)event->a1);
+    } else {
+        len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s a0=%lu a1=%lu\r\n", (unsigned long)event->time_ms,
+                       log_level_str(event->level), log_source_str(event->source), log_event_str(event->event_id),
+                       (unsigned long)event->a0, (unsigned long)event->a1);
+    }
+
     if (len <= 0) {
         return;
     }
