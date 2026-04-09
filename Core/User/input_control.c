@@ -3,20 +3,6 @@
 #include "dio.h"
 
 
-
-// ---------------------------------------------------------------------------
-// Driver inputs
-// ---------------------------------------------------------------------------
-
-
-bool read_ready_to_drive_button(void) {
-    return dio_read(PCB_USER_BUTTON);
-}
-
-bool read_forward_switch(void) {
-    return dio_read(DASH_SWITCH);
-}
-
 // ---------------------------------------------------------------------------
 // Simple 1-bit software debounce + asymmetric OFF delay
 // ---------------------------------------------------------------------------
@@ -32,7 +18,7 @@ static uint32_t off_start_ms = 0;
 
 bool read_dash_switch_filtered(void) {
     bool raw = dio_read(DASH_SWITCH); // true = HIGH (OFF), false = LOW (ON)
-
+    
     // Debounce
     if (raw == sw_stable) // still the same level
     {
@@ -44,17 +30,29 @@ bool read_dash_switch_filtered(void) {
         if (sw_stable ==
             SWITCH_OFF_LEVEL) // just went OFF -> start hold-off timer
             off_start_ms = HAL_GetTick();
-    }
-
-    // OFF hysteresis
-    if (sw_stable == SWITCH_OFF_LEVEL) {
-        if (HAL_GetTick() - off_start_ms < OFF_HOLDOFF_MS)
+        }
+        
+        // OFF hysteresis
+        if (sw_stable == SWITCH_OFF_LEVEL) {
+            if (HAL_GetTick() - off_start_ms < OFF_HOLDOFF_MS)
             return SWITCH_ON_LEVEL; // still within grace period -> report ON
     }
-
+    
     return sw_stable;
 }
 
+// ---------------------------------------------------------------------------
+// Driver inputs
+// ---------------------------------------------------------------------------
+
+
+bool read_ready_to_drive_button(void) {
+    return dio_read(DASH_RTD_BUTTON);
+}
+
+bool read_forward_switch(void) {
+    return dio_read(PCB_USER_BUTTON);
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -62,5 +60,6 @@ bool read_dash_switch_filtered(void) {
 
 void get_driver_inputs(VcuState_t *v) {
     v->fwrd_switch = read_forward_switch();
+
     v->rtd_button = read_ready_to_drive_button();
 }
