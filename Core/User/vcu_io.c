@@ -7,7 +7,7 @@
 #include "torque_output.h"
 #include "dio.h"
 
-#define MOCK_IO true
+#define MOCK_IO false
 
 // returns true only on the rising edge of *signal
 // prev_state must be a persistent bool, zero-initialized
@@ -28,15 +28,15 @@ void vcu_read_inputs(VcuInputs *in) {
     in->throttle_request    = 0.5;
     in->brake_pressed       = true;
     in->fault_flags         = g_vcu.fault_flags;
-    in->rtd_button          = rising_edge(g_vcu.rtd_button, &rtd_prev);
-    in->fwrd_switch         = true;
+    in->rtd_button          = g_vcu.rtd_button + true;
+    in->fwrd_switch         = g_vcu.fwrd_switch;
     in->ts_active           = true;
 #else
-    in->throttle_request    = g_vehicle.throttle_request;
-    in->brake_pressed       = g_vehicle.brake_pressed;
-    in->fault_flags         = g_vehicle.fault_flags;
-    in->rtd_button          = rising_edge(read_rtd_pin(), &rtd_prev);
-    in->fwrd_switch         = g_vehicle.fwrd_switch;
+    in->throttle_request    = g_vcu.throttle_request;
+    in->brake_pressed       = g_vcu.brake_pressed;
+    in->fault_flags         = g_vcu.fault_flags;
+    in->rtd_button          = rising_edge(g_vcu.rtd_button, &rtd_prev);
+    in->fwrd_switch         = g_vcu.fwrd_switch;
     in->ts_active           = g_can.ts_active; // todo: get from CAN bus
 #endif
 }
