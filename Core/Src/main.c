@@ -22,13 +22,14 @@
 #include "adc.h"
 #include "can.h"
 #include "dac.h"
+#include "dma.h"
 #include "tim.h"
 #include "usb_otg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "app_main.h"
+#include "app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -81,7 +82,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  app_config();
+  /* No user hardware access before board init. */
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -93,6 +94,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
@@ -103,7 +105,7 @@ int main(void)
   MX_TIM9_Init();
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
-//   MX_USB_DEVICE_Init();
+  app_init();
   /* USER CODE END 2 */
 
   /* Init scheduler */

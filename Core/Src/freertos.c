@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app.h"
 
 /* USER CODE END Includes */
 
@@ -94,6 +95,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
+  app_create_tasks();
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
@@ -113,6 +115,8 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  // CubeMX requires at least one task, the rest of
+  // our classes are created by the app
   /* Infinite loop */
   for(;;)
   {
