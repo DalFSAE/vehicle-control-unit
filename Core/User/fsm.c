@@ -36,7 +36,7 @@ typedef enum {
 
 static const FsmState_t transition_table[ST_COUNT][FSM_EV_COUNT] = {
     // [current state]    OK           READY        NOTREADY     RTD          RTD_REV      STOP
-    [ST_ENTRY] = {ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY},
+    [ST_ENTRY]   = {ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY},
     [ST_STANDBY] = {ST_STANDBY, ST_NEUTRAL, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY},
     [ST_NEUTRAL] = {ST_NEUTRAL, ST_NEUTRAL, ST_STANDBY, ST_FORWARD, ST_REVERSE, ST_STANDBY},
     [ST_FORWARD] = {ST_FORWARD, ST_FORWARD, ST_STANDBY, ST_FORWARD, ST_FORWARD, ST_NEUTRAL},
@@ -109,7 +109,7 @@ static FsmEvent_t forward_state(const FaultConfig_t *cfg, const VcuInputs *in, V
         out->throttle_enabled = false;
         return FSM_EV_STOP;
     }
- 
+
     if (fault_active(in, FAULT_APPS_DISAGREE)) {
         out->throttle_enabled = false;
         LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_APPS_DISAGREE, cfg->apps_disagree);
@@ -125,7 +125,7 @@ static FsmEvent_t forward_state(const FaultConfig_t *cfg, const VcuInputs *in, V
         LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_SENSOR_RANGE, cfg->sensor_range);
         return fault_response_to_event(cfg->sensor_range);
     }
- 
+
     out->throttle_enabled = true;
     return FSM_EV_OK;
 }
