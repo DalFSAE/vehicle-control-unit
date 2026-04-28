@@ -27,3 +27,22 @@ jobs:
 
       - name: Build Debug firmware
         run: cmake --build --preset Debug
+
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake gcc
+
+      - name: Configure
+        run: cmake -S Core/Tests/unit -B Core/Tests/unit/build
+
+      - name: Build
+        run: cmake --build Core/Tests/unit/build
+
+      - name: Run tests
+        run: ctest --test-dir Core/Tests/unit/build --output-on-failure
