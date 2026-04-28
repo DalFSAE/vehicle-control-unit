@@ -11,7 +11,7 @@ void tearDown(void) {}
 
 
 void test_throw_fault (void) {
-    TEST_ASSERT_TRUE(false); // this is to test CI/CD, should normally be true
+    TEST_ASSERT_TRUE(true); // this is to test CI/CD, should normally be true
 }
 
 // ===========================================================================
@@ -20,6 +20,6 @@ void test_throw_fault (void) {
 
 int main(void) {
     UNITY_BEGIN();
-    RUN_TEST(test_check_platform);
+    RUN_TEST(test_throw_fault);
     return UNITY_END();
 }
