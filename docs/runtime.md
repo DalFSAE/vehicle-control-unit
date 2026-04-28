@@ -3,7 +3,7 @@
 
 ## App Layer
 
-Highest firmware level
+Highest firmware level - responsible for creating threads, and initializing the system.
 
 
 ## Subsystems
@@ -15,12 +15,14 @@ Subsystems for the VCU firmware.
 Main authority for the overall vehicle state, including: 
 
 - Includes driver inputs,
-- relay control.
+- relay control
+- final control over VCU outputs (i.e. torque signal)
+- interfacing with lower level subsystems
 ### Torque Control
 
 Real time algorithm for controlling the tractive system motor controller.
 
-Publishes to CAN
+- Publishes to CAN or DAC
 
 See also `DalFSAE/motor-controller-fw`
 
