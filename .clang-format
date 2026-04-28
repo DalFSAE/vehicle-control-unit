@@ -1,0 +1,20 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+BreakBeforeBraces: Attach
+ColumnLimit: 120
+
+AlignConsecutiveDeclarations: true
+AlignTrailingComments: true
+
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+
+PointerAlignment: Right
+SortIncludes: false
+
+AllowShortCaseLabelsOnASingleLine: true
+IndentCaseLabels: true
+IndentCaseBlocks: false
