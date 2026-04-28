@@ -1,10 +1,6 @@
 // test_fsm.c
-// Unit tests for fsm.c using the Unity test framework.
-//
-// Build example (gcc):
-//   gcc -I. unity.c test_fsm.c fsm.c -o test_fsm && ./test_fsm
-//
-// fsm.c pulls in log.h and defines LOG_MODULE - stub both out below before
+// Unit tests for fsm.c using the Unity test framework
+// fsm.c pulls in log.h and defines LOG_MODULE stub both out below before
 // including the real headers so the translation unit compiles without the
 // full firmware tree.
 

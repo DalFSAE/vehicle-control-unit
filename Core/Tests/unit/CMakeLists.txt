@@ -9,7 +9,7 @@ enable_testing()
 
 # add_test_suite(<target> sources...)
 # Registers a Unity test executable and a CTest entry.
-# Always include: runner_<name>.c, stubs.c, unity/unity.c, and the module under test.
+# Always include: test_<name>.c, stubs.c, unity/unity.c, and the module under test.
 function(add_test_suite name)
     add_executable(${name} ${ARGN})
     target_include_directories(${name} PRIVATE ../../User ..)
@@ -20,8 +20,15 @@ endfunction()
 # Suites
 
 add_test_suite(test_fsm
+    unity.c
     stubs.c
     test_fsm.c
     ../../User/fsm.c
+)
+
+add_test_suite(test_internals
     unity.c
+    stubs.c
+    test_internals.c
+    ../../User/vehicle_state.c
 )
