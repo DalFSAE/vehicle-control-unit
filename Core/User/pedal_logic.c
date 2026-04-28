@@ -19,7 +19,7 @@ float pedal_percent_difference(float a, float b) {
 }
 
 float pedal_adc_to_normalized(int adcValue, float minVoltage, float maxVoltage, int adcMax) {
-    const float adcRefVoltage = 3.3f;
+    const float adcRefVoltage = 3.3f; // todo: add calibration step
     float adc_voltage = (adcValue / (float)adcMax) * adcRefVoltage;
     return (adc_voltage - minVoltage) / (maxVoltage - minVoltage);
 }

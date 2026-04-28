@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define MOCK_ADC true
+
 void sensor_control_register_thread(osThreadId_t thread_id);
 void sensorInputTask(void *argument);
 void sensor_init(void);
