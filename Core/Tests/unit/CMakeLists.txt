@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(test_runner
     runner.c
     stubs.c
-    ../test_fms.c
+    ../test_fsm.c
     ../../User/fsm.c
     ../unity/unity.c
 )
