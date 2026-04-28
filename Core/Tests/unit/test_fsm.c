@@ -2,7 +2,7 @@
 // Unit tests for fsm.c using the Unity test framework.
 //
 // Build example (gcc):
-//   gcc -I. -Iunity/src unity/src/unity.c test_fsm.c fsm.c -o test_fsm && ./test_fsm
+//   gcc -I. unity.c test_fsm.c fsm.c -o test_fsm && ./test_fsm
 //
 // fsm.c pulls in log.h and defines LOG_MODULE - stub both out below before
 // including the real headers so the translation unit compiles without the
@@ -92,7 +92,7 @@ void test_standby_stays_when_only_ts_active_set(void) {
     TEST_ASSERT_EQUAL(ST_STANDBY, step_fsm(ST_STANDBY, &cfg, &in, &out));
 }
 
-// --- ST_NEUTRAL ---
+// ST_NEUTRAL
 
 void test_neutral_stays_on_no_input(void) {
     FsmFaultConfig_t cfg = FaultConfig_default();
@@ -142,7 +142,7 @@ void test_neutral_notready_path_not_reachable_via_step_fsm(void) {
     TEST_IGNORE_MESSAGE("ST_NEUTRAL->ST_STANDBY via FSM_EV_NOTREADY: no state fn emits it yet");
 }
 
-// --- ST_FORWARD ---
+// ST_FORWARD
 
 void test_forward_stays_when_healthy(void) {
     FsmFaultConfig_t cfg = FaultConfig_default();
@@ -160,8 +160,7 @@ void test_forward_to_neutral_when_switch_released(void) {
     TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_FORWARD, &cfg, &in, &out));
 }
 
-// --- ST_REVERSE ---
-
+// ST_REVERSE
 void test_reverse_stays_in_reverse(void) {
     // reverse_state is a stub returning FSM_EV_OK
     // [ST_REVERSE][FSM_EV_OK] -> ST_REVERSE
@@ -172,7 +171,6 @@ void test_reverse_stays_in_reverse(void) {
 }
 
 // Output signal tests
-
 void test_entry_sets_all_relays_and_watchdog(void) {
     FsmFaultConfig_t cfg = FaultConfig_default();
     VcuInputs        in = make_clean_inputs();
@@ -237,12 +235,9 @@ void test_forward_disables_throttle_when_switch_released(void) {
     TEST_ASSERT_FALSE(out.throttle_enabled);
 }
 
-// ===========================================================================
 // Forward state - fault handling
-// ===========================================================================
 
 // FAULT_APPS_DISAGREE
-
 void test_forward_apps_disagree_cut_throttle_stays_forward(void) {
     FsmFaultConfig_t cfg = FaultConfig_default();
     cfg.apps_disagree = FAULT_RESP_CUT_THROTTLE;
@@ -393,7 +388,7 @@ void test_fault_config_default_can_timeout(void) {
 // Entry point
 // ===========================================================================
 
-int run_fsm_tests(void) {
+int main(void) {
     UNITY_BEGIN();
 
     // Transitions
