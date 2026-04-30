@@ -25,6 +25,8 @@ enum {
 
 static void app_heartbeat_task(void *argument);
 
+static BootResult_t s_pre_boot_result;
+
 static osThreadId_t app_heartbeat_task_handle;
 
 static const osThreadAttr_t app_heartbeat_task_attributes = {
@@ -56,15 +58,17 @@ uint32_t app_init(void) {
     dio_init();
     buzzer_init();
 
-    BootResult_t result = hardware_test_pre_boot();
-    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, result.tests_run, result.failures);
-    if (result.failures != 0u) {
+    s_pre_boot_result = hardware_test_pre_boot();
+    if (s_pre_boot_result.failures != 0u) {
         app_error_handler(BOOT_ERR_PRE_BOOT_TESTS);
     }
-    return result.failures;
+    return s_pre_boot_result.failures;
 }
 
 void app_post_boot(void) {
+    osDelay(500u);
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, s_pre_boot_result.tests_run, s_pre_boot_result.failures);
+
     BootResult_t result = hardware_test_post_boot();
     LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, result.tests_run, result.failures);
     if (result.failures != 0u) {
