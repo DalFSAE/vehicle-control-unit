@@ -53,6 +53,9 @@ uint32_t app_init(void) {
 
     uint32_t status = hardware_test_pre_boot();
     LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, status, 0u);
+    if (status != 0u) {
+        Error_Handler();
+    }
     return status;
 }
 
@@ -60,8 +63,6 @@ void app_post_boot(void) {
     uint32_t status = hardware_test_post_boot();
     LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, status, 1u);
     if (status != 0u) {
-        // If post-boot tests fail, we can't guarantee the system is in a safe
-        // state, so we halt here.
         Error_Handler();
     }
 }

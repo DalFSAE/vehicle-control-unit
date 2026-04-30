@@ -30,6 +30,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app.h"
+#include "board_outputs.h"
+#include <stdint.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -210,6 +212,10 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+    for (uint32_t i = 0; i < OUTPUT_COUNT; i++) {
+        board_output_disable(i);
+    }
+    board_output_enable(OUTPUT_DEBUG_LED5);
   }
   /* USER CODE END Error_Handler_Debug */
 }
