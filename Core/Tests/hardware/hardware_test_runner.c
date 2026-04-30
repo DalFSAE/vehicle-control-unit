@@ -1,5 +1,5 @@
 #include "hardware_test_runner.h"
-#include "../unit/unity.h"
+#include "unity.h"
   
 // ===========================================================================
 // Hardware Test Runner
