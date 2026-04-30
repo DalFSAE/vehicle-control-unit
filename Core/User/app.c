@@ -45,25 +45,30 @@ static const osThreadAttr_t fsm_task_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
+void app_error_handler(BootStatus_t status) {
+    LOG_EVENT(LOG_LEVEL_ERROR, EVT_BOOT, (uint32_t)status, 0u);
+    Error_Handler();
+}
+
 uint32_t app_init(void) {
     log_init();
     board_outputs_init();
     dio_init();
     buzzer_init();
 
-    uint32_t status = hardware_test_pre_boot();
-    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, status, 0u);
-    if (status != 0u) {
-        Error_Handler();
+    BootResult_t result = hardware_test_pre_boot();
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, result.tests_run, result.failures);
+    if (result.failures != 0u) {
+        app_error_handler(BOOT_ERR_PRE_BOOT_TESTS);
     }
-    return status;
+    return result.failures;
 }
 
 void app_post_boot(void) {
-    uint32_t status = hardware_test_post_boot();
-    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, status, 1u);
-    if (status != 0u) {
-        Error_Handler();
+    BootResult_t result = hardware_test_post_boot();
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, result.tests_run, result.failures);
+    if (result.failures != 0u) {
+        app_error_handler(BOOT_ERR_POST_BOOT_TESTS);
     }
 }
 
@@ -71,19 +76,19 @@ void app_create_tasks(void) {
     app_heartbeat_task_handle =
         osThreadNew(app_heartbeat_task, NULL, &app_heartbeat_task_attributes);
     if (app_heartbeat_task_handle == NULL)
-        Error_Handler();
+        app_error_handler(BOOT_ERR_TASK_CREATE);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_APP, 0u);
 
     osThreadId_t sensor_handle =
         osThreadNew(sensorInputTask, NULL, &sensor_task_attributes);
     if (sensor_handle == NULL)
-        Error_Handler();
+        app_error_handler(BOOT_ERR_TASK_CREATE);
     sensor_control_register_thread(sensor_handle);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_SENSOR, 0u);
 
     osThreadId_t fsm_handle = osThreadNew(fsm_task, NULL, &fsm_task_attributes);
     if (fsm_handle == NULL)
-        Error_Handler();
+        app_error_handler(BOOT_ERR_TASK_CREATE);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, 0, 0);
 }
 

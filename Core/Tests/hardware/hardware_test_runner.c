@@ -43,17 +43,26 @@ static void test_can_subsystem(void) {
 // Runners
 // ===========================================================================
 
-uint32_t hardware_test_pre_boot(void) {
+static BootResult_t make_result(void) {
+    return (BootResult_t){
+        .tests_run = (uint16_t)Unity.NumberOfTests,
+        .failures = (uint16_t)Unity.TestFailures,
+        .ignored = (uint16_t)Unity.TestIgnores,
+    };
+}
+
+BootResult_t hardware_test_pre_boot(void) {
     UNITY_BEGIN();
     RUN_TEST(test_board_outputs_default_state);
     RUN_TEST(test_output_enable_disable);
-    return (uint32_t)UNITY_END();
+    UNITY_END();
+    return make_result();
 }
 
-uint32_t hardware_test_post_boot(void) {
+BootResult_t hardware_test_post_boot(void) {
     UNITY_BEGIN();
     RUN_TEST(test_brake_light_flash);
     RUN_TEST(test_debug_led_flash);
-    return (uint32_t)UNITY_END();
+    UNITY_END();
+    return make_result();
 }
-
