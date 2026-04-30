@@ -8,6 +8,7 @@
 // Tasks
 #include "fsm_task.h"
 #include "sensor_control.h"
+#include <stdint.h>
 
 #define LOG_MODULE LOG_SRC_APP
 #include "log.h"
@@ -48,9 +49,9 @@ void app_init(void) {
     board_outputs_init();
     dio_init();
     buzzer_init();
-    hardware_test_runner();
+    uint32_t status = hardware_test_runner();
     
-    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, 0u, 0u);
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, status, 0u);
 }
 
 void app_create_tasks(void) {
