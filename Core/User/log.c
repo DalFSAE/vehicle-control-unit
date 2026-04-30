@@ -14,8 +14,9 @@
 #define UART_BUF_SIZE 256
 #define LOG_USB_TX_RETRY_COUNT 5U
 
-// CAN payload is 8 bytes:
-// [event_id, level, source, a0_hi, a0_lo, a1_hi, a1_lo, reserved]
+// CAN payload layout: [event_id(1), source(1), a0[15:8](1), a0[7:0](1),
+//                      a1[15:8](1), a1[7:0](1), reserved(1), reserved(1)]
+// a0 and a1 are truncated to 16 bits.
 #define CAN_PAYLOAD_SIZE 8U
 
 // ---------------------------------------------------------------------------
@@ -180,18 +181,26 @@ static void sink_uart_event(const LogEvent_t *event) {
 }
 
 // Encodes the event into a compact 8-byte CAN payload (no raw struct).
-// Layout: [event_id(1), level(1), source(1), a0[15:8](1), a0[7:0](1),
-//          a1[15:8](1), a1[7:0](1), reserved(1)]
 static void sink_can_event(const LogEvent_t *event) {
+    // Only allow valid events to be sent over CAN
+    switch (event->event_id) {
+        case EVT_FAULT_SET:
+        case EVT_STATE_CHANGE:
+        case EVT_BOOT:
+            break;
+        default:
+            return;
+    }
+
     uint8_t payload[CAN_PAYLOAD_SIZE];
     payload[0] = (uint8_t)event->event_id;
-    payload[1] = (uint8_t)event->level;
-    payload[2] = (uint8_t)event->source;
-    payload[3] = (uint8_t)((event->a0 >> 8u) & 0xFFu);
-    payload[4] = (uint8_t)(event->a0 & 0xFFu);
-    payload[5] = (uint8_t)((event->a1 >> 8u) & 0xFFu);
-    payload[6] = (uint8_t)(event->a1 & 0xFFu);
-    payload[7] = 0u; // reserved
+    payload[1] = (uint8_t)event->source;
+    payload[2] = (uint8_t)((event->a0 >> 8u) & 0xFFu);
+    payload[3] = (uint8_t)(event->a0 & 0xFFu);
+    payload[4] = (uint8_t)((event->a1 >> 8u) & 0xFFu);
+    payload[5] = (uint8_t)(event->a1 & 0xFFu);
+    payload[6] = 0u;
+    payload[7] = 0u;
 
     // TODO: transmit payload over CAN (e.g. CAN ID = LOG_EVENT_ID, DLC = 8)
     (void)payload;
