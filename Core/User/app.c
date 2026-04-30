@@ -11,6 +11,7 @@
 
 #define LOG_MODULE LOG_SRC_APP
 #include "log.h"
+#include "../Tests/hardware/hardware_test_runner.h"
 
 enum {
     APP_HEARTBEAT_PERIOD_MS = 250U,
@@ -47,6 +48,8 @@ void app_init(void) {
     board_outputs_init();
     dio_init();
     buzzer_init();
+    hardware_test_runner();
+    
     LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, 0u, 0u);
 }
 
