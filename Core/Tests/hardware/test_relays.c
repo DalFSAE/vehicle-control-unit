@@ -1,10 +1,5 @@
-#include "tests.h"
-
 #include "cmsis_os2.h"
-#include "io_control.h"
 #include "board_outputs.h"
-
-
 
 void test_relays(void) {
     uint32_t stateRelay0 = board_output_get_state(OUTPUT_ALWAYS_ON);
