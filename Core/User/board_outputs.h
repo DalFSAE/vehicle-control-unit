@@ -3,8 +3,8 @@
 #include <stdint.h>
 
 typedef enum {
-    OUTPUT_DEBUG_LED4,
     OUTPUT_DEBUG_LED3,
+    OUTPUT_DEBUG_LED4,
     OUTPUT_DEBUG_LED5,
     OUTPUT_DEBUG_LED6,
     OUTPUT_ALWAYS_ON,
@@ -21,3 +21,4 @@ void board_output_enable(OutputChannel_t ch);
 void board_output_disable(OutputChannel_t ch);
 void board_output_toggle(OutputChannel_t ch);
 uint32_t board_output_get_state(OutputChannel_t ch);
+void set_debug_led_value(uint8_t value);

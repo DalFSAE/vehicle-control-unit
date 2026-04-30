@@ -60,3 +60,23 @@ uint32_t board_output_get_state(OutputChannel_t ch) {
 
     return 0xFFFFFFFFu;
 }
+
+// ---------------------------------------------------------------------------
+// Debug LEDs
+// ---------------------------------------------------------------------------
+void set_debug_led_value(uint8_t value) {
+    static const OutputChannel_t debug_leds[4] = {
+        OUTPUT_DEBUG_LED3,
+        OUTPUT_DEBUG_LED4,
+        OUTPUT_DEBUG_LED5,
+        OUTPUT_DEBUG_LED6,
+    };
+
+    for (int i = 0; i < 4; i++) {
+        if (value & (1u << i)) {
+            board_output_enable(debug_leds[i]);
+        } else {
+            board_output_disable(debug_leds[i]);
+        }
+    }
+}

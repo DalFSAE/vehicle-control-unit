@@ -27,12 +27,18 @@ static void test_brake_light_flash(void) {
 }
 
 static void test_debug_led_flash(void) {
-    for (int i = 0; i < 50; i++) {
-        for (int j = OUTPUT_DEBUG_LED3; j < 4; j++) {
-            board_output_toggle(i);
-            osDelay(100);
-        }
+    for (int j = OUTPUT_DEBUG_LED3; j <= (int)OUTPUT_DEBUG_LED6; j++) {
+        board_output_toggle((OutputChannel_t)j);
+        osDelay(100);
     }
+}
+
+static void test_display_debug_binary(void) {
+    for (int i = 0; i < 16; i++) {
+        set_debug_led_value((uint8_t)i);
+        osDelay(500);
+    }
+    set_debug_led_value(0);
 }
 
 static void test_can_subsystem(void) {
@@ -54,6 +60,7 @@ uint32_t hardware_test_post_boot(void) {
     UNITY_BEGIN();
     RUN_TEST(test_brake_light_flash);
     RUN_TEST(test_debug_led_flash);
+    RUN_TEST(test_display_debug_binary);
     return (uint32_t)UNITY_END();
 }
 
