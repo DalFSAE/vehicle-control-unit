@@ -1,13 +1,13 @@
 #include "app.h"
-
 #include "cmsis_os2.h"
 #include "main.h"
 #include "board_outputs.h"
-#include "sensor_control.h"
 #include "output_control.h"
-#include "fsm.h"
 #include "dio.h"
-#
+
+// Tasks
+#include "fsm_task.h"
+#include "sensor_control.h"
 
 #define LOG_MODULE LOG_SRC_APP
 #include "log.h"

@@ -84,6 +84,38 @@
         },
         {
             "type": "shell",
+            "label": "Unit Tests: Configure",
+            "command": "cmake",
+            "args": ["-B", "build", "-DCMAKE_BUILD_TYPE=Debug"],
+            "options": {
+                "cwd": "${workspaceFolder}/Core/Tests/unit"
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Unit Tests: Build",
+            "command": "cmake",
+            "args": ["--build", "build", "-j", "8"],
+            "options": {
+                "cwd": "${workspaceFolder}/Core/Tests/unit"
+            },
+            "dependsOn": "Unit Tests: Configure",
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "type": "shell",
+            "label": "Unit Tests: Run",
+            "command": "ctest",
+            "args": ["--test-dir", "build", "--output-on-failure"],
+            "options": {
+                "cwd": "${workspaceFolder}/Core/Tests/unit"
+            },
+            "dependsOn": "Unit Tests: Build",
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
             "label": "CubeProg: List all available communication interfaces",
             "command": "STM32_Programmer_CLI",
             "args": ["--list"],
