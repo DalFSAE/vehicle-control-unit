@@ -27,9 +27,9 @@ static void test_brake_light_flash(void) {
 }
 
 static void test_debug_led_flash(void) {
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 10; i++) {
         for (int j = OUTPUT_DEBUG_LED3; j < 4; j++) {
-            board_output_toggle(i);
+            board_output_toggle(j);
             osDelay(100);
         }
     }
