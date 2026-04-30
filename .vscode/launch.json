@@ -31,6 +31,19 @@
             "preLaunchTask": "Build project"
         },
         {
+            "name": "Debug Unit Tests (test_fsm)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Core/Tests/unit/build/test_fsm",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Core/Tests/unit",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "Unit Tests: Build"
+        },
+        {
             "name": "Attach to Microcontroller - ST-Link",
             "cwd": "${workspaceFolder}",
             "type": "cortex-debug",
