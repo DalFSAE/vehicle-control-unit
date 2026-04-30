@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
     OUTPUT_DEBUG_LED4,
@@ -17,6 +18,7 @@ typedef enum {
 } OutputChannel_t;
 
 void board_outputs_init(void);
+void board_output_set(OutputChannel_t ch, bool value);
 void board_output_enable(OutputChannel_t ch);
 void board_output_disable(OutputChannel_t ch);
 void board_output_toggle(OutputChannel_t ch);
