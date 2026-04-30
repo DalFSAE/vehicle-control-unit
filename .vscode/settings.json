@@ -72,9 +72,8 @@
     ],
     "cmake.cmakePath": "cube-cmake",
     "cmake.configureArgs": [
-        "-DCMAKE_COMMAND=cube-cmake",
+        "-DCMAKE_COMMAND=cube-cmake"
     ],
-    "STM32VSCodeExtension.cubeCLT.path": "/opt/st/stm32cubeclt_1.20.0",
     "stm32cube-ide-clangd.path": "cube",
     "stm32cube-ide-clangd.arguments": [
         "starm-clangd",
