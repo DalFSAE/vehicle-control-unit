@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 uint32_t app_init(void);
+void app_post_boot(void);
 void app_create_tasks(void);
 
 #ifdef __cplusplus

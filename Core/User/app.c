@@ -8,6 +8,7 @@
 // Tasks
 #include "fsm_task.h"
 #include "sensor_control.h"
+#include "stm32f4xx_hal.h"
 #include <stdint.h>
 
 #define LOG_MODULE LOG_SRC_APP
@@ -44,20 +45,20 @@ static const osThreadAttr_t fsm_task_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
-uint32_t run_hardware_tests(uint32_t cmd) {
-    uint32_t status = (uint32_t)hardware_test_runner(cmd);
-    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, status, 0u);
-    return status;
-}
-
 uint32_t app_init(void) {
-    uint32_t status = 0;
     log_init();
     board_outputs_init();
     dio_init();
     buzzer_init();
-    run_hardware_tests(0);
+
+    uint32_t status = hardware_test_pre_boot();
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, status, 0u);
     return status;
+}
+
+void app_post_boot(void) {
+    uint32_t status = hardware_test_post_boot();
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, status, 1u);
 }
 
 void app_create_tasks(void) {
