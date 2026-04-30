@@ -104,7 +104,8 @@ int main(void)
   MX_TIM9_Init();
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
-  app_init();
+  uint32_t status = app_init();
+  (void)status;
   /* USER CODE END 2 */
 
   /* Init scheduler */

@@ -1,4 +1,4 @@
 #pragma once 
+#include "stdint.h"
 
-
-int hardware_test_runner(void);
+uint32_t hardware_test_runner(uint32_t cmd);

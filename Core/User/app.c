@@ -44,14 +44,20 @@ static const osThreadAttr_t fsm_task_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
-void app_init(void) {
+uint32_t run_hardware_tests(uint32_t cmd) {
+    uint32_t status = (uint32_t)hardware_test_runner(cmd);
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, status, 0u);
+    return status;
+}
+
+uint32_t app_init(void) {
+    uint32_t status = 0;
     log_init();
     board_outputs_init();
     dio_init();
     buzzer_init();
-    uint32_t status = (uint32_t)hardware_test_runner();
-    
-    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, status, 0u);
+    run_hardware_tests(0);
+    return status;
 }
 
 void app_create_tasks(void) {
