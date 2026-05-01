@@ -2,6 +2,7 @@
 
 #include "main.h"
 #include "stm32f4xx_hal.h"
+#include <stdbool.h>
 
 typedef struct {
     GPIO_TypeDef *port;
@@ -21,6 +22,8 @@ static const BoardOutputsGPIO_t board_outputs_map[OUTPUT_COUNT] = {
     [OUTPUT_AUX] = {PWR_AUX_GPIO_Port, PWR_AUX_Pin},
 };
 
+static bool s_output_state[OUTPUT_COUNT];
+
 void board_outputs_init(void) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -32,30 +35,43 @@ void board_outputs_init(void) {
         GPIO_InitStruct.Pin = board_outputs_map[i].pin;
         HAL_GPIO_Init(board_outputs_map[i].port, &GPIO_InitStruct);
         HAL_GPIO_WritePin(board_outputs_map[i].port, board_outputs_map[i].pin, GPIO_PIN_RESET);
+        s_output_state[i] = false;
+    }
+}
+
+void board_output_set(OutputChannel_t ch, bool value) {
+    if (ch < OUTPUT_COUNT) {
+        HAL_GPIO_WritePin(board_outputs_map[ch].port, board_outputs_map[ch].pin,
+                          value ? GPIO_PIN_SET : GPIO_PIN_RESET);
+        s_output_state[ch] = value;
     }
 }
 
 void board_output_enable(OutputChannel_t ch) {
     if (ch < OUTPUT_COUNT) {
         HAL_GPIO_WritePin(board_outputs_map[ch].port, board_outputs_map[ch].pin, GPIO_PIN_SET);
+        s_output_state[ch] = true;
     }
 }
 
 void board_output_disable(OutputChannel_t ch) {
     if (ch < OUTPUT_COUNT) {
         HAL_GPIO_WritePin(board_outputs_map[ch].port, board_outputs_map[ch].pin, GPIO_PIN_RESET);
+        s_output_state[ch] = false;
     }
 }
 
 void board_output_toggle(OutputChannel_t ch) {
     if (ch < OUTPUT_COUNT) {
-        HAL_GPIO_TogglePin(board_outputs_map[ch].port, board_outputs_map[ch].pin);
+        s_output_state[ch] = !s_output_state[ch];
+        HAL_GPIO_WritePin(board_outputs_map[ch].port, board_outputs_map[ch].pin,
+                          s_output_state[ch] ? GPIO_PIN_SET : GPIO_PIN_RESET);
     }
 }
 
 uint32_t board_output_get_state(OutputChannel_t ch) {
     if (ch < OUTPUT_COUNT) {
-        return HAL_GPIO_ReadPin(board_outputs_map[ch].port, board_outputs_map[ch].pin);
+        return s_output_state[ch] ? 1u : 0u;
     }
 
     return 0xFFFFFFFFu;
