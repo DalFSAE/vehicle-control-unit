@@ -5,6 +5,7 @@
 #include "usbd_cdc_if.h"
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -17,11 +18,53 @@
 // ---------------------------------------------------------------------------
 
 static bool               s_log_initialized = false;
-static uint8_t            s_usb_tx_buffer[UART_BUF_SIZE];
 static osMessageQueueId_t s_log_queue;
 
+// ---------------------------------------------------------------------------
+// log_putchar
+// ---------------------------------------------------------------------------
 
-// Writes a log message to the USB CDC queue. 
+#define LOG_PUTCHAR_LINE_LEN 128U
+#define LOG_PUTCHAR_MAX_LINES 64U
+
+static char    s_line_buf[LOG_PUTCHAR_LINE_LEN];
+static uint8_t s_line_len = 0U;
+
+// This is a simple way to capture early logs without dynamic memory allocation 
+// or complex buffering logic. Used for tracking logs generated before log_init() 
+static char    s_pre_init_lines[LOG_PUTCHAR_MAX_LINES][LOG_PUTCHAR_LINE_LEN];
+static uint8_t s_pre_init_line_count = 0U;
+
+// Flushes the current line buffer to the appropriate sink 
+// (USB if initialized, otherwise pre-init buffer).
+static void putchar_flush_line(void) {
+    if (s_line_len == 0U) {
+        return;
+    }
+    s_line_buf[s_line_len] = '\0';
+
+    if (s_log_initialized) {
+        log_printf("%s\r\n", s_line_buf);
+    } else if (s_pre_init_line_count < LOG_PUTCHAR_MAX_LINES) {
+        memcpy(s_pre_init_lines[s_pre_init_line_count], s_line_buf, s_line_len + 1U);
+        s_pre_init_line_count++;
+    }
+
+    s_line_len = 0U;
+}
+
+// Used for line-buffered char sink (i.e. Unity)
+void log_putchar(int c) {
+    if (c == '\n') {
+        putchar_flush_line();
+    } else if (c != '\r') {
+        if (s_line_len < LOG_PUTCHAR_LINE_LEN - 1U) {
+            s_line_buf[s_line_len++] = (char)c;
+        }
+    }
+}
+
+// Writes a log message to the USB CDC queue.
 static bool log_usb_write(const char *buf, size_t len) {
     if (!s_log_initialized) {
         return false;
@@ -37,7 +80,6 @@ static bool log_usb_write(const char *buf, size_t len) {
     msg.len = len;
 
     return (osMessageQueuePut(s_log_queue, &msg, 0, 0) == osOK);
-
 }
 
 static uint32_t log_get_time_ms(void) {
@@ -199,17 +241,23 @@ static void sink_uart_printf(const char *buf, size_t len) {
 // ---------------------------------------------------------------------------
 
 bool log_init(void) {
-    const int msg_count = 8;
-    s_log_queue = osMessageQueueNew(msg_count, sizeof(LogMsg_t), NULL);
+    const int pre_boot_msg_count = 24; // warning: large values will consume RAM due to static allocation
+    s_log_queue = osMessageQueueNew(pre_boot_msg_count, sizeof(LogMsg_t), NULL);
     if (s_log_queue == NULL) {
         return false;
     }
     s_log_initialized = true;
+
+    for (uint8_t i = 0; i < s_pre_init_line_count; i++) {
+        log_printf("%s\r\n", s_pre_init_lines[i]);
+    }
+    s_pre_init_line_count = 0U;
+
     return true;
 }
 
 bool log_write(const LogEvent_t *event) {
-    if ((event == NULL) || !s_log_initialized) {
+    if ((event == NULL) || !s_log_initialized || (event->level < LOG_MIN_LEVEL)) {
         return false;
     }
 
@@ -246,19 +294,20 @@ void log_printf(const char *format, ...) {
 }
 
 void log_usb_task(void *argument) {
+    (void)argument;
+    osDelay(1000); // wait for USB host enumeration before transmitting
     LogMsg_t msg;
-    for (;;) { 
+    for (;;) {
         if (osMessageQueueGet(s_log_queue, &msg, NULL, osWaitForever) == osOK) {
             // Wait until USB is free
-            while (CDC_Transmit_FS((uint8_t*)msg.data, msg.len) == USBD_BUSY) {
+            while (CDC_Transmit_FS((uint8_t *)msg.data, msg.len) == USBD_BUSY) {
                 osDelay(1);
             }
 
             // Wait until TX complete
-            while (CDC_IsTxBusy())
-            {
+            while (CDC_IsTxBusy()) {
                 osDelay(1);
             }
         }
     }
-}    
+}
