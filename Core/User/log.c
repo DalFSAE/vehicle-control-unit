@@ -5,6 +5,7 @@
 #include "usbd_cdc_if.h"
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -16,8 +17,52 @@
 // Helper functions
 // ---------------------------------------------------------------------------
 
-static bool s_log_initialized = false;
+static bool               s_log_initialized = false;
 static osMessageQueueId_t s_log_queue;
+
+// ---------------------------------------------------------------------------
+// log_putchar 
+// Used for line-buffered char sink (i.e. Unity)
+// ---------------------------------------------------------------------------
+
+#define LOG_PUTCHAR_LINE_LEN 128U
+#define LOG_PUTCHAR_MAX_LINES 16U
+
+static char    s_line_buf[LOG_PUTCHAR_LINE_LEN];
+static uint8_t s_line_len = 0U;
+
+// ---------------------------------------------------------------------------
+// This is a simple way to capture early logs without dynamic memory allocation 
+// or complex buffering logic. Used for tracking logs generated before log_init() 
+// ---------------------------------------------------------------------------
+static char    s_pre_init_lines[LOG_PUTCHAR_MAX_LINES][LOG_PUTCHAR_LINE_LEN];
+static uint8_t s_pre_init_line_count = 0U;
+
+static void putchar_flush_line(void) {
+    if (s_line_len == 0U) {
+        return;
+    }
+    s_line_buf[s_line_len] = '\0';
+
+    if (s_log_initialized) {
+        log_printf("%s\r\n", s_line_buf);
+    } else if (s_pre_init_line_count < LOG_PUTCHAR_MAX_LINES) {
+        memcpy(s_pre_init_lines[s_pre_init_line_count], s_line_buf, s_line_len + 1U);
+        s_pre_init_line_count++;
+    }
+
+    s_line_len = 0U;
+}
+
+void log_putchar(int c) {
+    if (c == '\n') {
+        putchar_flush_line();
+    } else if (c != '\r') {
+        if (s_line_len < LOG_PUTCHAR_LINE_LEN - 1U) {
+            s_line_buf[s_line_len++] = (char)c;
+        }
+    }
+}
 
 // Writes a log message to the USB CDC queue.
 static bool log_usb_write(const char *buf, size_t len) {
@@ -202,6 +247,12 @@ bool log_init(void) {
         return false;
     }
     s_log_initialized = true;
+
+    for (uint8_t i = 0; i < s_pre_init_line_count; i++) {
+        log_printf("%s\r\n", s_pre_init_lines[i]);
+    }
+    s_pre_init_line_count = 0U;
+
     return true;
 }
 
