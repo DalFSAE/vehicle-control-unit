@@ -19,6 +19,9 @@ typedef enum {
     LOG_LEVEL_ERROR
 } LogLevel_t;
 
+// Only events at or above this level are printed to serial.
+#define LOG_MIN_LEVEL LOG_LEVEL_WARN
+
 // List of possible firmware events
 typedef enum {
     EVT_BOOT = 0u,

@@ -16,12 +16,10 @@
 // Helper functions
 // ---------------------------------------------------------------------------
 
-static bool               s_log_initialized = false;
-static uint8_t            s_usb_tx_buffer[UART_BUF_SIZE];
+static bool s_log_initialized = false;
 static osMessageQueueId_t s_log_queue;
 
-
-// Writes a log message to the USB CDC queue. 
+// Writes a log message to the USB CDC queue.
 static bool log_usb_write(const char *buf, size_t len) {
     if (!s_log_initialized) {
         return false;
@@ -37,7 +35,6 @@ static bool log_usb_write(const char *buf, size_t len) {
     msg.len = len;
 
     return (osMessageQueuePut(s_log_queue, &msg, 0, 0) == osOK);
-
 }
 
 static uint32_t log_get_time_ms(void) {
@@ -209,7 +206,7 @@ bool log_init(void) {
 }
 
 bool log_write(const LogEvent_t *event) {
-    if ((event == NULL) || !s_log_initialized) {
+    if ((event == NULL) || !s_log_initialized || (event->level < LOG_MIN_LEVEL)) {
         return false;
     }
 
@@ -247,18 +244,17 @@ void log_printf(const char *format, ...) {
 
 void log_usb_task(void *argument) {
     LogMsg_t msg;
-    for (;;) { 
+    for (;;) {
         if (osMessageQueueGet(s_log_queue, &msg, NULL, osWaitForever) == osOK) {
             // Wait until USB is free
-            while (CDC_Transmit_FS((uint8_t*)msg.data, msg.len) == USBD_BUSY) {
+            while (CDC_Transmit_FS((uint8_t *)msg.data, msg.len) == USBD_BUSY) {
                 osDelay(1);
             }
 
             // Wait until TX complete
-            while (CDC_IsTxBusy())
-            {
+            while (CDC_IsTxBusy()) {
                 osDelay(1);
             }
         }
     }
-}    
+}
