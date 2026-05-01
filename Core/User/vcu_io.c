@@ -8,6 +8,9 @@
 #include "torque_output.h"
 #include "dio.h"
 
+// true: spoof adc data
+#define MOCK_IO false
+
 // returns true only on the rising edge of *signal
 // prev_state must be a persistent bool, zero-initialized
 bool rising_edge(bool signal, bool *prev_state)
@@ -27,14 +30,14 @@ void vcu_read_inputs(VcuInputs *in) {
     in->throttle_request    = 0.5;
     in->brake_pressed       = true;
     in->fault_flags         = g_vcu.fault_flags;
-    in->rtd_button          = g_vcu.rtd_button + true;
+    in->rtd_button          = g_vcu.rtd_button;
     in->fwrd_switch         = g_vcu.fwrd_switch;
     in->ts_active           = true;
 #else
     in->throttle_request    = g_vcu.throttle_request;
     in->brake_pressed       = g_vcu.brake_pressed;
     in->fault_flags         = g_vcu.fault_flags;
-    in->rtd_button          = rising_edge(g_vcu.rtd_button, &rtd_prev);
+    in->rtd_button          = g_vcu.rtd_button;
     in->fwrd_switch         = g_vcu.fwrd_switch;
     in->ts_active           = g_can.ts_active; // todo: get from CAN bus
 #endif

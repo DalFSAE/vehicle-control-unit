@@ -2,8 +2,6 @@
 
 #include "vehicle_state.h"
 
-// true: spoof adc data
-#define MOCK_IO false
 
 // Populate VcuInputs from hardware and shared sensor state.
 void vcu_read_inputs(VcuInputs *in);

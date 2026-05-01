@@ -24,7 +24,7 @@ static osMessageQueueId_t s_log_queue;
 // log_putchar
 // ---------------------------------------------------------------------------
 
-#define LOG_PUTCHAR_LINE_LEN 128U
+#define LOG_PUTCHAR_LINE_LEN 240U
 #define LOG_PUTCHAR_MAX_LINES 64U
 
 static char    s_line_buf[LOG_PUTCHAR_LINE_LEN];

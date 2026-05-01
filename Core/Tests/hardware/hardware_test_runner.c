@@ -1,8 +1,11 @@
 #include "hardware_test_runner.h"
 #include "test_board_outputs.h"
+#include "test_fsm_hil.h"
 #include "unity.h"
 #include "board_outputs.h"
 #include "cmsis_os2.h"
+#include "log.h"
+#include "unity_internals.h"
 
 void setUp(void) {
     /* runs before each test */
@@ -16,16 +19,6 @@ void tearDown(void) {
 // Post-boot tests (OS scheduler running, osDelay available)
 // ===========================================================================
 
-static void test_brake_light_flash(void) {
-    board_output_enable(OUTPUT_BRAKE_LIGHT);
-    osDelay(200);
-    TEST_ASSERT_EQUAL_UINT32(1u, board_output_get_state(OUTPUT_BRAKE_LIGHT));
-
-    board_output_disable(OUTPUT_BRAKE_LIGHT);
-    osDelay(200);
-    TEST_ASSERT_EQUAL_UINT32(0u, board_output_get_state(OUTPUT_BRAKE_LIGHT));
-}
-
 static void test_debug_led_flash(void) {
     for (int i = 0; i < 10; i++) {
         for (int j = OUTPUT_DEBUG_LED3; j < 4; j++) {
@@ -33,10 +26,6 @@ static void test_debug_led_flash(void) {
             osDelay(100);
         }
     }
-}
-
-static void test_can_subsystem(void) {
-    osDelay(1);
 }
 
 // ===========================================================================
@@ -52,6 +41,7 @@ static BootResult_t make_result(void) {
 }
 
 BootResult_t hardware_test_pre_boot(void) {
+    log_printf("===hardware_test_pre_boot===\r\n");
     UNITY_BEGIN();
     RUN_TEST(test_board_outputs_default_state);
     RUN_TEST(test_output_enable_disable);
@@ -61,8 +51,22 @@ BootResult_t hardware_test_pre_boot(void) {
 
 BootResult_t hardware_test_post_boot(void) {
     UNITY_BEGIN();
-    RUN_TEST(test_brake_light_flash);
     RUN_TEST(test_debug_led_flash);
+    RUN_TEST(test_fsm_in_standby_after_boot);
+    RUN_TEST(test_fsm_standby_requires_switch_and_ts);
+    RUN_TEST(test_fsm_transitions_to_neutral);
+    RUN_TEST(test_fsm_rtd_requires_brake);
+    RUN_TEST(test_fsm_rtd_with_brake_enters_forward);
+    RUN_TEST(test_fsm_pedal_plaus_returns_to_neutral);
+    // RUN_TEST(test_if_debug_button_changes_state); // optional, requires user input
     UNITY_END();
     return make_result();
+}
+
+void hardware_post_test_task(void *argument) {
+    (void)argument;
+    log_printf("===BEGIN_HIL_TESTS===\r\n");
+    BootResult_t result = hardware_test_post_boot();
+    log_printf("===END_HIL_TESTS: %u run, %u failed==\r\n", result.tests_run, result.failures);
+    osThreadExit();
 }

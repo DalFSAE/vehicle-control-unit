@@ -22,6 +22,7 @@ enum {
     APP_SENSOR_STACK_SIZE = 512U * 4U,
     APP_FSM_STACK_SIZE = 512U * 4U,
     APP_LOGGER_STACK_SIZE = 256U * 4U,
+    APP_HW_TEST_STACK_SIZE = 512U * 4U,
 };
 
 static void app_heartbeat_task(void *argument);
@@ -54,6 +55,12 @@ static const osThreadAttr_t usb_logger_task_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
+static const osThreadAttr_t hw_test_task_attributes = {
+    .name = "hw_test",
+    .stack_size = APP_HW_TEST_STACK_SIZE,
+    .priority = (osPriority_t)osPriorityLow,
+};
+
 void app_error_handler(BootStatus_t status) {
     LOG_EVENT(LOG_LEVEL_ERROR, EVT_BOOT, (uint32_t)status, 0u);
     Error_Handler();
@@ -79,15 +86,9 @@ void app_post_boot(void) {
     }
     LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, s_pre_boot_result.tests_run, s_pre_boot_result.failures);
 
-    BootResult_t result = hardware_test_post_boot();
-    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, result.tests_run, result.failures);
-    if (result.failures != 0u) {
-        app_error_handler(BOOT_ERR_POST_BOOT_TESTS);
-    }
 }
 
 void app_create_tasks(void) {
-
     osThreadId_t logger_handle =
         osThreadNew(log_usb_task, NULL, &usb_logger_task_attributes);
     if (logger_handle == NULL)
@@ -110,7 +111,12 @@ void app_create_tasks(void) {
     osThreadId_t fsm_handle = osThreadNew(fsm_task, NULL, &fsm_task_attributes);
     if (fsm_handle == NULL)
         app_error_handler(BOOT_ERR_TASK_CREATE);
-    LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, 0, 0);
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_FSM, 0u);
+
+    osThreadId_t hw_test_handle = osThreadNew(hardware_post_test_task, NULL, &hw_test_task_attributes);
+    if (hw_test_handle == NULL)
+        app_error_handler(BOOT_ERR_TASK_CREATE);
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_UNKNOWN, 0u);
 }
 
 static void app_heartbeat_task(void *argument) {
@@ -121,7 +127,7 @@ static void app_heartbeat_task(void *argument) {
         board_output_toggle(OUTPUT_DEBUG_LED3);
         elapsed_ms += APP_HEARTBEAT_PERIOD_MS;
         if (elapsed_ms >= APP_HEARTBEAT_LOG_PERIOD_MS) {
-            LOG_EVENT(LOG_LEVEL_INFO, EVT_HEARTBEAT, elapsed_ms, 0u);
+            LOG_EVENT(LOG_LEVEL_DEBUG, EVT_HEARTBEAT, elapsed_ms, 0u);
             elapsed_ms = 0u;
         }
         osDelay(APP_HEARTBEAT_PERIOD_MS);

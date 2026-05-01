@@ -11,3 +11,5 @@ void sensor_control_register_thread(osThreadId_t thread_id);
 void sensorInputTask(void *argument);
 void sensor_init(void);
 void set_dac_out(uint32_t dacOut);
+
+osThreadId_t sensor_task_get_handle(void);

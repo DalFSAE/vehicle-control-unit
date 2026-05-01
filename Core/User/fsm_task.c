@@ -1,5 +1,5 @@
+#include "input_control.h"
 #define LOG_MODULE LOG_SRC_FSM
-#define FSM_PERIOD_MS 10u
 
 #include "fsm_task.h"
 #include "fsm.h"
@@ -8,6 +8,7 @@
 #include "cmsis_os2.h"
 #include "log.h"
 
+volatile FsmState_t g_fsm_state = ST_ENTRY;
 
 void fsm_task(void *arg) {
     (void)arg;
@@ -21,11 +22,11 @@ void fsm_task(void *arg) {
     for (;;) {
         vcu_read_inputs(&in);
         FsmState_t next = step_fsm(state, &fault_cfg, &in, &out);
-        // log state changes
         if (next != state) {
             LOG_EVENT(LOG_LEVEL_INFO, EVT_STATE_CHANGE, state, next);
         }
         state = next;
+        g_fsm_state = state;
         vcu_apply_outputs(&out);
         osDelay(FSM_PERIOD_MS);
     }

@@ -37,7 +37,9 @@ void sensor_control_register_thread(osThreadId_t thread_id) {
     s_sensor_thread = thread_id;
 }
 
-
+osThreadId_t sensor_task_get_handle(void) {
+    return s_sensor_thread;
+}
 
 static SensorInfo_t g_sensors[NUM_SENSORS] = {
     [APPS1] = {"APPS1", 1.0f, 2.0f, 0, 0.0f},

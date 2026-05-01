@@ -45,12 +45,15 @@ bool read_dash_switch_filtered(void) {
 // Driver inputs
 // ---------------------------------------------------------------------------
 
-
 bool read_ready_to_drive_button(void) {
     return dio_read(DASH_RTD_BUTTON);
 }
 
 bool read_forward_switch(void) {
+    return dio_read(DASH_SWITCH);
+}
+
+bool read_pcb_user_button(void) {
     return dio_read(PCB_USER_BUTTON);
 }
 
@@ -60,6 +63,5 @@ bool read_forward_switch(void) {
 
 void get_driver_inputs(VcuState_t *v) {
     v->fwrd_switch = read_forward_switch();
-
-    v->rtd_button = read_ready_to_drive_button();
+    v->rtd_button = read_pcb_user_button() || read_ready_to_drive_button();
 }
