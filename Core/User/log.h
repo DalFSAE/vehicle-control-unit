@@ -3,6 +3,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define UART_BUF_SIZE 256
+#define LOG_USB_TX_RETRY_COUNT 10U
+
+// CAN payload layout: [event_id(1), source(1), a0[15:8](1), a0[7:0](1),
+//                      a1[15:8](1), a1[7:0](1), reserved(1), reserved(1)]
+// a0 and a1 are truncated to 16 bits.
+#define CAN_PAYLOAD_SIZE 8U
+
 // used to filter log verbosity level
 typedef enum {
     LOG_LEVEL_DEBUG = 0u,
@@ -54,6 +62,11 @@ typedef struct {
     uint32_t     a0;       // logging payload
     uint32_t     a1;       // logging payload
 } LogEvent_t;
+
+typedef struct {
+    uint32_t len;
+    char data[UART_BUF_SIZE];
+} LogMsg_t;
 
 // Starts the logging subsystem. Safe to call before the RTOS kernel starts;
 // call again from a task context to complete OS-dependent init (mutex).
