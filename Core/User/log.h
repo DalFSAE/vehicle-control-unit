@@ -92,3 +92,5 @@ void log_printf(const char *format, ...);
         .a0       = (arg0_value),                                              \
         .a1       = (arg1_value),                                              \
     })
+
+void log_usb_task(void *argument);

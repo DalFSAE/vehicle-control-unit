@@ -21,6 +21,7 @@ enum {
     APP_HEARTBEAT_STACK_SIZE = 256U * 4U,
     APP_SENSOR_STACK_SIZE = 512U * 4U,
     APP_FSM_STACK_SIZE = 512U * 4U,
+    APP_LOGGER_STACK_SIZE = 256U * 4U,
 };
 
 static void app_heartbeat_task(void *argument);
@@ -47,15 +48,18 @@ static const osThreadAttr_t fsm_task_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
+static const osThreadAttr_t usb_logger_task_attributes = {
+    .name = "usb_logger",
+    .stack_size = APP_LOGGER_STACK_SIZE,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
 void app_error_handler(BootStatus_t status) {
     LOG_EVENT(LOG_LEVEL_ERROR, EVT_BOOT, (uint32_t)status, 0u);
     Error_Handler();
 }
 
 uint32_t app_init(void) {
-    if (!log_init()) {
-        app_error_handler(BOOT_ERR_PRE_BOOT_TESTS);
-    }
     board_outputs_init();
     dio_init();
     buzzer_init();
@@ -69,6 +73,10 @@ uint32_t app_init(void) {
 
 void app_post_boot(void) {
     osDelay(500u);
+    
+    if (!log_init()) {
+        Error_Handler();
+    }
     LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, s_pre_boot_result.tests_run, s_pre_boot_result.failures);
 
     BootResult_t result = hardware_test_post_boot();
@@ -79,6 +87,13 @@ void app_post_boot(void) {
 }
 
 void app_create_tasks(void) {
+
+    osThreadId_t logger_handle =
+        osThreadNew(log_usb_task, NULL, &usb_logger_task_attributes);
+    if (logger_handle == NULL)
+        app_error_handler(BOOT_ERR_TASK_CREATE);
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_LOG, 0u);
+
     app_heartbeat_task_handle =
         osThreadNew(app_heartbeat_task, NULL, &app_heartbeat_task_attributes);
     if (app_heartbeat_task_handle == NULL)
