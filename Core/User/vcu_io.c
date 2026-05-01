@@ -5,7 +5,7 @@
 #include "vehicle_state.h"
 #include "board_outputs.h"
 #include "output_control.h"
-#include "torque_output.h"
+#include "motor_controller.h"
 #include "dio.h"
 
 // true: spoof adc data

@@ -1,7 +1,11 @@
-#include "torque_output.h"
+#include "motor_controller.h"
 #include "sensor_control.h"
 
 #define TORQUE_OUTPUT_DAC_MAX_VALUE 4095u
+
+void init_motor_controller() {
+
+}
 
 void torque_output_update(float request, bool enabled) {
     if (!enabled) {
