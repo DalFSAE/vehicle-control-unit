@@ -1,11 +1,13 @@
+// hardware_test_runner.c
 #include "hardware_test_runner.h"
-#include "test_board_outputs.h"
-#include "test_fsm_hil.h"
 #include "unity.h"
 #include "board_outputs.h"
 #include "cmsis_os2.h"
 #include "log.h"
 #include "unity_internals.h"
+#include "test_board_outputs.h"
+#include "test_fsm_hil.h"
+#include "test_can.h"
 
 void setUp(void) {
     /* runs before each test */
@@ -26,6 +28,24 @@ static void test_debug_led_flash(void) {
             osDelay(100);
         }
     }
+}
+
+static void run_fsm_tests(void) {
+    RUN_TEST(test_debug_led_flash);
+    RUN_TEST(test_fsm_in_standby_after_boot);
+    RUN_TEST(test_fsm_standby_requires_switch_and_ts);
+    RUN_TEST(test_fsm_transitions_to_neutral);
+    RUN_TEST(test_fsm_rtd_requires_brake);
+    RUN_TEST(test_fsm_rtd_with_brake_enters_forward);
+    RUN_TEST(test_fsm_pedal_plaus_returns_to_neutral);
+    RUN_TEST(test_if_debug_button_changes_state); // optional, requires user input
+}
+
+static void run_can_tests(void) {
+    RUN_TEST(test_can_loopback);
+    RUN_TEST(test_can_dash_led_msg);
+    RUN_TEST(test_if_inverter_alive);
+    RUN_TEST(test_if_bms_alive);
 }
 
 // ===========================================================================
@@ -51,14 +71,8 @@ BootResult_t hardware_test_pre_boot(void) {
 
 BootResult_t hardware_test_post_boot(void) {
     UNITY_BEGIN();
-    RUN_TEST(test_debug_led_flash);
-    RUN_TEST(test_fsm_in_standby_after_boot);
-    RUN_TEST(test_fsm_standby_requires_switch_and_ts);
-    RUN_TEST(test_fsm_transitions_to_neutral);
-    RUN_TEST(test_fsm_rtd_requires_brake);
-    RUN_TEST(test_fsm_rtd_with_brake_enters_forward);
-    RUN_TEST(test_fsm_pedal_plaus_returns_to_neutral);
-    // RUN_TEST(test_if_debug_button_changes_state); // optional, requires user input
+    run_fsm_tests();
+    run_can_tests();
     UNITY_END();
     return make_result();
 }

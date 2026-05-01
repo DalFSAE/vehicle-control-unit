@@ -164,3 +164,27 @@ void test_if_debug_button_changes_state(void) {
     clear_inputs();
     resume_sensor();
 }
+
+void test_throttle_step_response_from_nuetral(void) {
+    suspend_sensor();
+    walk_to_neutral();
+
+    g_vcu.fwrd_switch = false;
+    g_vcu.brake_pressed = false;
+    g_vcu.rtd_button = true;
+    osDelay(FSM_SETTLE_MS);
+    g_vcu.rtd_button = false;
+
+    // Ramp throttle from 0 to 100% in 10% increments, then back down.
+    for (int i = 0; i <= 10; i++) {
+        g_vcu.throttle_request = i / 10.0f;
+        osDelay(FSM_SETTLE_MS);
+    }
+    for (int i = 9; i >= 0; i--) {
+        g_vcu.throttle_request = i / 10.0f;
+        osDelay(FSM_SETTLE_MS);
+    }
+
+    clear_inputs();
+    resume_sensor();
+}
