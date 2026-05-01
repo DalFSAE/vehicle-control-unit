@@ -25,7 +25,7 @@ static osMessageQueueId_t s_log_queue;
 // ---------------------------------------------------------------------------
 
 #define LOG_PUTCHAR_LINE_LEN 128U
-#define LOG_PUTCHAR_MAX_LINES 16U
+#define LOG_PUTCHAR_MAX_LINES 64U
 
 static char    s_line_buf[LOG_PUTCHAR_LINE_LEN];
 static uint8_t s_line_len = 0U;
@@ -241,8 +241,8 @@ static void sink_uart_printf(const char *buf, size_t len) {
 // ---------------------------------------------------------------------------
 
 bool log_init(void) {
-    const int msg_count = 8;
-    s_log_queue = osMessageQueueNew(msg_count, sizeof(LogMsg_t), NULL);
+    const int pre_boot_msg_count = 24; // warning: large values will consume RAM due to static allocation
+    s_log_queue = osMessageQueueNew(pre_boot_msg_count, sizeof(LogMsg_t), NULL);
     if (s_log_queue == NULL) {
         return false;
     }
@@ -294,6 +294,8 @@ void log_printf(const char *format, ...) {
 }
 
 void log_usb_task(void *argument) {
+    (void)argument;
+    osDelay(1000); // wait for USB host enumeration before transmitting
     LogMsg_t msg;
     for (;;) {
         if (osMessageQueueGet(s_log_queue, &msg, NULL, osWaitForever) == osOK) {
