@@ -55,8 +55,9 @@ typedef struct {
     uint32_t     a1;       // logging payload
 } LogEvent_t;
 
-// Starts the logging subsystem
-void log_init(void);
+// Starts the logging subsystem. Safe to call before the RTOS kernel starts;
+// call again from a task context to complete OS-dependent init (mutex).
+bool log_init(void);
 
 // Primary event logger — auto-fills timestamp, routes to all sinks
 bool log_write(const LogEvent_t *event);

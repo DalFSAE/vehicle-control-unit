@@ -53,7 +53,9 @@ void app_error_handler(BootStatus_t status) {
 }
 
 uint32_t app_init(void) {
-    log_init();
+    if (!log_init()) {
+        app_error_handler(BOOT_ERR_PRE_BOOT_TESTS);
+    }
     board_outputs_init();
     dio_init();
     buzzer_init();

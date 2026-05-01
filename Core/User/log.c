@@ -215,8 +215,9 @@ static void sink_uart_printf(const char *buf, size_t len) {
 // Public API
 // ---------------------------------------------------------------------------
 
-void log_init(void) {
+bool log_init(void) {
     s_log_initialized = true;
+    return true;
 }
 
 bool log_write(const LogEvent_t *event) {
