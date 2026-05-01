@@ -81,6 +81,10 @@ bool log_write(const LogEvent_t *event);
 // Optional plain-text printf-style interface for debug output
 void log_printf(const char *format, ...);
 
+// Char-at-a-time sink — buffers into lines and forwards to log_printf.
+// Safe to call before log_init(); pre-init output is flushed when log_init() runs.
+void log_putchar(int c);
+
 // Convenience macro — requires LOG_MODULE to be defined before including this header.
 // Falls back to LOG_SRC_UNKNOWN if LOG_MODULE is not defined.
 #ifndef LOG_MODULE
