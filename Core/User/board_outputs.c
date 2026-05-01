@@ -47,13 +47,6 @@ void board_output_set(OutputChannel_t ch, bool value) {
     }
 }
 
-void board_output_set(OutputChannel_t ch, bool value) {
-    if (ch < OUTPUT_COUNT) {
-        HAL_GPIO_WritePin(board_outputs_map[ch].port, board_outputs_map[ch].pin,
-                          value ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    }
-}
-
 void board_output_enable(OutputChannel_t ch) {
     if (ch < OUTPUT_COUNT) {
         HAL_GPIO_WritePin(board_outputs_map[ch].port, board_outputs_map[ch].pin, GPIO_PIN_SET);
