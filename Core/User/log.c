@@ -21,8 +21,7 @@ static bool               s_log_initialized = false;
 static osMessageQueueId_t s_log_queue;
 
 // ---------------------------------------------------------------------------
-// log_putchar 
-// Used for line-buffered char sink (i.e. Unity)
+// log_putchar
 // ---------------------------------------------------------------------------
 
 #define LOG_PUTCHAR_LINE_LEN 128U
@@ -31,13 +30,13 @@ static osMessageQueueId_t s_log_queue;
 static char    s_line_buf[LOG_PUTCHAR_LINE_LEN];
 static uint8_t s_line_len = 0U;
 
-// ---------------------------------------------------------------------------
 // This is a simple way to capture early logs without dynamic memory allocation 
 // or complex buffering logic. Used for tracking logs generated before log_init() 
-// ---------------------------------------------------------------------------
 static char    s_pre_init_lines[LOG_PUTCHAR_MAX_LINES][LOG_PUTCHAR_LINE_LEN];
 static uint8_t s_pre_init_line_count = 0U;
 
+// Flushes the current line buffer to the appropriate sink 
+// (USB if initialized, otherwise pre-init buffer).
 static void putchar_flush_line(void) {
     if (s_line_len == 0U) {
         return;
@@ -54,6 +53,7 @@ static void putchar_flush_line(void) {
     s_line_len = 0U;
 }
 
+// Used for line-buffered char sink (i.e. Unity)
 void log_putchar(int c) {
     if (c == '\n') {
         putchar_flush_line();
