@@ -140,16 +140,23 @@ void test_if_debug_button_changes_state(void) {
 
     s_spoof.fwrd_switch  = true;
     s_spoof.brake_pressed = true;
+    bool button_was_pressed = false;
 
     for (int i = 0; i < 20; i++) {
         s_spoof.rtd_button = read_pcb_user_button();
+        button_was_pressed |= s_spoof.rtd_button;
         vcu_spoof_inputs(&s_spoof);
         osDelay(100);
-        if (g_fsm_state == ST_FORWARD) break;
+        if (g_fsm_state == ST_FORWARD) 
+            break;
     }
 
-    TEST_ASSERT_EQUAL_MESSAGE(ST_FORWARD, g_fsm_state,
-        "RTD button was not pressed during the test window");
+    if (!button_was_pressed) {
+        TEST_IGNORE_MESSAGE("RTD button was not pressed during the test window");
+    } else {
+        TEST_ASSERT_EQUAL_MESSAGE(ST_FORWARD, g_fsm_state,
+            "FSM did not transition to FORWARD state after RTD button was pressed");
+    }
 
     clear_inputs();
     resume_sensor();
