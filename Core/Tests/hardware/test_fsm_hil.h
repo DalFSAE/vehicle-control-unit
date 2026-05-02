@@ -8,3 +8,4 @@ void test_fsm_rtd_with_brake_enters_forward(void);
 void test_fsm_pedal_plaus_returns_to_neutral(void);
 void test_if_debug_button_changes_state(void);
 void test_throttle_step_response_from_nuetral(void);
+void test_throttle_step_response_from_forward(void);
