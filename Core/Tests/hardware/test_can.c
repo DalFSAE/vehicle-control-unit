@@ -89,3 +89,13 @@ void test_if_inverter_alive(void) {
 void test_if_bms_alive(void) {
     TEST_IGNORE_MESSAGE("requires BMS on bus");
 }
+
+BootResult_t run_can_tests(void) {
+    UNITY_BEGIN();
+    RUN_TEST(test_can_loopback);
+    RUN_TEST(test_can_dash_led_msg);
+    RUN_TEST(test_if_inverter_alive);
+    RUN_TEST(test_if_bms_alive);
+    UNITY_END();
+    return make_result();
+}

@@ -41,18 +41,12 @@ static void run_fsm_tests(void) {
     RUN_TEST(test_if_debug_button_changes_state); // optional, requires user input
 }
 
-static void run_can_tests(void) {
-    RUN_TEST(test_can_loopback);
-    RUN_TEST(test_can_dash_led_msg);
-    RUN_TEST(test_if_inverter_alive);
-    RUN_TEST(test_if_bms_alive);
-}
 
 // ===========================================================================
 // Runners
 // ===========================================================================
 
-static BootResult_t make_result(void) {
+BootResult_t make_result(void) {
     return (BootResult_t){
         .tests_run = (uint16_t)Unity.NumberOfTests,
         .failures = (uint16_t)Unity.TestFailures,
@@ -72,7 +66,6 @@ BootResult_t hardware_test_pre_boot(void) {
 BootResult_t hardware_test_post_boot(void) {
     UNITY_BEGIN();
     run_fsm_tests();
-    run_can_tests();
     UNITY_END();
     return make_result();
 }
@@ -80,7 +73,8 @@ BootResult_t hardware_test_post_boot(void) {
 void hardware_post_test_task(void *argument) {
     (void)argument;
     log_printf("===BEGIN_HIL_TESTS===\r\n");
-    BootResult_t result = hardware_test_post_boot();
-    log_printf("===END_HIL_TESTS: %u run, %u failed==\r\n", result.tests_run, result.failures);
+    hardware_test_post_boot();
+    log_printf("===BEGIN_CAN_TESTS===\r\n");
+    run_can_tests();
     osThreadExit();
 }
