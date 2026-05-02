@@ -186,6 +186,29 @@ static const char *log_mc_vsm_state_str(uint32_t state) {
     }
 }
 
+// Keep in sync with pack_outputs() in fsm_task.c.
+static int fmt_io_change(char *buf, size_t size, const LogEvent_t *event) {
+    uint32_t bits    = event->a0;
+    uint32_t thr_mpt = event->a1; // throttle * 1000
+    return snprintf(buf, size,
+        "[%8lu] %-5s %-6s %-14s "
+        "relay_on=%u inv=%u brake_lt=%u mc_brk=%u wdog=%u tssi=%u dir=%s thr_en=%u thr=%lu.%lu%%\r\n",
+        (unsigned long)event->time_ms,
+        log_level_str(event->level),
+        log_source_str(event->source),
+        log_event_str(event->event_id),
+        (bits >> 0u) & 1u,
+        (bits >> 1u) & 1u,
+        (bits >> 2u) & 1u,
+        (bits >> 3u) & 1u,
+        (bits >> 4u) & 1u,
+        (bits >> 5u) & 1u,
+        ((bits >> 6u) & 1u) ? "REV" : "FWD",
+        (bits >> 7u) & 1u,
+        (unsigned long)(thr_mpt / 10u),
+        (unsigned long)(thr_mpt % 10u));
+}
+
 // ---------------------------------------------------------------------------
 // Sinks: target for events
 // ---------------------------------------------------------------------------
@@ -195,7 +218,9 @@ static void sink_uart_event(const LogEvent_t *event) {
     char buf[UART_BUF_SIZE];
     int  len;
 
-    if (event->event_id == EVT_SENSOR_DEBUG) {
+    if (event->event_id == EVT_IO_CHANGE) {
+        len = fmt_io_change(buf, sizeof(buf), event);
+    } else if (event->event_id == EVT_SENSOR_DEBUG) {
         len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s channel=%s value=%lu\r\n",
                        (unsigned long)event->time_ms, log_level_str(event->level), log_source_str(event->source),
                        log_event_str(event->event_id), log_sensor_channel_str(event->a0), (unsigned long)event->a1);

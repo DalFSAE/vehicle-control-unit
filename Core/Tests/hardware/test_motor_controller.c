@@ -1,12 +1,15 @@
 #include "test_motor_controller.h"
+#include "fsm_test_helpers.h"
 #include "motor_controller.h"
 #include "can_bus.h"
 #include "can0_powertrain.h"
 #include "can_task.h"
 #include "hardware_test_runner.h"
+#include "fsm_task.h"
 #include "unity.h"
 #include "cmsis_os2.h"
 #include "stm32f4xx_hal.h"
+#include "vcu_io.h"
 
 #include <string.h>
 #include <stdbool.h>
@@ -154,10 +157,41 @@ void test_mc_no_active_faults(void) {
     TEST_ASSERT_EQUAL_UINT32_MESSAGE(0u, mc_fault_bitmap(), "Inverter reported active faults");
 }
 
+// Sweeps throttle from 0 to 100% in FORWARD state and verifies the motor
+// controller command cache at each step. fsm_task emits EVT_IO_CHANGE at
+// DEBUG level automatically on each output change, producing a readable
+// trace of the full sweep on serial.
+void test_mc_throttle_sweep(void) {
+    suspend_sensor();
+    walk_to_neutral();
+    walk_to_forward();
+    TEST_ASSERT_EQUAL_MESSAGE(ST_FORWARD, g_fsm_state, "FSM must reach FORWARD before sweep");
+
+    static const float steps[] = {0.0f, 0.25f, 0.5f, 0.75f, 1.0f};
+    for (size_t i = 0; i < sizeof(steps) / sizeof(steps[0]); i++) {
+        g_spoof.throttle_request = steps[i];
+        vcu_spoof_inputs(&g_spoof);
+        osDelay(FSM_SETTLE_MS); // FSM ticks, applies outputs, emits EVT_IO_CHANGE
+
+        MotorControllerCmd_t cmd;
+        motor_controller_get_cmd(&cmd);
+
+        float expected_nm = steps[i] * MC_TORQUE_MAX_NM;
+        TEST_ASSERT_FLOAT_WITHIN_MESSAGE(0.5f, expected_nm, cmd.torque_command_nm,
+            "Torque command does not match throttle request");
+        TEST_ASSERT_TRUE_MESSAGE(cmd.inv_enable,              "Inverter must be enabled in FORWARD");
+        TEST_ASSERT_TRUE_MESSAGE(cmd.motor_direction_forward, "Direction must be forward");
+    }
+
+    clear_inputs();
+    resume_sensor();
+}
+
 BootResult_t run_mc_tests(void) {
     UNITY_BEGIN();
     RUN_TEST(test_mc_cmd_cache_roundtrip);
     RUN_TEST(test_mc_cmd_encoding_loopback);
+    RUN_TEST(test_mc_throttle_sweep);
     RUN_TEST(test_mc_heartbeat_received);
     RUN_TEST(test_mc_vsm_is_ready);
     RUN_TEST(test_mc_no_active_faults);
