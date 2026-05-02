@@ -18,11 +18,6 @@
 #include "vehicle_state.h"
 #include "fsm.h"
 
-// Extern globals required by vehicle_state.h
-
-VcuState_t g_vcu = {0};
-CanState_t g_can = {0};
-
 // Helpers
 
 static VcuInputs make_clean_inputs(void) {
