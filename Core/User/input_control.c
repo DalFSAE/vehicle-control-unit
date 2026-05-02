@@ -2,6 +2,9 @@
 #include "main.h"
 #include "dio.h"
 
+#define LOG_MODULE LOG_SRC_IO
+#include "log.h"
+
 // ---------------------------------------------------------------------------
 // Simple 1-bit software debounce + asymmetric OFF delay
 // ---------------------------------------------------------------------------
@@ -36,13 +39,16 @@ bool read_dash_switch_filtered(void) {
 }
 
 bool read_ready_to_drive_button(void) {
+    // LOG_EVENT(LOG_LEVEL_DEBUG, EVT_IO_CHANGE, DASH_RTD_BUTTON, dio_read(DASH_RTD_BUTTON));
     return dio_read(DASH_RTD_BUTTON);
 }
 
 bool read_forward_switch(void) {
+    // LOG_EVENT(LOG_LEVEL_DEBUG, EVT_IO_CHANGE, DASH_SWITCH, dio_read(DASH_SWITCH));
     return dio_read(DASH_SWITCH);
 }
 
 bool read_pcb_user_button(void) {
+    // LOG_EVENT(LOG_LEVEL_DEBUG, EVT_IO_CHANGE, PCB_USER_BUTTON, dio_read(PCB_USER_BUTTON));
     return dio_read(PCB_USER_BUTTON);
 }

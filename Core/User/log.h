@@ -50,6 +50,7 @@ typedef enum {
     LOG_SRC_CAN,
     LOG_SRC_FAULT,
     LOG_SRC_TORQUE,
+    LOG_SRC_MC,
     LOG_SRC_LOG,  // log.c itself
     LOG_SRC_COUNT // keep last
 } LogSource_t;
