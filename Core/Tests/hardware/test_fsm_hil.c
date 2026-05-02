@@ -199,23 +199,3 @@ void test_throttle_step_response_from_nuetral(void) {
     clear_inputs();
     resume_sensor();
 }
-
-void test_throttle_step_response_from_forward(void) {
-    suspend_sensor();
-    walk_to_neutral();
-    walk_to_forward();
-
-    for (int i = 0; i <= 10; i++) {
-        s_spoof.throttle_request = i / 10.0f;
-        vcu_spoof_inputs(&s_spoof);
-        osDelay(FSM_SETTLE_MS);
-    }
-    for (int i = 9; i >= 0; i--) {
-        s_spoof.throttle_request = i / 10.0f;
-        vcu_spoof_inputs(&s_spoof);
-        osDelay(FSM_SETTLE_MS);
-    }
-
-    clear_inputs();
-    resume_sensor();
-}

@@ -8,6 +8,7 @@
 #include "test_board_outputs.h"
 #include "test_fsm_hil.h"
 #include "test_can.h"
+#include "test_motor_controller.h"
 #include "vcu_io.h"
 
 void setUp(void) {
@@ -77,6 +78,8 @@ void hardware_post_test_task(void *argument) {
     hardware_test_post_boot();
     log_printf("===BEGIN_CAN_TESTS===\r\n");
     run_can_tests();
+    log_printf("===BEGIN_MC_TESTS===\r\n");
+    run_mc_tests();
     vcu_clear_spoof();
     osThreadExit();
 }

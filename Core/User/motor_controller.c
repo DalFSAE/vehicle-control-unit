@@ -68,7 +68,7 @@ void can_tx_send_inverter_cmd(const MotorControllerCmd_t *cmd) {
     msg.vcu_inv_inverter_enable = cmd->inv_enable ? 1u : 0u;
     msg.vcu_inv_inverter_discharge = cmd->inv_discharge ? 1u : 0u;
     msg.vcu_inv_speed_mode_enable = cmd->speed_mode_enable ? 1u : 0u;
-    msg.vcu_inv_direction_command = cmd->motor_direction_forward ? 0u : 1u;
+    msg.vcu_inv_direction_command = cmd->motor_direction_forward ? 1u : 0u;
     msg.vcu_inv_rolling_counter = cmd->rolling_counter;
 
     uint8_t buf[CAN0_POWERTRAIN_M192_COMMAND_MESSAGE_LENGTH];
