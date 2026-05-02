@@ -119,6 +119,7 @@ void app_create_tasks(void) {
     osThreadId_t can_handle = osThreadNew(can_task, NULL, &can_task_attributes);
     if (can_handle == NULL)
         app_error_handler(BOOT_ERR_TASK_CREATE);
+    can_task_register_handle(can_handle);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_CAN, 0u);
 
     osThreadId_t fsm_handle = osThreadNew(fsm_task, NULL, &fsm_task_attributes);

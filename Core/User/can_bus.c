@@ -15,11 +15,18 @@ static CanRxHook_t        s_rx_hook = NULL;
 void can_bus_init(CAN_HandleTypeDef *hcan, uint32_t mode) {
     s_hcan = hcan;
 
-    // CAN_operating_mode
+    // If running, abort any pending TX mailboxes and stop cleanly before
+    // switching mode. HAL_CAN_Init entering init-mode does NOT flush TX
+    // mailboxes their TXRQ bits survive and retransmit once Start() exits
+    // init-mode, which would loop stale frames back in loopback mode.
+    if (hcan->State == HAL_CAN_STATE_LISTENING) {
+        HAL_CAN_AbortTxRequest(hcan, CAN_TX_MAILBOX0 | CAN_TX_MAILBOX1 | CAN_TX_MAILBOX2);
+        HAL_CAN_Stop(hcan);
+    }
+
     hcan->Init.Mode = mode;
     HAL_CAN_Init(hcan);
 
-    // Accept-all filter: mask=0 means no bits are checked.
     CAN_FilterTypeDef f = {
         .FilterIdHigh = 0x0000,
         .FilterIdLow = 0x0000,
@@ -30,10 +37,20 @@ void can_bus_init(CAN_HandleTypeDef *hcan, uint32_t mode) {
         .FilterMode = CAN_FILTERMODE_IDMASK,
         .FilterScale = CAN_FILTERSCALE_32BIT,
         .FilterActivation = CAN_FILTER_ENABLE,
-        .SlaveStartFilterBank = 14, // CAN2 banks start at 14 on STM32F4
+        .SlaveStartFilterBank = 14,
     };
     HAL_CAN_ConfigFilter(hcan, &f);
     HAL_CAN_Start(hcan);
+
+    // Drain whatever landed in the FIFO before the notification is armed so
+    // that the ISR only fires for frames sent after this point.
+    {
+        CAN_RxHeaderTypeDef h;
+        uint8_t             d[8];
+        while (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &h, d) == HAL_OK) {
+        }
+    }
+
     HAL_CAN_ActivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
 }
 
