@@ -1,4 +1,3 @@
-#include "input_control.h"
 #define LOG_MODULE LOG_SRC_FSM
 
 #include "fsm_task.h"
@@ -20,7 +19,7 @@ void fsm_task(void *arg) {
     VcuOutputs out = {0};
 
     for (;;) {
-        vcu_read_inputs(&in);
+        vcu_gather_inputs(&in);
         FsmState_t next = step_fsm(state, &fault_cfg, &in, &out);
         if (next != state) {
             LOG_EVENT(LOG_LEVEL_INFO, EVT_STATE_CHANGE, state, next);
