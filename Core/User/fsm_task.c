@@ -4,6 +4,7 @@
 #include "fsm.h"
 #include "vehicle_state.h"
 #include "vcu_io.h"
+#include "dash.h"
 #include "cmsis_os2.h"
 #include "log.h"
 
@@ -50,6 +51,15 @@ void fsm_task(void *arg) {
 
         state = next;
         g_fsm_state = state;
+
+        DashLedCmd_t leds = {
+            .imd_ok = 1u,  // placeholder until HVC RX is added
+            .bms_ok = 1u,  // placeholder until HVC RX is added
+            .rtd    = (state == ST_FORWARD || state == ST_REVERSE) ? 1u : 0u,
+            .fault  = (in.fault_flags != FAULT_NONE) ? 1u : 0u,
+        };
+        dash_set_leds(&leds);
+
         vcu_apply_outputs(&out);
         osDelay(FSM_PERIOD_MS);
     }
