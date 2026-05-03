@@ -20,7 +20,7 @@ typedef enum {
 } LogLevel_t;
 
 // Only events at or above this level are printed to serial.
-#define LOG_MIN_LEVEL LOG_LEVEL_INFO
+#define LOG_MIN_LEVEL LOG_LEVEL_DEBUG
 
 // List of possible firmware events
 typedef enum {
@@ -50,6 +50,7 @@ typedef enum {
     LOG_SRC_CAN,
     LOG_SRC_FAULT,
     LOG_SRC_TORQUE,
+    LOG_SRC_MC,
     LOG_SRC_LOG,  // log.c itself
     LOG_SRC_COUNT // keep last
 } LogSource_t;

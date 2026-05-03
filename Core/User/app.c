@@ -8,6 +8,8 @@
 // Tasks
 #include "fsm_task.h"
 #include "sensor_control.h"
+#include "can_task.h"
+#include "motor_controller.h"
 #include "stm32f4xx_hal.h"
 #include <stdint.h>
 
@@ -21,6 +23,7 @@ enum {
     APP_HEARTBEAT_STACK_SIZE = 256U * 4U,
     APP_SENSOR_STACK_SIZE = 512U * 4U,
     APP_FSM_STACK_SIZE = 512U * 4U,
+    APP_CAN_STACK_SIZE = 512U * 4U,
     APP_LOGGER_STACK_SIZE = 256U * 4U,
     APP_HW_TEST_STACK_SIZE = 512U * 4U,
 };
@@ -47,6 +50,12 @@ static const osThreadAttr_t fsm_task_attributes = {
     .name = "fsm",
     .stack_size = APP_FSM_STACK_SIZE,
     .priority = (osPriority_t)osPriorityNormal,
+};
+
+static const osThreadAttr_t can_task_attributes = {
+    .name = "can",
+    .stack_size = APP_CAN_STACK_SIZE,
+    .priority = (osPriority_t)osPriorityAboveNormal,
 };
 
 static const osThreadAttr_t usb_logger_task_attributes = {
@@ -80,33 +89,38 @@ uint32_t app_init(void) {
 
 void app_post_boot(void) {
     osDelay(500u);
-    
+
     if (!log_init()) {
         Error_Handler();
     }
     LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, s_pre_boot_result.tests_run, s_pre_boot_result.failures);
 
+    // Must be called after OS starts — creates mutex and starts CAN.
+    motor_controller_init();
 }
 
 void app_create_tasks(void) {
-    osThreadId_t logger_handle =
-        osThreadNew(log_usb_task, NULL, &usb_logger_task_attributes);
+    osThreadId_t logger_handle = osThreadNew(log_usb_task, NULL, &usb_logger_task_attributes);
     if (logger_handle == NULL)
         app_error_handler(BOOT_ERR_TASK_CREATE);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_LOG, 0u);
 
-    app_heartbeat_task_handle =
-        osThreadNew(app_heartbeat_task, NULL, &app_heartbeat_task_attributes);
+    app_heartbeat_task_handle = osThreadNew(app_heartbeat_task, NULL, &app_heartbeat_task_attributes);
     if (app_heartbeat_task_handle == NULL)
         app_error_handler(BOOT_ERR_TASK_CREATE);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_APP, 0u);
 
-    osThreadId_t sensor_handle =
-        osThreadNew(sensorInputTask, NULL, &sensor_task_attributes);
+    osThreadId_t sensor_handle = osThreadNew(sensorInputTask, NULL, &sensor_task_attributes);
     if (sensor_handle == NULL)
         app_error_handler(BOOT_ERR_TASK_CREATE);
     sensor_control_register_thread(sensor_handle);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_SENSOR, 0u);
+
+    osThreadId_t can_handle = osThreadNew(can_task, NULL, &can_task_attributes);
+    if (can_handle == NULL)
+        app_error_handler(BOOT_ERR_TASK_CREATE);
+    can_task_register_handle(can_handle);
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_CAN, 0u);
 
     osThreadId_t fsm_handle = osThreadNew(fsm_task, NULL, &fsm_task_attributes);
     if (fsm_handle == NULL)
