@@ -24,6 +24,13 @@ void can_task(void *arg) {
     uint8_t  prev_vsm_state    = mc_vsm_state();
     uint32_t prev_fault_bitmap = mc_fault_bitmap();
 
+    // Set green at startup. Other devices on network may set low
+    DashLedCmd_t led_cmd = {
+        .imd_ok = 1u,
+        .bms_ok = 1u,
+    };
+    dash_set_leds(&led_cmd);
+
     for (;;) {
         MotorControllerCmd_t cmd;
         motor_controller_get_cmd(&cmd);

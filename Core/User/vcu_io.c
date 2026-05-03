@@ -74,13 +74,6 @@ void vcu_apply_outputs(const VcuOutputs *out) {
     if (out->buzzer_beep_ms) buzzer_beep(out->buzzer_beep_ms);        
     buzzer_update();
 
-    // Dash LEDs
-    DashLedCmd_t leds = {
-        .imd_ok = 1u,
-        .bms_ok = 1u,
-    };
-    dash_set_leds(&leds);
-
     // Motor direction
     mc_set_direction(out->motor_direction);
 
