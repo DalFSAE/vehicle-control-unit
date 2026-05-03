@@ -45,23 +45,28 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 
 file(GLOB USER_SOURCES CONFIGURE_DEPENDS
     ${CMAKE_SOURCE_DIR}/Core/User/*.c
+    ${CMAKE_SOURCE_DIR}/Core/Tests/hardware/*.c
 )
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    # Add user sources here
     ${USER_SOURCES}
+    ${CMAKE_SOURCE_DIR}/Core/Tests/unit/unity.c
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     ${CMAKE_SOURCE_DIR}/Core/User
+    ${CMAKE_SOURCE_DIR}/Core/Tests
+    ${CMAKE_SOURCE_DIR}/Core/Tests/hardware
+    ${CMAKE_SOURCE_DIR}/Core/Tests/unit
 )
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
+    UNITY_INCLUDE_CONFIG_H
 )
 
 # Add linked libraries

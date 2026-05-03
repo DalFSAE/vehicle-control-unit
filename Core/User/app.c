@@ -8,9 +8,12 @@
 // Tasks
 #include "fsm_task.h"
 #include "sensor_control.h"
+#include "stm32f4xx_hal.h"
+#include <stdint.h>
 
 #define LOG_MODULE LOG_SRC_APP
 #include "log.h"
+#include "hardware_test_runner.h"
 
 enum {
     APP_HEARTBEAT_PERIOD_MS = 250U,
@@ -18,9 +21,12 @@ enum {
     APP_HEARTBEAT_STACK_SIZE = 256U * 4U,
     APP_SENSOR_STACK_SIZE = 512U * 4U,
     APP_FSM_STACK_SIZE = 512U * 4U,
+    APP_LOGGER_STACK_SIZE = 256U * 4U,
 };
 
 static void app_heartbeat_task(void *argument);
+
+static BootResult_t s_pre_boot_result;
 
 static osThreadId_t app_heartbeat_task_handle;
 
@@ -42,31 +48,68 @@ static const osThreadAttr_t fsm_task_attributes = {
     .priority = (osPriority_t)osPriorityNormal,
 };
 
-void app_init(void) {
-    log_init();
+static const osThreadAttr_t usb_logger_task_attributes = {
+    .name = "usb_logger",
+    .stack_size = APP_LOGGER_STACK_SIZE,
+    .priority = (osPriority_t)osPriorityNormal,
+};
+
+void app_error_handler(BootStatus_t status) {
+    LOG_EVENT(LOG_LEVEL_ERROR, EVT_BOOT, (uint32_t)status, 0u);
+    Error_Handler();
+}
+
+uint32_t app_init(void) {
     board_outputs_init();
     dio_init();
     buzzer_init();
-    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, 0u, 0u);
+
+    s_pre_boot_result = hardware_test_pre_boot();
+    if (s_pre_boot_result.failures != 0u) {
+        app_error_handler(BOOT_ERR_PRE_BOOT_TESTS);
+    }
+    return s_pre_boot_result.failures;
+}
+
+void app_post_boot(void) {
+    osDelay(500u);
+    
+    if (!log_init()) {
+        Error_Handler();
+    }
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, s_pre_boot_result.tests_run, s_pre_boot_result.failures);
+
+    BootResult_t result = hardware_test_post_boot();
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, result.tests_run, result.failures);
+    if (result.failures != 0u) {
+        app_error_handler(BOOT_ERR_POST_BOOT_TESTS);
+    }
 }
 
 void app_create_tasks(void) {
+
+    osThreadId_t logger_handle =
+        osThreadNew(log_usb_task, NULL, &usb_logger_task_attributes);
+    if (logger_handle == NULL)
+        app_error_handler(BOOT_ERR_TASK_CREATE);
+    LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_LOG, 0u);
+
     app_heartbeat_task_handle =
         osThreadNew(app_heartbeat_task, NULL, &app_heartbeat_task_attributes);
     if (app_heartbeat_task_handle == NULL)
-        Error_Handler();
+        app_error_handler(BOOT_ERR_TASK_CREATE);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_APP, 0u);
 
     osThreadId_t sensor_handle =
         osThreadNew(sensorInputTask, NULL, &sensor_task_attributes);
     if (sensor_handle == NULL)
-        Error_Handler();
+        app_error_handler(BOOT_ERR_TASK_CREATE);
     sensor_control_register_thread(sensor_handle);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, LOG_SRC_SENSOR, 0u);
 
     osThreadId_t fsm_handle = osThreadNew(fsm_task, NULL, &fsm_task_attributes);
     if (fsm_handle == NULL)
-        Error_Handler();
+        app_error_handler(BOOT_ERR_TASK_CREATE);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_TASK_CREATED, 0, 0);
 }
 

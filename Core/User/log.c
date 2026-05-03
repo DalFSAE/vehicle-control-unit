@@ -1,9 +1,11 @@
 
 #include "cmsis_os2.h"
+#include "main.h"
 #include "stm32f4xx_hal.h"
 #include "usbd_cdc_if.h"
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -11,47 +13,73 @@
 #include "log.h"
 #include "sensor_types.h"
 
-#define UART_BUF_SIZE 256
-#define LOG_USB_TX_RETRY_COUNT 5U
-
-// CAN payload is 8 bytes:
-// [event_id, level, source, a0_hi, a0_lo, a1_hi, a1_lo, reserved]
-#define CAN_PAYLOAD_SIZE 8U
-
 // ---------------------------------------------------------------------------
 // Helper functions
 // ---------------------------------------------------------------------------
 
-static bool    s_log_initialized = false;
-static uint8_t s_usb_tx_buffer[UART_BUF_SIZE];
+static bool               s_log_initialized = false;
+static osMessageQueueId_t s_log_queue;
 
+// ---------------------------------------------------------------------------
+// log_putchar
+// ---------------------------------------------------------------------------
+
+#define LOG_PUTCHAR_LINE_LEN 128U
+#define LOG_PUTCHAR_MAX_LINES 64U
+
+static char    s_line_buf[LOG_PUTCHAR_LINE_LEN];
+static uint8_t s_line_len = 0U;
+
+// This is a simple way to capture early logs without dynamic memory allocation 
+// or complex buffering logic. Used for tracking logs generated before log_init() 
+static char    s_pre_init_lines[LOG_PUTCHAR_MAX_LINES][LOG_PUTCHAR_LINE_LEN];
+static uint8_t s_pre_init_line_count = 0U;
+
+// Flushes the current line buffer to the appropriate sink 
+// (USB if initialized, otherwise pre-init buffer).
+static void putchar_flush_line(void) {
+    if (s_line_len == 0U) {
+        return;
+    }
+    s_line_buf[s_line_len] = '\0';
+
+    if (s_log_initialized) {
+        log_printf("%s\r\n", s_line_buf);
+    } else if (s_pre_init_line_count < LOG_PUTCHAR_MAX_LINES) {
+        memcpy(s_pre_init_lines[s_pre_init_line_count], s_line_buf, s_line_len + 1U);
+        s_pre_init_line_count++;
+    }
+
+    s_line_len = 0U;
+}
+
+// Used for line-buffered char sink (i.e. Unity)
+void log_putchar(int c) {
+    if (c == '\n') {
+        putchar_flush_line();
+    } else if (c != '\r') {
+        if (s_line_len < LOG_PUTCHAR_LINE_LEN - 1U) {
+            s_line_buf[s_line_len++] = (char)c;
+        }
+    }
+}
+
+// Writes a log message to the USB CDC queue.
 static bool log_usb_write(const char *buf, size_t len) {
-    if ((buf == NULL) || (len == 0u)) {
+    if (!s_log_initialized) {
         return false;
     }
 
-    if (osKernelGetState() != osKernelRunning) {
-        return false;
+    LogMsg_t msg;
+
+    if (len > sizeof(msg.data)) {
+        len = sizeof(msg.data);
     }
 
-    if (len > sizeof(s_usb_tx_buffer)) {
-        len = sizeof(s_usb_tx_buffer);
-    }
+    memcpy(msg.data, buf, len);
+    msg.len = len;
 
-    memcpy(s_usb_tx_buffer, buf, len);
-
-    for (uint32_t attempt = 0u; attempt < LOG_USB_TX_RETRY_COUNT; ++attempt) {
-        uint8_t status = CDC_Transmit_FS(s_usb_tx_buffer, (uint16_t)len);
-        if (status == USBD_OK) {
-            return true;
-        }
-        if (status != USBD_BUSY) {
-            return false;
-        }
-        osDelay(1U);
-    }
-
-    return false;
+    return (osMessageQueuePut(s_log_queue, &msg, 0, 0) == osOK);
 }
 
 static uint32_t log_get_time_ms(void) {
@@ -180,18 +208,24 @@ static void sink_uart_event(const LogEvent_t *event) {
 }
 
 // Encodes the event into a compact 8-byte CAN payload (no raw struct).
-// Layout: [event_id(1), level(1), source(1), a0[15:8](1), a0[7:0](1),
-//          a1[15:8](1), a1[7:0](1), reserved(1)]
 static void sink_can_event(const LogEvent_t *event) {
+    // Only allow valid events to be sent over CAN
+    switch (event->event_id) {
+        case EVT_FAULT_SET:
+        case EVT_STATE_CHANGE:
+        case EVT_BOOT: break;
+        default: return;
+    }
+
     uint8_t payload[CAN_PAYLOAD_SIZE];
     payload[0] = (uint8_t)event->event_id;
-    payload[1] = (uint8_t)event->level;
-    payload[2] = (uint8_t)event->source;
-    payload[3] = (uint8_t)((event->a0 >> 8u) & 0xFFu);
-    payload[4] = (uint8_t)(event->a0 & 0xFFu);
-    payload[5] = (uint8_t)((event->a1 >> 8u) & 0xFFu);
-    payload[6] = (uint8_t)(event->a1 & 0xFFu);
-    payload[7] = 0u; // reserved
+    payload[1] = (uint8_t)event->source;
+    payload[2] = (uint8_t)((event->a0 >> 8u) & 0xFFu);
+    payload[3] = (uint8_t)(event->a0 & 0xFFu);
+    payload[4] = (uint8_t)((event->a1 >> 8u) & 0xFFu);
+    payload[5] = (uint8_t)(event->a1 & 0xFFu);
+    payload[6] = 0u;
+    payload[7] = 0u;
 
     // TODO: transmit payload over CAN (e.g. CAN ID = LOG_EVENT_ID, DLC = 8)
     (void)payload;
@@ -206,12 +240,24 @@ static void sink_uart_printf(const char *buf, size_t len) {
 // Public API
 // ---------------------------------------------------------------------------
 
-void log_init(void) {
+bool log_init(void) {
+    const int pre_boot_msg_count = 24; // warning: large values will consume RAM due to static allocation
+    s_log_queue = osMessageQueueNew(pre_boot_msg_count, sizeof(LogMsg_t), NULL);
+    if (s_log_queue == NULL) {
+        return false;
+    }
     s_log_initialized = true;
+
+    for (uint8_t i = 0; i < s_pre_init_line_count; i++) {
+        log_printf("%s\r\n", s_pre_init_lines[i]);
+    }
+    s_pre_init_line_count = 0U;
+
+    return true;
 }
 
 bool log_write(const LogEvent_t *event) {
-    if ((event == NULL) || !s_log_initialized) {
+    if ((event == NULL) || !s_log_initialized || (event->level < LOG_MIN_LEVEL)) {
         return false;
     }
 
@@ -245,4 +291,23 @@ void log_printf(const char *format, ...) {
     }
 
     sink_uart_printf(buf, (size_t)len);
+}
+
+void log_usb_task(void *argument) {
+    (void)argument;
+    osDelay(1000); // wait for USB host enumeration before transmitting
+    LogMsg_t msg;
+    for (;;) {
+        if (osMessageQueueGet(s_log_queue, &msg, NULL, osWaitForever) == osOK) {
+            // Wait until USB is free
+            while (CDC_Transmit_FS((uint8_t *)msg.data, msg.len) == USBD_BUSY) {
+                osDelay(1);
+            }
+
+            // Wait until TX complete
+            while (CDC_IsTxBusy()) {
+                osDelay(1);
+            }
+        }
+    }
 }

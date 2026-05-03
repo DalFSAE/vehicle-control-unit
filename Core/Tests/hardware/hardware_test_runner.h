@@ -1,0 +1,14 @@
+#pragma once
+#include <stdint.h>
+
+typedef struct {
+    uint16_t tests_run;
+    uint16_t failures;
+    uint16_t ignored;
+} BootResult_t;
+
+// Run before the OS scheduler starts. No osDelay allowed.
+BootResult_t hardware_test_pre_boot(void);
+
+// Run after the OS scheduler starts, but before task creation. osDelay allowed.
+BootResult_t hardware_test_post_boot(void);
