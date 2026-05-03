@@ -11,6 +11,8 @@
 #include "can_task.h"
 #include "motor_controller.h"
 #include "dash.h"
+#include "can.h"
+#include "can_bus.h"
 #include "stm32f4xx_hal.h"
 #include <stdint.h>
 
@@ -95,8 +97,9 @@ void app_post_boot(void) {
         Error_Handler();
     }
     LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, s_pre_boot_result.tests_run, s_pre_boot_result.failures);
+    
+    can_bus_init(&hcan1, CAN_MODE_NORMAL);
 
-    // Must be called after OS starts. Creates mutexes and starts CAN.
     motor_controller_init();
     dash_init();
 }

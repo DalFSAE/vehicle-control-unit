@@ -26,17 +26,17 @@ typedef struct {
     uint8_t  rolling_counter; // incremented by can_task each TX
 } MotorControllerCmd_t;
 
-// Lifecycle — must be called after OS starts (creates mutex).
+// Must be called after OS starts (creates mutex).
 void motor_controller_init(void);
 
-// Thread-safe command cache — written by FSM via vcu_apply_outputs().
+// Thread-safe command interface.
 void motor_controller_set_cmd(const MotorControllerCmd_t *cmd);
 void motor_controller_get_cmd(MotorControllerCmd_t *out);
 
 // Transmit M192 command frame. rolling_counter must be set by caller (can_task).
 void can_tx_send_inverter_cmd(const MotorControllerCmd_t *cmd);
 
-// CAN node RX handler — called from ISR via can_bus dispatch.
+// CAN node RX handler. Called from ISR via can_bus dispatch.
 void inverter_rx(uint32_t id, const uint8_t *data, size_t len);
 extern const CanNode_t inverter_node;
 
