@@ -52,12 +52,6 @@ void fsm_task(void *arg) {
         state = next;
         g_fsm_state = state;
 
-        DashLedCmd_t leds = {
-            .imd_ok = 1u,
-            .bms_ok = 1u,
-        };
-        dash_set_leds(&leds);
-
         vcu_apply_outputs(&out);
         osDelay(FSM_PERIOD_MS);
     }
