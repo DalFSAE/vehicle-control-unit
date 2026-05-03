@@ -7,6 +7,7 @@ static DashLedCmd_t s_leds      = {0};
 static osMutexId_t  s_mutex     = NULL;
 static uint32_t     s_boot_tick = 0;
 
+
 void dash_init(void) {
     s_mutex     = osMutexNew(NULL);
     s_boot_tick = HAL_GetTick();
@@ -19,8 +20,8 @@ void dash_set_leds(const DashLedCmd_t *cmd) {
     osMutexRelease(s_mutex);
 }
 
-void dash_tx_cmd(void) {
-    if (s_mutex == NULL) return;
+bool dash_tx_cmd(void) {
+    if (s_mutex == NULL) return false;
 
     DashLedCmd_t snap;
     osMutexAcquire(s_mutex, osWaitForever);
@@ -36,7 +37,7 @@ void dash_tx_cmd(void) {
         snap.fault,
         led_test,
     };
-    can_bus_transmit(CAN_ID_DASH_CMD, frame, sizeof(frame));
+    return can_bus_transmit(CAN_ID_DASH_CMD, frame, sizeof(frame));
 }
 
 void dash_rx(uint32_t id, const uint8_t *data, size_t len) {

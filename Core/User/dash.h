@@ -29,7 +29,8 @@ void dash_init(void);
 void dash_set_leds(const DashLedCmd_t *cmd);
 
 // Called from can_task each cycle to transmit the dash command frame.
-void dash_tx_cmd(void);
+// Returns true if the CAN mailbox accepted the frame.
+bool dash_tx_cmd(void);
 
 // CAN RX handler, called from ISR via can_bus dispatch.
 void dash_rx(uint32_t id, const uint8_t *data, size_t len);

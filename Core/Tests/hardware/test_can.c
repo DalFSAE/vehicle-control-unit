@@ -112,6 +112,34 @@ void test_can_dash_led_msg(void) {
     osThreadResume(can_task_get_handle());
 }
 
+// Transmits a sequence of LED commands to the dash on the real bus.
+// Watch the dash physically to confirm LEDs respond.
+void test_can_dash_leds_live(void) {
+    // All LEDs off
+    DashLedCmd_t cmd = { .imd_ok = 0u, .bms_ok = 0u, .rtd = 0u, .fault = 0u };
+    dash_set_leds(&cmd);
+    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: all off");
+    osDelay(750);
+
+    // All LEDs on
+    cmd = (DashLedCmd_t){ .imd_ok = 1u, .bms_ok = 1u, .rtd = 1u, .fault = 1u };
+    dash_set_leds(&cmd);
+    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: all on");
+    osDelay(750);
+
+    // Fault only
+    cmd = (DashLedCmd_t){ .imd_ok = 0u, .bms_ok = 0u, .rtd = 0u, .fault = 1u };
+    dash_set_leds(&cmd);
+    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: fault only");
+    osDelay(750);
+
+    // Normal running state: IMD ok, BMS ok, RTD active, no fault
+    cmd = (DashLedCmd_t){ .imd_ok = 1u, .bms_ok = 1u, .rtd = 1u, .fault = 0u };
+    dash_set_leds(&cmd);
+    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: normal running");
+    osDelay(750);
+}
+
 void test_if_inverter_alive(void) {
     TEST_IGNORE_MESSAGE("requires inverter on bus");
 }
@@ -124,6 +152,7 @@ BootResult_t run_can_tests(void) {
     UNITY_BEGIN();
     RUN_TEST(test_can_loopback);
     RUN_TEST(test_can_dash_led_msg);
+    RUN_TEST(test_can_dash_leds_live);
     RUN_TEST(test_if_inverter_alive);
     RUN_TEST(test_if_bms_alive);
     UNITY_END();
