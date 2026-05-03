@@ -89,8 +89,6 @@ void test_can_dash_led_msg(void) {
     DashLedCmd_t cmd = {
         .imd_ok = 1u,
         .bms_ok = 0u,
-        .rtd    = 1u,
-        .fault  = 0u,
     };
     dash_set_leds(&cmd);
     dash_tx_cmd();
@@ -99,13 +97,10 @@ void test_can_dash_led_msg(void) {
 
     TEST_ASSERT_TRUE_MESSAGE(s_rx_fired, "No RX frame captured for dash LED command");
     TEST_ASSERT_EQUAL_UINT32(CAN_ID_DASH_CMD, s_rx_id);
-    TEST_ASSERT_EQUAL_UINT8(5, s_rx_len);
-    TEST_ASSERT_EQUAL_UINT8(cmd.imd_ok, s_rx_data[0]);
-    TEST_ASSERT_EQUAL_UINT8(cmd.bms_ok, s_rx_data[1]);
-    TEST_ASSERT_EQUAL_UINT8(cmd.rtd,    s_rx_data[2]);
-    TEST_ASSERT_EQUAL_UINT8(cmd.fault,  s_rx_data[3]);
-    // byte 4 is led_test, managed by boot timer just verify it is 0 or 1
-    TEST_ASSERT_LESS_OR_EQUAL_UINT8(1u, s_rx_data[4]);
+    TEST_ASSERT_EQUAL_UINT8(3, s_rx_len);
+    TEST_ASSERT_EQUAL_UINT8(0,          s_rx_data[0]); // reserved
+    TEST_ASSERT_EQUAL_UINT8(cmd.imd_ok, s_rx_data[1]);
+    TEST_ASSERT_EQUAL_UINT8(cmd.bms_ok, s_rx_data[2]);
 
     can_bus_set_rx_hook(NULL);
     can_bus_init(&hcan1, CAN_MODE_NORMAL);
@@ -115,28 +110,28 @@ void test_can_dash_led_msg(void) {
 // Transmits a sequence of LED commands to the dash on the real bus.
 // Watch the dash physically to confirm LEDs respond.
 void test_can_dash_leds_live(void) {
-    // All LEDs off
-    DashLedCmd_t cmd = { .imd_ok = 0u, .bms_ok = 0u, .rtd = 0u, .fault = 0u };
+    // Both off
+    DashLedCmd_t cmd = { .imd_ok = 0u, .bms_ok = 0u };
     dash_set_leds(&cmd);
-    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: all off");
+    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: both off");
     osDelay(750);
 
-    // All LEDs on
-    cmd = (DashLedCmd_t){ .imd_ok = 1u, .bms_ok = 1u, .rtd = 1u, .fault = 1u };
+    // Both on
+    cmd = (DashLedCmd_t){ .imd_ok = 1u, .bms_ok = 1u };
     dash_set_leds(&cmd);
-    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: all on");
+    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: both on");
     osDelay(750);
 
-    // Fault only
-    cmd = (DashLedCmd_t){ .imd_ok = 0u, .bms_ok = 0u, .rtd = 0u, .fault = 1u };
+    // IMD only
+    cmd = (DashLedCmd_t){ .imd_ok = 1u, .bms_ok = 0u };
     dash_set_leds(&cmd);
-    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: fault only");
+    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: IMD only");
     osDelay(750);
 
-    // Normal running state: IMD ok, BMS ok, RTD active, no fault
-    cmd = (DashLedCmd_t){ .imd_ok = 1u, .bms_ok = 1u, .rtd = 1u, .fault = 0u };
+    // BMS only
+    cmd = (DashLedCmd_t){ .imd_ok = 0u, .bms_ok = 1u };
     dash_set_leds(&cmd);
-    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: normal running");
+    TEST_ASSERT_TRUE_MESSAGE(dash_tx_cmd(), "TX failed: BMS only");
     osDelay(750);
 }
 

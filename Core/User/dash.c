@@ -1,16 +1,12 @@
 #include "dash.h"
 #include "can_bus.h"
 #include "cmsis_os2.h"
-#include "stm32f4xx_hal.h"
 
-static DashLedCmd_t s_leds      = {0};
-static osMutexId_t  s_mutex     = NULL;
-static uint32_t     s_boot_tick = 0;
-
+static DashLedCmd_t s_leds  = {0};
+static osMutexId_t  s_mutex = NULL;
 
 void dash_init(void) {
-    s_mutex     = osMutexNew(NULL);
-    s_boot_tick = HAL_GetTick();
+    s_mutex = osMutexNew(NULL);
 }
 
 void dash_set_leds(const DashLedCmd_t *cmd) {
@@ -28,14 +24,10 @@ bool dash_tx_cmd(void) {
     snap = s_leds;
     osMutexRelease(s_mutex);
 
-    uint8_t led_test = (HAL_GetTick() - s_boot_tick) < DASH_LED_TEST_MS ? 1u : 0u;
-
-    uint8_t frame[5] = {
+    uint8_t frame[3] = {
+        0,
         snap.imd_ok,
         snap.bms_ok,
-        snap.rtd,
-        snap.fault,
-        led_test,
     };
     return can_bus_transmit(CAN_ID_DASH_CMD, frame, sizeof(frame));
 }

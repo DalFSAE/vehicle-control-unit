@@ -55,8 +55,6 @@ void fsm_task(void *arg) {
         DashLedCmd_t leds = {
             .imd_ok = 1u,
             .bms_ok = 1u,
-            .rtd    = (state == ST_FORWARD || state == ST_REVERSE) ? 1u : 0u,
-            .fault  = (in.fault_flags != FAULT_NONE) ? 1u : 0u,
         };
         dash_set_leds(&leds);
 
