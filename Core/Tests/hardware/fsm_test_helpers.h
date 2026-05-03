@@ -4,7 +4,7 @@
 #include "fsm.h"
 #include <stdint.h>
 
-#define FSM_SETTLE_MS (FSM_PERIOD_MS * 4u)
+#define FSM_SETTLE_MS (FSM_PERIOD_MS * 8u)
 
 // Shared spoof state 
 // modify fields then call vcu_spoof_inputs(&g_spoof).
