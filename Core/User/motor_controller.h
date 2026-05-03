@@ -44,3 +44,4 @@ extern const CanNode_t inverter_node;
 bool     mc_is_ready(void);     // VSM state >= MC_VSM_READY
 bool     mc_has_timeout(void);  // time since last M170 > MC_HEARTBEAT_TIMEOUT_MS
 uint32_t mc_fault_bitmap(void); // post_fault | run_fault, for telemetry
+uint8_t  mc_vsm_state(void);    // raw VSM state, for change-detection logging in can_task

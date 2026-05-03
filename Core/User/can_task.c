@@ -20,7 +20,9 @@ void can_task_register_handle(osThreadId_t handle) {
 void can_task(void *arg) {
     (void)arg;
 
-    uint8_t rolling_counter = 0;
+    uint8_t  rolling_counter   = 0;
+    uint8_t  prev_vsm_state    = mc_vsm_state();
+    uint32_t prev_fault_bitmap = mc_fault_bitmap();
 
     for (;;) {
         MotorControllerCmd_t cmd;
@@ -28,6 +30,21 @@ void can_task(void *arg) {
         cmd.rolling_counter = rolling_counter++ & 0x0Fu;
         can_tx_send_inverter_cmd(&cmd);
         dash_tx_cmd();
+
+        uint8_t  vsm    = mc_vsm_state();
+        uint32_t faults = mc_fault_bitmap();
+
+        if (vsm != prev_vsm_state) {
+            LOG_EVENT(LOG_LEVEL_INFO, EVT_STATE_CHANGE, prev_vsm_state, vsm);
+            prev_vsm_state = vsm;
+        }
+
+        if (faults != prev_fault_bitmap) {
+            LogEventId_t evt = (faults != 0u) ? EVT_FAULT_SET : EVT_FAULT_CLEAR;
+            LogLevel_t   lvl = (faults != 0u) ? LOG_LEVEL_ERROR : LOG_LEVEL_INFO;
+            LOG_EVENT(lvl, evt, prev_fault_bitmap, faults);
+            prev_fault_bitmap = faults;
+        }
 
         osDelay(CAN_TASK_PERIOD_MS);
     }

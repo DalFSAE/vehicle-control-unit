@@ -1,7 +1,6 @@
 #define LOG_MODULE LOG_SRC_MC
 #include "motor_controller.h"
 #include "can_bus.h"
-#include "log.h"
 #include "can0_powertrain.h"
 #include "node.h"
 #include "cmsis_os2.h"
@@ -28,7 +27,6 @@ static osMutexId_t          s_cmd_mutex = NULL;
 
 void motor_controller_init(void) {
     s_cmd_mutex = osMutexNew(NULL);
-    LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, 0u, 0u);
 }
 
 // Command cache
@@ -78,10 +76,7 @@ void inverter_rx(uint32_t id, const uint8_t *data, size_t len) {
         case CAN0_POWERTRAIN_M170_INTERNAL_STATES_FRAME_ID: {
             struct can0_powertrain_m170_internal_states_t m;
             if (can0_powertrain_m170_internal_states_unpack(&m, data, len) == 0) {
-                if (m.inv_vsm_state != s_inv.vsm_state) {
-                    LOG_EVENT(LOG_LEVEL_INFO, EVT_STATE_CHANGE, s_inv.vsm_state, m.inv_vsm_state);
-                    s_inv.vsm_state = m.inv_vsm_state;
-                }
+                s_inv.vsm_state       = m.inv_vsm_state;
                 s_inv.last_rx_tick_ms = HAL_GetTick();
             }
             break;
@@ -89,15 +84,8 @@ void inverter_rx(uint32_t id, const uint8_t *data, size_t len) {
         case CAN0_POWERTRAIN_M171_FAULT_CODES_FRAME_ID: {
             struct can0_powertrain_m171_fault_codes_t m;
             if (can0_powertrain_m171_fault_codes_unpack(&m, data, len) == 0) {
-                uint32_t prev_faults = s_inv.post_fault | s_inv.run_fault;
                 s_inv.post_fault = ((uint32_t)m.inv_post_fault_hi << 16) | m.inv_post_fault_lo;
-                s_inv.run_fault = ((uint32_t)m.inv_run_fault_hi << 16) | m.inv_run_fault_lo;
-                uint32_t new_faults = s_inv.post_fault | s_inv.run_fault;
-                if (new_faults != prev_faults) {
-                    LogEventId_t evt = (new_faults != 0u) ? EVT_FAULT_SET : EVT_FAULT_CLEAR;
-                    LogLevel_t   lvl = (new_faults != 0u) ? LOG_LEVEL_ERROR : LOG_LEVEL_INFO;
-                    LOG_EVENT(lvl, evt, prev_faults, new_faults);
-                }
+                s_inv.run_fault  = ((uint32_t)m.inv_run_fault_hi  << 16) | m.inv_run_fault_lo;
             }
             break;
         }
@@ -131,4 +119,8 @@ bool mc_has_timeout(void) {
 
 uint32_t mc_fault_bitmap(void) {
     return s_inv.post_fault | s_inv.run_fault;
+}
+
+uint8_t mc_vsm_state(void) {
+    return s_inv.vsm_state;
 }
