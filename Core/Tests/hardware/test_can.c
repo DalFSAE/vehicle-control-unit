@@ -107,6 +107,31 @@ void test_can_dash_led_msg(void) {
     osThreadResume(can_task_get_handle());
 }
 
+void test_can_dash_fault_msg(void) {
+    osThreadSuspend(can_task_get_handle());
+
+    can_bus_init(&hcan1, CAN_MODE_LOOPBACK);
+    can_bus_set_rx_hook(capture_rx);
+    s_rx_fired = false;
+
+    DashLedCmd_t cmd = { .imd_ok = 0u, .bms_ok = 0u };
+    dash_set_leds(&cmd);
+    dash_tx_cmd();
+
+    osDelay(20);
+
+    TEST_ASSERT_TRUE_MESSAGE(s_rx_fired, "No RX frame captured for dash fault command");
+    TEST_ASSERT_EQUAL_UINT32(CAN_ID_DASH_CMD, s_rx_id);
+    TEST_ASSERT_EQUAL_UINT8(3, s_rx_len);
+    TEST_ASSERT_EQUAL_UINT8(0u, s_rx_data[0]); // reserved
+    TEST_ASSERT_EQUAL_UINT8(0u, s_rx_data[1]); // imd_ok off
+    TEST_ASSERT_EQUAL_UINT8(0u, s_rx_data[2]); // bms_ok off
+
+    can_bus_set_rx_hook(NULL);
+    can_bus_init(&hcan1, CAN_MODE_NORMAL);
+    osThreadResume(can_task_get_handle());
+}
+
 // Transmits a sequence of LED commands to the dash on the real bus.
 // Watch the dash physically to confirm LEDs respond.
 void test_can_dash_leds_live(void) {
@@ -147,6 +172,7 @@ BootResult_t run_can_tests(void) {
     UNITY_BEGIN();
     RUN_TEST(test_can_loopback);
     RUN_TEST(test_can_dash_led_msg);
+    RUN_TEST(test_can_dash_fault_msg);
     RUN_TEST(test_can_dash_leds_live);
     RUN_TEST(test_if_inverter_alive);
     RUN_TEST(test_if_bms_alive);
