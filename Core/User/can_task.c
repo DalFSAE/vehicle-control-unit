@@ -3,6 +3,7 @@
 
 #include "can_task.h"
 #include "motor_controller.h"
+#include "dash.h"
 #include "vehicle_state.h"
 #include "cmsis_os2.h"
 
@@ -26,6 +27,7 @@ void can_task(void *arg) {
         motor_controller_get_cmd(&cmd);
         cmd.rolling_counter = rolling_counter++ & 0x0Fu;
         can_tx_send_inverter_cmd(&cmd);
+        dash_tx_cmd();
 
         osDelay(CAN_TASK_PERIOD_MS);
     }

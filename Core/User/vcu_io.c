@@ -10,6 +10,7 @@
 #include "sensor_control.h"
 #include "input_control.h"
 #include "dio.h"
+#include "dash.h"
 
 // HIL spoof
 static bool s_spoof_active = false;
@@ -70,8 +71,15 @@ void vcu_apply_outputs(const VcuOutputs *out) {
     dio_write(MC_BRAKE_SW,  out->mc_brake_sw);
 
     // Buzzer
-    if (out->buzzer_beep_ms) buzzer_beep(out->buzzer_beep_ms);
+    if (out->buzzer_beep_ms) buzzer_beep(out->buzzer_beep_ms);        
     buzzer_update();
+
+    // Dash LEDs
+    DashLedCmd_t leds = {
+        .imd_ok = 1u,
+        .bms_ok = 1u,
+    };
+    dash_set_leds(&leds);
 
     // Motor direction
     mc_set_direction(out->motor_direction);
