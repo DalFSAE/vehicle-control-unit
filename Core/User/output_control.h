@@ -2,7 +2,7 @@
 
 #include "stdbool.h"
 #include <stdint.h>
-#include "vehicle_state.h"
+#include "vcu_io.h"
 
 
 void buzzer_init(void);

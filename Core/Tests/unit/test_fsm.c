@@ -15,7 +15,7 @@
 
 // Real firmware headers
 #include "unity.h"
-#include "vehicle_state.h"
+#include "vcu_io.h"
 #include "fsm.h"
 
 // Helpers

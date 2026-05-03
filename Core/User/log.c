@@ -140,7 +140,7 @@ static const char *log_sensor_channel_str(uint32_t sensor_channel) {
     }
 }
 
-// Keep in sync with FaultFlags_t in vehicle_state.h.
+// Keep in sync with FaultFlags_t in vcu_io.h.
 static const char *log_fault_flag_str(uint32_t flag) {
     switch (flag) {
         case (1u << 0): return "APPS_DISAGREE";

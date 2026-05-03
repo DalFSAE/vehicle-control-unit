@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "vcu_io.h"
-#include "vehicle_state.h"
+#include "vcu_io.h"
 #include "board_outputs.h"
 #include "output_control.h"
 #include "motor_controller.h"
@@ -95,3 +95,4 @@ void vcu_apply_outputs(const VcuOutputs *out) {
     };
     motor_controller_set_cmd(&cmd);
 }
+

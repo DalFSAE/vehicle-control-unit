@@ -4,7 +4,7 @@
 #include "can_task.h"
 #include "motor_controller.h"
 #include "dash.h"
-#include "vehicle_state.h"
+#include "vcu_io.h"
 #include "cmsis_os2.h"
 
 static osThreadId_t s_can_thread = NULL;

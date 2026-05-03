@@ -13,7 +13,7 @@
 
 #include "sensor_control.h"
 #include "pedal_logic.h"
-#include "vehicle_state.h"
+#include "vcu_io.h"
 
 #define ADC_RESOLUTION_MAX 4096
 #define ADC_BUFFER_LEN 8
