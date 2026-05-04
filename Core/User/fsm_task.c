@@ -2,7 +2,7 @@
 
 #include "fsm_task.h"
 #include "fsm.h"
-#include "vehicle_state.h"
+#include "vcu_io.h"
 #include "vcu_io.h"
 #include "dash.h"
 #include "cmsis_os2.h"

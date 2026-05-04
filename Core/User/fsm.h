@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vehicle_state.h"
+#include "vcu_io.h"
 
 // Response taken when a fault is detected by the vehicle.
 typedef enum {

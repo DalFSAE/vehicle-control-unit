@@ -10,12 +10,11 @@
 #define LOG_SRC_FSM 0
 #define LOG_LEVEL_ERROR 0
 #define EVT_FAULT_SET 0
-#define LOG_EVENT(lvl, evt, ...) ((void)0)
 #endif
 
 // Real firmware headers
 #include "unity.h"
-#include "vehicle_state.h"
+#include "vcu_io.h"
 #include "fsm.h"
 
 // Helpers
