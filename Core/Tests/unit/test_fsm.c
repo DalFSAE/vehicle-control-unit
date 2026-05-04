@@ -10,7 +10,6 @@
 #define LOG_SRC_FSM 0
 #define LOG_LEVEL_ERROR 0
 #define EVT_FAULT_SET 0
-#define LOG_EVENT(lvl, evt, ...) ((void)0)
 #endif
 
 // Real firmware headers

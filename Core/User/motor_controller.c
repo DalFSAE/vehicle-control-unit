@@ -1,4 +1,3 @@
-#define LOG_MODULE LOG_SRC_MC
 #include "motor_controller.h"
 #include "can_bus.h"
 #include "can0_powertrain.h"
