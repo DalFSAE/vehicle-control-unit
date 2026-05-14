@@ -7,6 +7,8 @@ typedef struct {
     uint16_t ignored;
 } BootResult_t;
 
+BootResult_t make_result(void);
+
 // Run before the OS scheduler starts. No osDelay allowed.
 BootResult_t hardware_test_pre_boot(void);
 
