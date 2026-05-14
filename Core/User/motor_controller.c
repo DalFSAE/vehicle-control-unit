@@ -10,7 +10,6 @@
 #include <string.h>
 #include <stddef.h>
 
-extern CAN_HandleTypeDef hcan1;
 
 // Private inverter state written from ISR, read from task context.
 static struct {
@@ -30,7 +29,6 @@ static osMutexId_t          s_cmd_mutex = NULL;
 
 void motor_controller_init(void) {
     s_cmd_mutex = osMutexNew(NULL);
-    can_bus_init(&hcan1, CAN_MODE_NORMAL);
     LOG_EVENT(LOG_LEVEL_INFO, EVT_BOOT, 0u, 0u);
 }
 
