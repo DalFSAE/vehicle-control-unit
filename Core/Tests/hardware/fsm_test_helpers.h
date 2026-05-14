@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vehicle_state.h"
+#include "vcu_io.h"
 #include "fsm.h"
 #include <stdint.h>
 

@@ -4,7 +4,7 @@
 #include "unity.h"
 #include "fsm.h"
 #include "fsm_task.h"
-#include "vehicle_state.h"
+#include "vcu_io.h"
 #include "vcu_io.h"
 #include "board_outputs.h"
 #include "cmsis_os2.h"
