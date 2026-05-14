@@ -30,5 +30,4 @@ add_test_suite(test_internals
     unity.c
     stubs.c
     test_internals.c
-    ../../User/vehicle_state.c
 )

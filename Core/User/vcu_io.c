@@ -3,13 +3,14 @@
 #include <string.h>
 
 #include "vcu_io.h"
-#include "vehicle_state.h"
+#include "vcu_io.h"
 #include "board_outputs.h"
 #include "output_control.h"
 #include "motor_controller.h"
 #include "sensor_control.h"
 #include "input_control.h"
 #include "dio.h"
+#include "dash.h"
 
 // HIL spoof
 static bool s_spoof_active = false;
@@ -70,7 +71,7 @@ void vcu_apply_outputs(const VcuOutputs *out) {
     dio_write(MC_BRAKE_SW,  out->mc_brake_sw);
 
     // Buzzer
-    if (out->buzzer_beep_ms) buzzer_beep(out->buzzer_beep_ms);
+    if (out->buzzer_beep_ms) buzzer_beep(out->buzzer_beep_ms);        
     buzzer_update();
 
     // Motor direction
@@ -87,3 +88,4 @@ void vcu_apply_outputs(const VcuOutputs *out) {
     };
     motor_controller_set_cmd(&cmd);
 }
+

@@ -4,6 +4,7 @@
 #include "can_bus.h"
 #include "node.h"
 #include "motor_controller.h"
+#include "dash.h"
 #include "can0_powertrain.h"
 
 #include <string.h>
@@ -87,6 +88,7 @@ static void can_bus_dispatch(uint32_t id, const uint8_t *data, size_t len) {
         case CAN0_POWERTRAIN_M170_INTERNAL_STATES_FRAME_ID:
         case CAN0_POWERTRAIN_M171_FAULT_CODES_FRAME_ID:
         case CAN0_POWERTRAIN_M172_TORQUE_AND_TIMER_INFO_FRAME_ID: inverter_rx(id, data, len); break;
+        case CAN_ID_DASH_STATUS: dash_rx(id, data, len); break;
         default: break;
     }
 }

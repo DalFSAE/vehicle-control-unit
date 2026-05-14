@@ -75,7 +75,8 @@ BootResult_t hardware_test_post_boot(void) {
 void hardware_post_test_task(void *argument) {
     (void)argument;
     log_printf("===BEGIN_HIL_TESTS===\r\n");
-    hardware_test_post_boot();
+    BootResult_t result = hardware_test_post_boot();
+    log_printf("===END_HIL_TESTS: %u run, %u failed===\r\n", result.tests_run, result.failures);
     log_printf("===BEGIN_CAN_TESTS===\r\n");
     run_can_tests();
     log_printf("===BEGIN_MC_TESTS===\r\n");

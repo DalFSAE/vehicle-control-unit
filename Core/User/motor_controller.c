@@ -58,18 +58,17 @@ void can_tx_send_inverter_cmd(const MotorControllerCmd_t *cmd) {
 
     struct can0_powertrain_m192_command_message_t msg;
     can0_powertrain_m192_command_message_init(&msg);
-
-    msg.vcu_inv_torque_command =
-        can0_powertrain_m192_command_message_vcu_inv_torque_command_encode(cmd->torque_command_nm);
-    msg.vcu_inv_torque_limit_command =
-        can0_powertrain_m192_command_message_vcu_inv_torque_limit_command_encode(cmd->torque_limit_nm);
-    msg.vcu_inv_speed_command =
-        can0_powertrain_m192_command_message_vcu_inv_speed_command_encode(cmd->speed_command_rpm);
-    msg.vcu_inv_inverter_enable = cmd->inv_enable ? 1u : 0u;
-    msg.vcu_inv_inverter_discharge = cmd->inv_discharge ? 1u : 0u;
-    msg.vcu_inv_speed_mode_enable = cmd->speed_mode_enable ? 1u : 0u;
-    msg.vcu_inv_direction_command = cmd->motor_direction_forward ? 1u : 0u;
-    msg.vcu_inv_rolling_counter = cmd->rolling_counter;
+    msg.vcu_inv_torque_command          
+        = can0_powertrain_m192_command_message_vcu_inv_torque_command_encode(cmd->torque_command_nm);
+    msg.vcu_inv_torque_limit_command    
+        = can0_powertrain_m192_command_message_vcu_inv_torque_limit_command_encode(cmd->torque_limit_nm);
+    msg.vcu_inv_speed_command           
+        = can0_powertrain_m192_command_message_vcu_inv_speed_command_encode(cmd->speed_command_rpm);
+    msg.vcu_inv_inverter_enable     = cmd->inv_enable ? 1u : 0u;
+    msg.vcu_inv_inverter_discharge  = cmd->inv_discharge ? 1u : 0u;
+    msg.vcu_inv_speed_mode_enable   = cmd->speed_mode_enable ? 1u : 0u;
+    msg.vcu_inv_direction_command   = cmd->motor_direction_forward ? 1u : 0u;
+    msg.vcu_inv_rolling_counter     = cmd->rolling_counter;
 
     uint8_t buf[CAN0_POWERTRAIN_M192_COMMAND_MESSAGE_LENGTH];
     can0_powertrain_m192_command_message_pack(buf, &msg, sizeof(buf));
@@ -108,10 +107,8 @@ void inverter_rx(uint32_t id, const uint8_t *data, size_t len) {
         case CAN0_POWERTRAIN_M172_TORQUE_AND_TIMER_INFO_FRAME_ID: {
             struct can0_powertrain_m172_torque_and_timer_info_t m;
             if (can0_powertrain_m172_torque_and_timer_info_unpack(&m, data, len) == 0) {
-                s_inv.torque_cmd_nm = (float)can0_powertrain_m172_torque_and_timer_info_inv_commanded_torque_decode(
-                    m.inv_commanded_torque);
-                s_inv.torque_fb_nm =
-                    (float)can0_powertrain_m172_torque_and_timer_info_inv_torque_feedback_decode(m.inv_torque_feedback);
+                s_inv.torque_cmd_nm = (float)can0_powertrain_m172_torque_and_timer_info_inv_commanded_torque_decode(m.inv_commanded_torque);
+                s_inv.torque_fb_nm  = (float)can0_powertrain_m172_torque_and_timer_info_inv_torque_feedback_decode(m.inv_torque_feedback);
             }
             break;
         }
@@ -137,4 +134,8 @@ bool mc_has_timeout(void) {
 
 uint32_t mc_fault_bitmap(void) {
     return s_inv.post_fault | s_inv.run_fault;
+}
+
+uint8_t mc_vsm_state(void) {
+    return s_inv.vsm_state;
 }

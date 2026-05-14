@@ -1,5 +1,5 @@
 #include "pedal_logic.h"
-#include "vehicle_state.h"
+#include "vcu_io.h"
 #include <math.h>
 
 // Math helpers
