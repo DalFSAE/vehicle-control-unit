@@ -1,72 +1,91 @@
 // vcu_io.c
 #include <stddef.h>
+#include <string.h>
 
 #include "vcu_io.h"
-#include "vehicle_state.h"
+#include "vcu_io.h"
 #include "board_outputs.h"
 #include "output_control.h"
-#include "torque_output.h"
+#include "motor_controller.h"
+#include "sensor_control.h"
+#include "input_control.h"
 #include "dio.h"
+#include "dash.h"
 
-// returns true only on the rising edge of *signal
-// prev_state must be a persistent bool, zero-initialized
-bool rising_edge(bool signal, bool *prev_state)
-{
-    bool edge = signal && !(*prev_state);
-    *prev_state = signal;
+// HIL spoof
+static bool s_spoof_active = false;
+static VcuInputs s_spoof = {0};
+
+void vcu_spoof_inputs(const VcuInputs *spoof) {
+    if (spoof == NULL) return;
+    s_spoof        = *spoof;
+    s_spoof_active = true;
+}
+
+void vcu_clear_spoof(void) {
+    s_spoof_active = false;
+}
+
+
+// Edge detection helper (persistent prev state per call site)
+static bool rising_edge(bool signal, bool *prev) {
+    bool edge = signal && !(*prev);
+    *prev = signal;
     return edge;
 }
 
-void vcu_read_inputs(VcuInputs *in) {
+// Gather inputs from hardware/sensors into *in. Called by main loop.
+void vcu_gather_inputs(VcuInputs *in) {
     if (in == NULL) return;
 
-    static bool rtd_prev = false;
+    if (s_spoof_active) {
+        *in = s_spoof;
+        return;
+    }
 
-#if MOCK_IO
-    // todo: connect to external interface. Possibly python over USB
-    in->throttle_request    = 0.5;
-    in->brake_pressed       = true;
-    in->fault_flags         = g_vcu.fault_flags;
-    in->rtd_button          = g_vcu.rtd_button + true;
-    in->fwrd_switch         = g_vcu.fwrd_switch;
-    in->ts_active           = true;
-#else
-    in->throttle_request    = g_vcu.throttle_request;
-    in->brake_pressed       = g_vcu.brake_pressed;
-    in->fault_flags         = g_vcu.fault_flags;
-    in->rtd_button          = rising_edge(g_vcu.rtd_button, &rtd_prev);
-    in->fwrd_switch         = g_vcu.fwrd_switch;
-    in->ts_active           = g_can.ts_active; // todo: get from CAN bus
-#endif
+    static bool rtd_prev = false;
+    bool rtd_raw = read_pcb_user_button() || read_ready_to_drive_button();
+
+    in->throttle_request = sensor_get_throttle();
+    in->brake_pressed    = sensor_get_brake();
+    in->fault_flags      = sensor_get_fault_flags();
+    if (mc_has_timeout()) in->fault_flags |= FAULT_CAN_TIMEOUT;
+    in->rtd_button       = rising_edge(rtd_raw, &rtd_prev);
+    in->fwrd_switch      = read_forward_switch();
+    in->rvrs_switch      = false; // no reverse switch wired yet
+    in->ts_active        = mc_is_ready();
 }
 
+// Apply outputs to hardware
 void vcu_apply_outputs(const VcuOutputs *out) {
     if (out == NULL) return;
-    
+
     // Relays
-    out->relay_always_on ? board_output_enable(OUTPUT_ALWAYS_ON) : board_output_disable(OUTPUT_ALWAYS_ON);
-    out->relay_inverter ? board_output_enable(OUTPUT_INVERTER) : board_output_disable(OUTPUT_INVERTER);
-    out->brake_light ? board_output_enable(OUTPUT_BRAKE_LIGHT) : board_output_disable(OUTPUT_BRAKE_LIGHT);
-    
+    out->relay_always_on ? board_output_enable(OUTPUT_ALWAYS_ON)    : board_output_disable(OUTPUT_ALWAYS_ON);
+    out->relay_inverter  ? board_output_enable(OUTPUT_INVERTER)     : board_output_disable(OUTPUT_INVERTER);
+    out->brake_light     ? board_output_enable(OUTPUT_BRAKE_LIGHT)  : board_output_disable(OUTPUT_BRAKE_LIGHT);
+
     // Digital outputs
     dio_write(CAN_WATCHDOG, out->can_watchdog);
-    dio_write(TSSI_EN, out->tssi_en);
-    dio_write(MC_BRAKE_SW, out->mc_brake_sw);
-    
+    dio_write(TSSI_EN,      out->tssi_en);
+    dio_write(MC_BRAKE_SW,  out->mc_brake_sw);
+
     // Buzzer
-    if (out->buzzer_beep_ms) {
-        buzzer_beep(out->buzzer_beep_ms);
-    }
+    if (out->buzzer_beep_ms) buzzer_beep(out->buzzer_beep_ms);        
     buzzer_update();
 
-    // Motor direction and torque
+    // Motor direction
     mc_set_direction(out->motor_direction);
-    torque_output_update(out->throttle_request, out->throttle_enabled);
-    
-    // todo: Send CAN command messages:
-    // HVC command
-    // BMS command 
-    // INV command
-    // DAQ command
-    
+
+    // Build motor controller command and push to cache (can_task sends it).
+    MotorControllerCmd_t cmd = {
+        .inv_enable              = out->throttle_enabled,
+        .motor_direction_forward = (out->motor_direction == MOTOR_DIR_FORWARD),
+        .torque_command_nm       = out->throttle_enabled ? out->throttle_request * MC_TORQUE_MAX_NM : 0.0f,
+        .torque_limit_nm         = MC_TORQUE_LIMIT_NM,
+        .inv_discharge           = false,
+        .speed_mode_enable       = false,
+    };
+    motor_controller_set_cmd(&cmd);
 }
+

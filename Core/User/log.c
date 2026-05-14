@@ -24,7 +24,7 @@ static osMessageQueueId_t s_log_queue;
 // log_putchar
 // ---------------------------------------------------------------------------
 
-#define LOG_PUTCHAR_LINE_LEN 128U
+#define LOG_PUTCHAR_LINE_LEN 240U
 #define LOG_PUTCHAR_MAX_LINES 64U
 
 static char    s_line_buf[LOG_PUTCHAR_LINE_LEN];
@@ -107,7 +107,8 @@ static const char *log_source_str(LogSource_t source) {
         case LOG_SRC_CAN: return "CAN";
         case LOG_SRC_FAULT: return "FAULT";
         case LOG_SRC_TORQUE: return "TORQUE";
-        case LOG_SRC_LOG: return "LOG";
+        case LOG_SRC_MC:    return "MC";
+        case LOG_SRC_LOG:   return "LOG";
         default: return "UNK";
     }
 }
@@ -139,7 +140,7 @@ static const char *log_sensor_channel_str(uint32_t sensor_channel) {
     }
 }
 
-// Keep in sync with FaultFlags_t in vehicle_state.h.
+// Keep in sync with FaultFlags_t in vcu_io.h.
 static const char *log_fault_flag_str(uint32_t flag) {
     switch (flag) {
         case (1u << 0): return "APPS_DISAGREE";
@@ -170,6 +171,44 @@ static const char *log_fsm_state_str(uint32_t state) {
     }
 }
 
+// Keep in sync with Rinehart PM100 VSM state table.
+static const char *log_mc_vsm_state_str(uint32_t state) {
+    switch (state) {
+        case 0u: return "START";
+        case 1u: return "PRECHARGE_INIT";
+        case 2u: return "PRECHARGE_ACTIVE";
+        case 3u: return "PRECHARGE_COMPLETE";
+        case 4u: return "WAIT";
+        case 5u: return "READY";
+        case 6u: return "RUNNING";
+        case 7u: return "FAULT";
+        default: return "UNKNOWN";
+    }
+}
+
+// Keep in sync with pack_outputs() in fsm_task.c.
+static int fmt_io_change(char *buf, size_t size, const LogEvent_t *event) {
+    uint32_t bits    = event->a0;
+    uint32_t thr_mpt = event->a1; // throttle * 1000
+    return snprintf(buf, size,
+        "[%8lu] %-5s %-6s %-14s "
+        "relay_on=%u inv=%u brake_lt=%u mc_brk=%u wdog=%u tssi=%u dir=%s thr_en=%u thr=%lu.%lu%%\r\n",
+        (unsigned long)event->time_ms,
+        log_level_str(event->level),
+        log_source_str(event->source),
+        log_event_str(event->event_id),
+        (bits >> 0u) & 1u,
+        (bits >> 1u) & 1u,
+        (bits >> 2u) & 1u,
+        (bits >> 3u) & 1u,
+        (bits >> 4u) & 1u,
+        (bits >> 5u) & 1u,
+        ((bits >> 6u) & 1u) ? "REV" : "FWD",
+        (bits >> 7u) & 1u,
+        (unsigned long)(thr_mpt / 10u),
+        (unsigned long)(thr_mpt % 10u));
+}
+
 // ---------------------------------------------------------------------------
 // Sinks: target for events
 // ---------------------------------------------------------------------------
@@ -179,18 +218,36 @@ static void sink_uart_event(const LogEvent_t *event) {
     char buf[UART_BUF_SIZE];
     int  len;
 
-    if (event->event_id == EVT_SENSOR_DEBUG) {
+    if (event->event_id == EVT_IO_CHANGE) {
+        len = fmt_io_change(buf, sizeof(buf), event);
+    } else if (event->event_id == EVT_SENSOR_DEBUG) {
         len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s channel=%s value=%lu\r\n",
                        (unsigned long)event->time_ms, log_level_str(event->level), log_source_str(event->source),
                        log_event_str(event->event_id), log_sensor_channel_str(event->a0), (unsigned long)event->a1);
-    } else if (event->event_id == EVT_FAULT_SET) {
-        len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s %s -> %s\r\n", (unsigned long)event->time_ms,
-                       log_level_str(event->level), log_source_str(event->source), log_event_str(event->event_id),
-                       log_fault_flag_str(event->a0), log_fault_resp_str(event->a1));
+    } else if (event->event_id == EVT_FAULT_SET || event->event_id == EVT_FAULT_CLEAR) {
+        if (event->source == LOG_SRC_MC) {
+            len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s faults 0x%04lX -> 0x%04lX\r\n",
+                           (unsigned long)event->time_ms, log_level_str(event->level),
+                           log_source_str(event->source), log_event_str(event->event_id),
+                           (unsigned long)event->a0, (unsigned long)event->a1);
+        } else {
+            len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s %s -> %s\r\n",
+                           (unsigned long)event->time_ms, log_level_str(event->level),
+                           log_source_str(event->source), log_event_str(event->event_id),
+                           log_fault_flag_str(event->a0), log_fault_resp_str(event->a1));
+        }
     } else if (event->event_id == EVT_STATE_CHANGE) {
-        len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s %s -> %s\r\n", (unsigned long)event->time_ms,
-                       log_level_str(event->level), log_source_str(event->source), log_event_str(event->event_id),
-                       log_fsm_state_str(event->a0), log_fsm_state_str(event->a1));
+        if (event->source == LOG_SRC_MC) {
+            len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s %s -> %s\r\n",
+                           (unsigned long)event->time_ms, log_level_str(event->level),
+                           log_source_str(event->source), log_event_str(event->event_id),
+                           log_mc_vsm_state_str(event->a0), log_mc_vsm_state_str(event->a1));
+        } else {
+            len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s %s -> %s\r\n",
+                           (unsigned long)event->time_ms, log_level_str(event->level),
+                           log_source_str(event->source), log_event_str(event->event_id),
+                           log_fsm_state_str(event->a0), log_fsm_state_str(event->a1));
+        }
     } else {
         len = snprintf(buf, sizeof(buf), "[%8lu] %-5s %-6s %-14s a0=%lu a1=%lu\r\n", (unsigned long)event->time_ms,
                        log_level_str(event->level), log_source_str(event->source), log_event_str(event->event_id),

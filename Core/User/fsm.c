@@ -108,7 +108,8 @@ static FsmEvent_t forward_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
         return fault_response_to_event(cfg->sensor_range);
     }
 
-    out->throttle_enabled = true;
+    out->throttle_enabled  = true;
+    out->throttle_request  = in->throttle_request;
     return FSM_EV_OK;
 }
 static FsmEvent_t reverse_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
