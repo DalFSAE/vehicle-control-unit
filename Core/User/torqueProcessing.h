@@ -1,5 +1,7 @@
+#include <stdbool.h>
 //struct containing configurables that will impact the torque algorithm calculation
 //these variables were selected via the torque parameters graph on page 53 of https://github.com/DalFSAE/motor-controller-fw/blob/main/docs/Software%20User%20Manual%20(V3_6)%20(1).pdf
+//regenerative torque is assumed to be negative.
 typedef struct{
     float peddle_lo; //deadzone, ignore anything below this value, e.g. 0.05 -> ignore below 5%
     float peddle_hi; //deadzone, ignore anything above this value, e.g. 0.95 -> ignore above 95%
