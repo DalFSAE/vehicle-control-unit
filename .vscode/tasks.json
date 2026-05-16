@@ -1,23 +1,15 @@
 {
     "version": "2.0.0",
-    "windows": {
-        "options": {
-            "shell": {
-                "executable": "cmd.exe",
-                "args": ["/d", "/c"]
-            }
-        }
-    },
     "tasks": [
         {
-            "type": "cppbuild",
+            "type": "shell",
             "label": "Build project",
             "command": "cmake",
             "args": ["--build", "${command:cmake.buildDirectory}", "-j", "8"],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "problemMatcher": ["$gcc"],
+            "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -31,7 +23,7 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "problemMatcher": ["$gcc"]
+            "problemMatcher": []
         },
         {
             "type": "shell",
@@ -80,6 +72,38 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Unit Tests: Configure",
+            "command": "cmake",
+            "args": ["-B", "build", "-DCMAKE_BUILD_TYPE=Debug"],
+            "options": {
+                "cwd": "${workspaceFolder}/Core/Tests/unit"
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Unit Tests: Build",
+            "command": "cmake",
+            "args": ["--build", "build", "-j", "8"],
+            "options": {
+                "cwd": "${workspaceFolder}/Core/Tests/unit"
+            },
+            "dependsOn": "Unit Tests: Configure",
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Unit Tests: Run",
+            "command": "ctest",
+            "args": ["--test-dir", "build", "--output-on-failure"],
+            "options": {
+                "cwd": "${workspaceFolder}/Core/Tests/unit"
+            },
+            "dependsOn": "Unit Tests: Build",
             "problemMatcher": []
         },
         {
