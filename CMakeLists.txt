@@ -12,6 +12,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
+
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
@@ -20,16 +21,17 @@ endif()
 # Set the project name
 set(CMAKE_PROJECT_NAME DMS-24-RTOS-VCU)
 
+# Include toolchain file
+include("cmake/gcc-arm-none-eabi.cmake")
 
 # Enable compile command to ease indexing with e.g. clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-# Core project settings
-project(${CMAKE_PROJECT_NAME})
-
 # Enable CMake support for ASM and C languages
 enable_language(C ASM)
 
+# Core project settings
+project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
 
 # Create an executable object type
@@ -43,15 +45,15 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
 )
 
-file(GLOB USER_SOURCES CONFIGURE_DEPENDS
-    ${CMAKE_SOURCE_DIR}/Core/User/*.c
-    ${CMAKE_SOURCE_DIR}/Core/Tests/hardware/*.c
-)
-
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    ${USER_SOURCES}
-    ${CMAKE_SOURCE_DIR}/Core/Tests/unit/unity.c
+    # Add user sources here
+    ${CMAKE_SOURCE_DIR}/Core/User/app_main.c
+    ${CMAKE_SOURCE_DIR}/Core/User/sensor_control.c
+    ${CMAKE_SOURCE_DIR}/Core/User/dms_logging.c
+    ${CMAKE_SOURCE_DIR}/Core/Tests/tests.c
+    ${CMAKE_SOURCE_DIR}/Core/Tests/tests.h
+    ${CMAKE_SOURCE_DIR}/Core/User/io_control.c
 )
 
 # Add include paths
@@ -59,14 +61,11 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
     ${CMAKE_SOURCE_DIR}/Core/User
     ${CMAKE_SOURCE_DIR}/Core/Tests
-    ${CMAKE_SOURCE_DIR}/Core/Tests/hardware
-    ${CMAKE_SOURCE_DIR}/Core/Tests/unit
 )
 
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
-    UNITY_INCLUDE_CONFIG_H
 )
 
 # Add linked libraries

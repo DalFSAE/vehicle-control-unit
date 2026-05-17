@@ -79,15 +79,4 @@ Use this space to show useful examples of how a project can be used. Additional 
 3. Push to the Branch (`git push origin feature/AmazingFeature`)
 4. Open a Pull Request
 
-## Continuous Integration
-
-GitHub Actions validates the firmware build on every push and pull request using the existing CMake `Debug` preset.
-
-To run the same build locally:
-
-```sh
-cmake --preset Debug
-cmake --build --preset Debug
-```
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
