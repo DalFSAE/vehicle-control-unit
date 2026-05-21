@@ -51,22 +51,20 @@ void motor_controller_get_cmd(MotorControllerCmd_t *out) {
 
 // CAN TX
 void can_tx_send_inverter_cmd(const MotorControllerCmd_t *cmd) {
-    if (cmd == NULL)
+    if (cmd == NULL) {
         return;
-
+    } 
+    
     struct can0_powertrain_m192_command_message_t msg;
     can0_powertrain_m192_command_message_init(&msg);
-    msg.vcu_inv_torque_command          
-        = can0_powertrain_m192_command_message_vcu_inv_torque_command_encode(cmd->torque_command_nm);
-    msg.vcu_inv_torque_limit_command    
-        = can0_powertrain_m192_command_message_vcu_inv_torque_limit_command_encode(cmd->torque_limit_nm);
-    msg.vcu_inv_speed_command           
-        = can0_powertrain_m192_command_message_vcu_inv_speed_command_encode(cmd->speed_command_rpm);
-    msg.vcu_inv_inverter_enable     = cmd->inv_enable ? 1u : 0u;
-    msg.vcu_inv_inverter_discharge  = cmd->inv_discharge ? 1u : 0u;
-    msg.vcu_inv_speed_mode_enable   = cmd->speed_mode_enable ? 1u : 0u;
-    msg.vcu_inv_direction_command   = cmd->motor_direction_forward ? 1u : 0u;
-    msg.vcu_inv_rolling_counter     = cmd->rolling_counter;
+    msg.vcu_inv_torque_command       = can0_powertrain_m192_command_message_vcu_inv_torque_command_encode(cmd->torque_command_nm);
+    msg.vcu_inv_torque_limit_command = can0_powertrain_m192_command_message_vcu_inv_torque_limit_command_encode(cmd->torque_limit_nm);
+    msg.vcu_inv_speed_command        = can0_powertrain_m192_command_message_vcu_inv_speed_command_encode(cmd->speed_command_rpm);
+    msg.vcu_inv_inverter_enable      = cmd->inv_enable ? 1u : 0u;
+    msg.vcu_inv_inverter_discharge   = cmd->inv_discharge ? 1u : 0u;
+    msg.vcu_inv_speed_mode_enable    = cmd->speed_mode_enable ? 1u : 0u;
+    msg.vcu_inv_direction_command    = cmd->motor_direction_forward ? 1u : 0u;
+    msg.vcu_inv_rolling_counter      = cmd->rolling_counter;
 
     uint8_t buf[CAN0_POWERTRAIN_M192_COMMAND_MESSAGE_LENGTH];
     can0_powertrain_m192_command_message_pack(buf, &msg, sizeof(buf));
