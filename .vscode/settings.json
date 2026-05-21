@@ -1,6 +1,12 @@
 {
+    "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/build/Debug"
+    ],
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/build/Debug/compile_commands.json",
+    "cmake.configureOnOpen": true,
     "files.associations": {
         "main.h": "c",
+        "app.h": "c",
         "app_main.h": "c",
         "stm32f4xx_hal.h": "c",
         "gpio.h": "c",
@@ -63,5 +69,15 @@
         "TRUSTZONE",
         "VOLTAGESCALING",
         "yarray"
-    ]
+    ],
+    "cmake.cmakePath": "cube-cmake",
+    "cmake.configureArgs": [
+        "-DCMAKE_COMMAND=cube-cmake"
+    ],
+    "stm32cube-ide-clangd.path": "cube",
+    "stm32cube-ide-clangd.arguments": [
+        "starm-clangd",
+        "--query-driver=${env:CUBE_BUNDLE_PATH}/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-gcc*",
+        "--query-driver=${env:CUBE_BUNDLE_PATH}/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-g++*"
+    ],
 }
