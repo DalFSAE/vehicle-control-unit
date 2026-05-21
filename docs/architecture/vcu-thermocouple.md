@@ -1,6 +1,6 @@
 # Overview
 
-The new VCU will contain a Thermocouple circuit to assist in the cooling. A Thermocouple is a temperature measuring sensor that generates a voltage that changes over temperature. A thermocouple is able to read a wide temerature range at a fast response time, making it the ideal choice for temperature measurements.  
+The new VCU should contain a Thermocouple circuit to assist in the cooling. A Thermocouple is a temperature measuring sensor that generates a voltage that changes over temperature. A thermocouple is able to read a wide temerature range at a fast response time, making it the ideal choice for temperature measurements.  
 
 
 ## Thermocouple Research 
@@ -49,6 +49,13 @@ Isolated from the sheath with a layer of insulation between the thermocouple and
 
 To save space on the VCU it is suggested to use a multiplexer to attach to the ADC input of our Thermocouple. Per the web " a multiplexer can be used with the ADC input of a thermocouple, but careful selection of a low-resistance, low-leakage analog multiplexer is necessary to avoid significant measurement errors and preserve accuracy." 
 
+## Current Support
+
+VCU Hw3.0 does *not* support any thermocouple inputs. A few options are available for measuring temperatures.
+
+- **AiM ACC2 Open** - Supports up to 4 thermocouples. Data logged over CAN
+- **AiM MXm** - Supports up to 4 thermocouples. Data logged over CAN
+- **PM100DX** - Reports motor and internal coolant temperature over CAN 
 ## References
 
 [Texas Instruments: A Basic Guide to Thermocouple Measurements](https://www.ti.com/lit/an/sbaa274a/sbaa274a.pdf?ts=1758725949092)
