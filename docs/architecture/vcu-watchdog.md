@@ -162,7 +162,7 @@ Potential watchdog improvements:
 ## References
 
 - **Code**: `Core/User/app.c`, `Core/User/motor_controller.c`, `Core/User/can_task.c`
-- **FSAE Rules**: 
+- **FSAE Rules**:
   - EV4.7 - Sensor fault detection (BSPD check)
   - EV8.1.6 - CAN watchdog for safety shutdown system
 - **Related Docs**: `vcu-motor-control.md`, `vcu-sensors.md`, `vcu-finite-state-machine.md`, `vcu-fault-handling.md`

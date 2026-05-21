@@ -8,7 +8,7 @@ GPIO subsystem controls low-voltage relays, indicator lights, and buzzer. All ou
 1. **Safe power defaults**
    - All outputs de-energized on power-up and reset
    - No uncontrolled relay activation possible
-   - Fail-safe: relay coils are normally open 
+   - Fail-safe: relay coils are normally open
 
 2. **Relay control via FSM**
    - FSM maintains output state machine (VcuOutputs struct)
@@ -19,7 +19,7 @@ GPIO subsystem controls low-voltage relays, indicator lights, and buzzer. All ou
 3. **Fused outputs (automotive blade fuses)**
    - Each output has individual fuse for short-circuit protection
    - Fuse trip de-energizes that output while others remain operational
-   - Fuse ratings match load specifications (defined by vehicle electrical )
+   - Fuse ratings match load specifications (see schematic for details)
 
 4. **Tractive System Status Indicator (TSSI)**
    - Audible/visual indicator when high-voltage system active

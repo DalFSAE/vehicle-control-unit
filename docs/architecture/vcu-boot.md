@@ -34,8 +34,8 @@ Boot sequence initializes hardware, validates system health, and starts FreeRTOS
 - Hardware test pre-boot validation (optional)
 - Error if pre-boot tests fail → Error_Handler()
 
-**Post-boot 
-- 500ms scheduler delay for USB enumeration 
+**Post-boot (after scheduler)**
+- 500ms scheduler delay for USB enumeration
 - Logging system initialized (USB CDC)
 - Boot event logged with test results
 

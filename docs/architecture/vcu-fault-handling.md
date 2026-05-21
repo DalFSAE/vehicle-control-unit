@@ -151,7 +151,7 @@ FSM enforces these defaults in entry/standby states even if no fault active.
 ## References
 
 - **Code**: `Core/User/fsm.c`, `Core/User/input_control.c`, `Core/User/pedal_logic.c`, `Core/User/motor_controller.c`
-- **FSAE Rules**: 
+- **FSAE Rules**:
   - EV4.7 - Brake System Plausibility Device (BSPD) requirements
   - EV8.1.6 - CAN bus safety system shutdown demonstration
 - **Related Docs**: `vcu-finite-state-machine.md`, `vcu-motor-control.md`, `vcu-sensors.md`, `vcu-watchdog.md`, `VCU_Torque_Safety_Procedures.md`

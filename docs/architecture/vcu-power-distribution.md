@@ -59,7 +59,7 @@ See `DMS-26-VCU-V3.0.pdf` for full specifications. Fuse ratings are subject to c
 - PWR_FANS (cooling fans)
 - PWR_BL (brake light)
 - PWR_AUX (auxiliary)
- 
+
 **Always-On Outputs** (6x relays):
 - PWR_ALWAYSON (system power)
 - Low-voltage logic rails - 2A Polyfuse
@@ -80,7 +80,8 @@ FSM manages relay timing during state transitions to prevent:
 - Inrush currents from multiple relays energizing simultaneously
 - Uncontrolled acceleration from relay chatter
 
-A current shunt on the VCU +VBAT input may be used to monitor system current draw
+A current shunt on the VCU +VBAT input may be used to monitor system current draw.
+
 ## DCDC Converter (Optional)
 
 Some vehicle variants include isolated DCDC for high-voltage interface:

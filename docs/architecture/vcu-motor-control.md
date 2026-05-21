@@ -14,7 +14,7 @@ Motor control subsystem manages inverter communication, torque commands, and mot
 2. **Inverter heartbeat monitoring**
    - Inverter must transmit status message every ~50ms
    - VCU must monitor receipt and timeout within 200ms
-   - Loss of heartbeat triggers immediate torque cut 
+   - Loss of heartbeat triggers immediate torque cut
    - Must integrate with fault handling system
 
 3. **PM100DX compliance (datasheet)**
@@ -112,6 +112,6 @@ Mutex serializes access (prevents FSM/CAN race conditions).
 ## References
 
 - **Code**: `Core/User/motor_controller.c`, `Core/User/can0_powertrain.c`, `Core/User/can_task.c`
-- **Hardware Datasheet**: PM100DX datasheet `motor-controller-fw/docs/PM and RM Hardware User's Manual (V3_8).pdf` 
+- **Hardware Datasheet**: PM100DX datasheet `motor-controller-fw/docs/PM and RM Hardware User's Manual (V3_8).pdf`
 - **FSAE Rules**: EV4.5 (electrical power steering disabled when not in drive), EV4.7 (torque limits)
 - **Related Docs**: `vcu-finite-state-machine.md`, `vcu-fault-handling.md`, `can.md`, `VCU_Torque_Safety_Procedures.md`

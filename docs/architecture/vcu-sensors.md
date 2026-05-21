@@ -33,8 +33,8 @@ Sensor subsystem acquires analog inputs via ADC with DMA, processes them for fau
    - Continuous sampling with rolling buffer
    - Timer-triggered conversion for consistent timing
 
-1. **Support for additional sensors**
-   - Wheel speed, suspension and steering potentiometers, etc. 
+6. **Support for additional sensors**
+   - Wheel speed, suspension and steering potentiometers, etc.
 
 
 ## Sensor Types
@@ -50,6 +50,7 @@ This list should include all sensors that the VCU supports:
 | TSCUR  | ADC     | 0.5-4.5V | Tractive System DC curent    | BSPD                |           |
 
 Note: All ADC inputs include a 20k/10k resistor divider, scales 5V signal to 1.67V (Vout = Vin × 10k/30k)
+
 ## ADC Configuration
 
 - **Peripheral**: ADC1 with DMA (Direct Memory Access)
