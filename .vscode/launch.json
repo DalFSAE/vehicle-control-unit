@@ -13,25 +13,45 @@
             // Or fixed file path: "${workspaceFolder}/path/to/filename.elf"
             "request": "launch",
             "servertype": "stlink",
-            "device": "STM32F407VGTx", //MCU used
+            "device": "STM32F407VGTx",
             "interface": "swd",
-            "serialNumber": "",        //Set ST-Link ID if you use multiple at the same time
+            "serialNumber": "",
             "runToEntryPoint": "main",
-            "svdFile": "${config:STM32VSCodeExtension.cubeCLT.path}/STMicroelectronics_CMSIS_SVD/STM32F407.svd",
-            "v1": false,               //Change it depending on ST Link version
-            "serverpath": "${config:STM32VSCodeExtension.cubeCLT.path}/STLink-gdb-server/bin/ST-LINK_gdbserver",
-            "stm32cubeprogrammer":"${config:STM32VSCodeExtension.cubeCLT.path}/STM32CubeProgrammer/bin",
-            "stlinkPath": "${config:STM32VSCodeExtension.cubeCLT.path}/STLink-gdb-server/bin/ST-LINK_gdbserver",   
-            "armToolchainPath": "${config:STM32VSCodeExtension.cubeCLT.path}/GNU-tools-for-STM32/bin",
-            "gdbPath":"${config:STM32VSCodeExtension.cubeCLT.path}/GNU-tools-for-STM32/bin/arm-none-eabi-gdb",            
-            "serverArgs": ["-m","0"],
-            "preLaunchTask": "Build project",
-            "liveWatch": {
-                "enabled": true,
-                "samplesPerSecond": 4
-            }
-            /* If you use external loader, add additional arguments */
-            //"serverArgs": ["--extload", "path/to/ext/loader.stldr"],
+            "v1": false,
+            "serverArgs": [
+                "-m",
+                "0"
+            ],
+            "windows": {
+                "svdFile": "C:/ST/STM32CubeCLT_1.15.1/STMicroelectronics_CMSIS_SVD/STM32F407.svd",
+                "serverpath": "C:/ST/STM32CubeCLT_1.15.1/STLink-gdb-server/bin/ST-LINK_gdbserver",
+                "stm32cubeprogrammer": "C:/ST/STM32CubeCLT_1.15.1/STM32CubeProgrammer/bin",
+                "stlinkPath": "C:/ST/STM32CubeCLT_1.15.1/STLink-gdb-server/bin/ST-LINK_gdbserver",
+                "armToolchainPath": "C:/ST/STM32CubeCLT_1.15.1/GNU-tools-for-STM32/bin",
+                "gdbPath": "C:/ST/STM32CubeCLT_1.15.1/GNU-tools-for-STM32/bin/arm-none-eabi-gdb.exe"
+            },
+            "linux": {
+                "svdFile": "${config:STM32VSCodeExtension.cubeCLT.path}/STMicroelectronics_CMSIS_SVD/STM32F407.svd",
+                "serverpath": "${config:STM32VSCodeExtension.cubeCLT.path}/STLink-gdb-server/bin/ST-LINK_gdbserver",
+                "stm32cubeprogrammer": "${config:STM32VSCodeExtension.cubeCLT.path}/STM32CubeProgrammer/bin",
+                "stlinkPath": "${config:STM32VSCodeExtension.cubeCLT.path}/STLink-gdb-server/bin/ST-LINK_gdbserver",
+                "armToolchainPath": "${config:STM32VSCodeExtension.cubeCLT.path}/GNU-tools-for-STM32/bin",
+                "gdbPath": "${config:STM32VSCodeExtension.cubeCLT.path}/GNU-tools-for-STM32/bin/arm-none-eabi-gdb"
+            },
+            "preLaunchTask": "Build project"
+        },
+        {
+            "name": "Debug Unit Tests (test_fsm)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/Core/Tests/unit/build/test_fsm",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/Core/Tests/unit",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "Unit Tests: Build"
         },
         {
             "name": "Attach to Microcontroller - ST-Link",
@@ -42,20 +62,31 @@
             // Or fixed file path: "${workspaceFolder}/path/to/filename.elf"
             "request": "attach",
             "servertype": "stlink",
-            "device": "STM32F407VGTx", //MCU used
+            "device": "STM32F407VGTx",
             "interface": "swd",
-            "serialNumber": "",        //Set ST-Link ID if you use multiple at the same time
+            "serialNumber": "",
             "runToEntryPoint": "main",
-            "svdFile": "${config:STM32VSCodeExtension.cubeCLT.path}/STMicroelectronics_CMSIS_SVD/STM32F407.svd",
-            "v1": false,               //Change it depending on ST Link version
-            "serverpath": "${config:STM32VSCodeExtension.cubeCLT.path}/STLink-gdb-server/bin/ST-LINK_gdbserver",
-            "stm32cubeprogrammer":"${config:STM32VSCodeExtension.cubeCLT.path}/STM32CubeProgrammer/bin",
-            "stlinkPath": "${config:STM32VSCodeExtension.cubeCLT.path}/STLink-gdb-server/bin/ST-LINK_gdbserver",   
-            "armToolchainPath": "${config:STM32VSCodeExtension.cubeCLT.path}/GNU-tools-for-STM32/bin",
-            "gdbPath":"${config:STM32VSCodeExtension.cubeCLT.path}/GNU-tools-for-STM32/bin/arm-none-eabi-gdb",            
-            "serverArgs": ["-m","0"],
-            /* If you use external loader, add additional arguments */
-            //"serverArgs": ["--extload", "path/to/ext/loader.stldr"],
+            "v1": false,
+            "serverArgs": [
+                "-m",
+                "0"
+            ],
+            "windows": {
+                "svdFile": "C:/ST/STM32CubeCLT_1.15.1/STMicroelectronics_CMSIS_SVD/STM32F407.svd",
+                "serverpath": "C:/ST/STM32CubeCLT_1.15.1/STLink-gdb-server/bin/ST-LINK_gdbserver",
+                "stm32cubeprogrammer": "C:/ST/STM32CubeCLT_1.15.1/STM32CubeProgrammer/bin",
+                "stlinkPath": "C:/ST/STM32CubeCLT_1.15.1/STLink-gdb-server/bin/ST-LINK_gdbserver",
+                "armToolchainPath": "C:/ST/STM32CubeCLT_1.15.1/GNU-tools-for-STM32/bin",
+                "gdbPath": "C:/ST/STM32CubeCLT_1.15.1/GNU-tools-for-STM32/bin/arm-none-eabi-gdb.exe"
+            },
+            "linux": {
+                "svdFile": "${config:STM32VSCodeExtension.cubeCLT.path}/STMicroelectronics_CMSIS_SVD/STM32F407.svd",
+                "serverpath": "${config:STM32VSCodeExtension.cubeCLT.path}/STLink-gdb-server/bin/ST-LINK_gdbserver",
+                "stm32cubeprogrammer": "${config:STM32VSCodeExtension.cubeCLT.path}/STM32CubeProgrammer/bin",
+                "stlinkPath": "${config:STM32VSCodeExtension.cubeCLT.path}/STLink-gdb-server/bin/ST-LINK_gdbserver",
+                "armToolchainPath": "${config:STM32VSCodeExtension.cubeCLT.path}/GNU-tools-for-STM32/bin",
+                "gdbPath": "${config:STM32VSCodeExtension.cubeCLT.path}/GNU-tools-for-STM32/bin/arm-none-eabi-gdb"
+            }
         }
     ]
 }
