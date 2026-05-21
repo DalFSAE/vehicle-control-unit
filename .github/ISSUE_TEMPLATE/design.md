@@ -7,14 +7,17 @@ assignees: ''
 
 ---
 
-# **Summary:** 
-_What is the requested design?  Describe the solution you'd like._
+# Summary: 
+<!--What is the requested design?  Describe the solution you'd like.-->
 
-## **Justification:** 
-_Why is it needed?_
 
-## **Specifications:** 
-_List any technical details, constraints, or references to rules._
+## Justification:
+<!--Why is it needed?-->
 
-## **Dependencies:** 
-_Does it rely on other features?_
+
+## Specifications:
+<!--List any technical details, constraints, or references to rules.-->
+
+
+## Dependencies:
+<!--Does it rely on other features?-->

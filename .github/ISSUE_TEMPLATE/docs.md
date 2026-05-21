@@ -7,10 +7,17 @@ assignees:
 
 ---
 
-**Section Affected:** What part of the documentation needs improvement?
+## Section Affected:
+<!--What part of the documentation needs improvement?-->
 
-**Current Documentation:** Provide a link or summary.
 
-**Proposed Changes:** How should it be updated?
+## Current Documentation:
+<!--Provide a link or summary.-->
 
-**Impact:** How does this help the team?
+
+## Proposed Changes:
+<!--How should it be updated?-->
+
+
+## Impact: 
+<!--How does this help the team?-->

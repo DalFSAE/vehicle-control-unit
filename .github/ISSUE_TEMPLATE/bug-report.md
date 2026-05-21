@@ -9,14 +9,18 @@ assignees:
 
 ## Observed Issue:
 
+
 ## Expected Behaviour: 
 <!--What should be happening?-->
+
 
 ## Steps to Reproduce: 
 <!-- How can someone else replicate the issue?-->
 
-## Related CAD/File:
+
+## Related Files:
 <!--Which version/file/design is affected?-->
 
-**Screenshots/Files:**
+
+## Screenshots/Files:
 <!--Attach supporting images, CAD screenshots, or logs.-->
