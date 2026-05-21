@@ -55,7 +55,8 @@ VCU Hw3.0 does *not* support any thermocouple inputs. A few options are availabl
 
 - **AiM ACC2 Open** - Supports up to 4 thermocouples. Data logged over CAN
 - **AiM MXm** - Supports up to 4 thermocouples. Data logged over CAN
-- **PM100DX** - Reports motor and internal coolant temperature over CAN 
+- **PM100DX** - Reports motor and internal coolant temperature over CAN
+
 ## References
 
 [Texas Instruments: A Basic Guide to Thermocouple Measurements](https://www.ti.com/lit/an/sbaa274a/sbaa274a.pdf?ts=1758725949092)
