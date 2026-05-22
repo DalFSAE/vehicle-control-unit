@@ -5,22 +5,20 @@ Boot sequence initializes hardware, validates system health, and starts FreeRTOS
 
 ## Requirements
 
-1. **Hardware-agnostic control logic**
-   - Boot sequence must be testable via injected inputs
-   - FSM must validate during boot via hardware tests
-   - Input signals must be normalized before FSM processing
-
-2. **Safe initialization order**
+1. **Safe initialization order**
    - All outputs must be de-energized on power-up (safe default)
    - Inverter disabled until FSM ready to control it
-   - CAN watchdog must be active before any external system communication
+   - CAN watchdog must be active before any external system communication (see [vcu-watchdog.md](vcu-watchdog.md))
 
-3. **Fault detection during boot**
-   - Pre-boot tests validate GPIO, CAN, sensor connectivity
+2. **Fault detection during boot**
+   - Pre-boot tests validate GPIO, CAN, and sensor connectivity before FSM starts (see [vcu-fault-handling.md](vcu-fault-handling.md))
+     - **GPIO**: confirm relay functionality.
+     - **CAN**: bus initialization returns no error; test in loopback mode
+     - **Sensors**: ADC/DMA acquisition starts; sensor voltages within valid range
    - Boot failure must halt vehicle operation (Error_Handler)
    - Results must be logged for diagnostics
 
-4. **Real-time task scheduling**
+3. **Real-time task scheduling**
    - FSM task (10ms period) must run with priority to ensure control loop
    - Sensor input task (AboveNormal) must have responsive fault detection
    - CAN task (5ms) must prioritized for communication reliability
@@ -52,14 +50,13 @@ See `app.c` for implementation.
 
 | Task          | Stack Size  | Priority    | Purpose                             |
 | ------------- | ----------- | ----------- | ----------------------------------- |
-| FSM           | 512×4 bytes | Normal      | Vehicle state control (10ms period) |
-| CAN           | 512×4 bytes | AboveNormal | CAN TX/RX handling (5ms period)     |
-| Sensor Input  | 512×4 bytes | AboveNormal | ADC + fault detection (~10ms)       |
-| Heartbeat     | 256×4 bytes | Low         | System watchdog tick (250ms)        |
+| FSM           | 512×4 bytes | Normal      | Vehicle state control               |
+| CAN           | 512×4 bytes | AboveNormal | CAN TX/RX handling                  |
+| Sensor Input  | 512×4 bytes | AboveNormal | ADC + fault detection               |
+| Heartbeat     | 256×4 bytes | Low         | System watchdog tick                |
 | Logger        | 256×4 bytes | Normal      | USB telemetry output                |
 | Hardware Test | 512×4 bytes | Low         | Optional on-device validation       |
-todo: determine if the current priority is okay. I recall there being a possible bug where a high priority task would get stuck waiting for a mutex. Resolve and open issue before merging.
-todo: review current list of tasks, determine if when a task should be made vs including on the main FSM thread.
+
 ## Pre-boot Validation
 
 Hardware tests validate system state before FSM starts:
