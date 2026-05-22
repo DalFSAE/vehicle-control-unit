@@ -9,7 +9,7 @@ Logging system provides two channels: event-based human-readable logs and period
    - Human-readable log messages with timestamps
    - Low-frequency, high-information-density events
    - Traceability for fault analysis and system verification
-   - Limited availablity before logging subsystem fully initialized (pre-init buffer)
+   - Limited availability before logging subsystem fully initialized; `LOG_EVENT()` buffers early events automatically (pre-init buffer)
 
 2. **Telemetry for monitoring**
    - Periodic fixed-format sensor data for real-time monitoring
@@ -18,7 +18,7 @@ Logging system provides two channels: event-based human-readable logs and period
    - Enable tracking of vehicle behavior during testing
 
 3. **USB CDC output during development**
-   - Real-time stream accessible via ST-LINK virtual COM port
+   - Real-time stream accessible via USB CDC
    - Allows debugging without removing vehicle from test stand
    - Serial format: 115200 baud, 8N1
    - Must not block control loop (asynchronous logging)
