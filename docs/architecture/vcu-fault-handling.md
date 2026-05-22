@@ -6,31 +6,38 @@ Fault handling system detects sensor/subsystem failures and executes safety resp
 ## Requirements
 
 1. **FSAE EV4.7 Brake System Plausibility Device (BSPD)**
-   - Must detect brake + tractive system current simultaneous engagement
-   - Brake sensor AND accelerator >25% pedal → immediate shutdown
-   - Motor shall stay cut until accelerator <5% pedal travel
-   - Shall be demonstrable at technical inspection
-   - Shall be implemented in hardware
+   - Must detect tractive system current + accelerator >25% simultaneous engagement
 
-2. **Sensor redundancy validation**
+   **Software (VCU):**
+   - Brake sensor AND accelerator >25% pedal → cut throttle
+   - Motor shall stay cut until accelerator <5% pedal travel
+
+   **Hardware (BSPD circuit):**
+   - Should never trigger under normal operation; VCU software check must preempt it
+   - If hardware BSPD triggers → open shutdown circuit
+   - Shall be implemented in hardware and software
+   - Shall be demonstrable at technical inspection
+
+2. **Pedal Plausibility Checks (PPC)**
    - Two independent accelerator sensors (APPS1, APPS2) must agree
-   - Must sum to ~5V (0.5V offset) or flag as fault
+   - APPS1 + APPS2 voltages must sum to ~5V (±0.5V tolerance); deviation flags APPS_DISAGREE
    - Disagreement → APPS_DISAGREE fault with configurable response
 
 3. **CAN heartbeat monitoring (FSAE EV8.1.6)**
    - Critical vehicle systems must maintain CAN heartbeats
-   - Loss of inverter heartbeat (200ms) → immediate torque cut
+   - Loss of inverter heartbeat (200ms) → return to neutral
    - Loss of BMS/HVC heartbeat → return to neutral or shutdown
    - Required for safety shutdown system compliance
 
 4. **Configurable fault responses**
    - Not all faults require same action
    - Some faults warrant throttle cut, others require state change
-   - Responses must be adjustable without code changes
-   - Must support latching faults for driver awareness
+   - Responses must be adjustable without code changes (optional)
+   - Must support control of the shutdown circuit
 
 5. **Fault logging and traceability**
    - Every fault must be logged with context
+   - Every fault must send a notification to the driver via the dashboard display
    - Enables post-incident diagnostics and safety validation
    - Must integrate with telemetry system
 
@@ -91,13 +98,15 @@ Passed to FSM via `fsm_step(cfg, inputs, outputs)`. See `fsm.c` for response han
 
 FSAE rule EV4.7 requires monitoring for unsafe brake+throttle combination:
 
-**Condition**: Mechanical brakes engaged AND accelerator >25% pedal travel
+**Condition**: Tractive system current sensor detects power draw AND accelerator >25% pedal travel
 
-**Action**: Power to motor must immediately and completely shut down
+**Software (VCU) response**: Cut throttle immediately
+
+**Hardware (BSPD circuit) response**: Should never trigger; VCU software check must fire first. If hardware BSPD does trigger → latching fault.
 
 **Recovery**: Motor must stay disabled until accelerator <5% pedal travel
 
-Implemented in `pedal_logic.c`:
+**Software implementation** (`pedal_logic.c`):
 - APPS1/APPS2 sensor voltage thresholds calibrated for 25%/5% pedal positions
 - Brake pressure sensor monitored for engagement
 - If condition detected → `FAULT_PEDAL_PLAUS` set
@@ -107,7 +116,7 @@ Thresholds per `VCU_Torque_Safety_Procedures.md`:
 - 25% pedal = 1.125V (S1), 2.875V (S2)
 - 5% pedal = 0.225V (S1), 3.775V (S2)
 
-**Note:** The core BSPD logic is implemented in hardware, and causes a `LATCH_FAULT`. The BSPD triggers whenever the *current supplied to the tractive system* exceeded ~10kW. The VCU's internal monitoring systems should trigger before the hardware monitor is able to. See also `vehicle-control-unit/DMS-26-VCU-V3.0.pdf` for more info on the BSPD hardware implementation.
+**Hardware implementation**: The BSPD circuit monitors current supplied to the tractive system and triggers a `LATCH_FAULT` if load exceeds ~10kW while brakes are engaged. See `DMS-26-VCU-V3.0.pdf` for hardware implementation details.
 ## CAN Heartbeat Timeouts (FSAE EV8.1.6)
 
 **Inverter Heartbeat** (200ms timeout)
