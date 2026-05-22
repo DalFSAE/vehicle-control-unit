@@ -13,7 +13,6 @@ GPIO subsystem controls low-voltage relays, indicator lights, and buzzer. All ou
 2. **Relay control via FSM**
    - FSM maintains output state machine (VcuOutputs struct)
    - Relay energization only in specific FSM states
-   - State transitions must be atomic (no partial state)
    - Always-on relay powers low-voltage logic continuously
 
 3. **Fused outputs (automotive blade fuses)**
