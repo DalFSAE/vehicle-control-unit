@@ -12,7 +12,7 @@ Motor control subsystem manages inverter communication, torque commands, and mot
    - Commands must stop if heartbeat lost (200ms timeout)
 
 2. **Inverter heartbeat monitoring**
-   - Inverter must transmit status message every ~50ms
+   - Inverter must transmit status message every ~50ms (see [vcu-fault-handling.md](vcu-fault-handling.md))
    - VCU must monitor receipt and timeout within 200ms
    - Loss of heartbeat triggers immediate torque cut
    - Must integrate with fault handling system
