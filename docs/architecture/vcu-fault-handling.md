@@ -128,6 +128,21 @@ Thresholds per `VCU_Torque_Safety_Procedures.md`:
 - Similar monitoring for battery management system
 - Timeout triggers appropriate fault response
 
+**Dash Fault Indicators (HVC-controlled)**
+
+The HVC is responsible for driving two dashboard LEDs (BMS Fault, IMD Fault):
+
+| State | Color | Condition |
+|-------|-------|-----------|
+| OK | Green | No fault, SDC latched |
+| Unlatched | Yellow | SDC unlatched at vehicle startup |
+| Fault | Flashing Red | Fault thrown by BMS or IMD |
+
+- At startup the SDC is unlatched; LEDs may show yellow until the SDC latches
+- LEDs only transition to flashing red if a fault is actively thrown
+
+See [vcu-shutdown-circuit.md](vcu-shutdown-circuit.md) for SDC latch behaviour.
+
 **Rule EV8.1.6 Compliance**
 - Vehicles using CAN as safety element must demonstrate shutdown
 - If CAN communication interrupted → SDC must open safely
