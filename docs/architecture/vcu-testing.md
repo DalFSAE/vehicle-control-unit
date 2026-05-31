@@ -15,7 +15,7 @@ Testing covers two layers: unit tests (logic on host machine) and hardware tests
    - All fault conditions must be testable (APPS disagree, implausibility, range errors)
    - Fault responses must match configured policies
    - Must validate BSPD (brake+throttle) software check per FSAE rules
-   - Must verify inverter heartbeat timeout behavior
+   - Must verify inverter heartbeat timeout behavior (see [vcu-motor-control.md](vcu-motor-control.md))
 
 3. **Safety-critical code coverage**
    - FSM state transitions: all events and state combinations
@@ -24,10 +24,11 @@ Testing covers two layers: unit tests (logic on host machine) and hardware tests
    - Safe defaults: verify all outputs de-energized on boot
 
 4. **Hardware-in-the-loop (HIL) validation**
-   - Real CAN communication with inverter simulator
+   - Real CAN communication with real inverter (Note: HV is not present during testbench testing)
    - GPIO relay outputs toggled and verified
    - ADC sensor acquisition tested with known inputs
    - On-device tests included in firmware build
+   - Hardware tests must be performed on the VCU testbench before merging to main
 
 5. **Continuous Integration with CI/CD**
    - Automated build on every commit
@@ -74,14 +75,6 @@ cmake --build build
 On-device tests run on actual STM32 hardware, validating real peripherals.
 
 **Location**: `Core/Tests/hardware/`
-
-**Files**:
-- `test_board_outputs.c` - GPIO relay control
-- `test_can.c` - CAN bus communication
-- `test_fsm_hil.c` - HIL (Hardware-in-the-Loop) FSM validation
-- `test_motor_controller.c` - Inverter CAN communication
-- `fsm_test_helpers.c/.h` - Utility functions for injecting test inputs
-- `hardware_test_runner.c/.h` - Test framework for on-device execution
 
 **Input Injection:** `vcu_spoof_inputs()`
 
