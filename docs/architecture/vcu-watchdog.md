@@ -26,10 +26,9 @@ Watchdog system monitors health of critical subsystems. Multiple watchdog mechan
    - See also [vcu-motor-control.md](vcu-motor-control.md)
 
 4. **Sensor fault detection at high frequency**
-   - Sensor plausibility checks run every 10ms (FSM loop rate)
-   - APPS disagreement, brake+throttle check, range validation
+   - PPC checks run at sensor task rate
    - Immediate response to detected faults (no delayed reaction)
-   - See also [vcu-fault-handling.md](vcu-fault-handling.md)
+   - See [vcu-fault-handling.md](vcu-fault-handling.md) for the full PPC definition
 
 5. **CAN watchdog for safety shutdown system compliance**
    - Per FSAE EV8.1.6: vehicles using CAN as safety element must shutdown if CAN broken
