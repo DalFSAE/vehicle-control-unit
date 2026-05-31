@@ -5,29 +5,33 @@ Fault handling system detects sensor/subsystem failures and executes safety resp
 
 ## Requirements
 
-1. **FSAE EV4.7 Brake System Plausibility Device (BSPD)**
-   - Must detect tractive system current + accelerator >25% simultaneous engagement
+1. **BSPD - Hardware circuit (EV.7.7)**
+   - Independent hardware circuit monitors tractive system current and brake engagement
+   - If both exceed thresholds simultaneously → latching fault, SDC opens
+   - VCU has no role in the BSPD latch/reset sequence
+   - VCU software PPC check (req 2) must preempt the hardware BSPD under normal operation
+   - See [vcu-shutdown-circuit.md](vcu-shutdown-circuit.md)
 
-   **Software (VCU):**
-   - Brake sensor AND accelerator >25% pedal → cut throttle
-   - Motor shall stay cut until accelerator <5% pedal travel
+2. **Pedal Plausibility Checks (PPC) - Software, run every sensor cycle (~10ms)**
 
-   **Hardware (BSPD circuit):**
-   - Should never trigger under normal operation; VCU software check must preempt it
-   - If hardware BSPD triggers → open shutdown circuit
-   - Shall be implemented in hardware and software
-   - Shall be demonstrable at technical inspection
+   **a. APPS Agreement** - `FAULT_APPS_DISAGREE`
+   - APPS1 and APPS2 are inverse channels: normalize each using their respective voltage range, confirm they agree within 10%
+   - Disagreement for >100ms triggers fault
 
-2. **Pedal Plausibility Checks (PPC)**
-   - Two independent accelerator sensors (APPS1, APPS2) must agree
-   - APPS1 + APPS2 voltages must sum to ~5V (±0.5V tolerance); deviation flags APPS_DISAGREE
-   - Disagreement → APPS_DISAGREE fault with configurable response
+   **b. Brake+Throttle Plausibility** - `FAULT_PEDAL_PLAUS`
+   - Throttle >25% AND (FBPS OR RBPS above brake threshold) simultaneously → motor cut
+   - Motor remains cut until throttle returns below 5%
+
+   **c. Sensor Range** - `FAULT_SENSOR_RANGE`
+   - Each sensor must read within its valid operating range after normalization
+   - Out-of-range indicates disconnected or shorted sensor
 
 3. **CAN heartbeat monitoring (FSAE EV8.1.6)**
    - Critical vehicle systems must maintain CAN heartbeats
    - Loss of inverter heartbeat (200ms) → return to neutral
-   - Loss of BMS/HVC heartbeat → return to neutral or shutdown
+   - Loss of HVC heartbeat → return to neutral or shutdown
    - Required for safety shutdown system compliance
+   - See [vcu-watchdog.md](vcu-watchdog.md) for timing details
 
 4. **Configurable fault responses**
    - Not all faults require same action
@@ -48,7 +52,7 @@ Fault handling system detects sensor/subsystem failures and executes safety resp
 | APPS_DISAGREE | Sensor input | Redundant pedal sensors disagree | CUT_THROTTLE |
 | PEDAL_PLAUS | Sensor input | Brake + throttle simultaneously | RETURN_NEUTRAL |
 | SENSOR_RANGE | Sensor input | Sensor value out of valid range | RETURN_NEUTRAL |
-| CAN_TIMEOUT | Communication | Inverter or BMS heartbeat missing | RETURN_NEUTRAL |
+| CAN_TIMEOUT | Communication | Inverter or HVC heartbeat missing | RETURN_NEUTRAL |
 
 See `sensor_control.c`, `motor_controller.c` for fault detection logic.
 
@@ -94,38 +98,21 @@ FsmFaultConfig_t cfg = {
 
 Passed to FSM via `fsm_step(cfg, inputs, outputs)`. See `fsm.c` for response handling.
 
-## BSPD (Brake System Plausibility Device) Check
+## BSPD (Brake System Plausibility Device)
 
-FSAE rule EV4.7 requires monitoring for unsafe brake+throttle combination:
+The BSPD is a hardware circuit (EV.7.7), independent of the VCU. It monitors tractive system current and brake engagement directly. If both exceed their thresholds simultaneously, the BSPD latches and opens the SDC. This requires a manual reset via the latch button.
 
-**Condition**: Tractive system current sensor detects power draw AND accelerator >25% pedal travel
+The VCU software PPC brake+throttle check (`FAULT_PEDAL_PLAUS`) is intended to detect and cut throttle before the hardware BSPD ever triggers. See [vcu-shutdown-circuit.md](vcu-shutdown-circuit.md) for the hardware circuit details and `DMS-26-VCU-V3.0.pdf` for the hardware implementation.
 
-**Software (VCU) response**: Cut throttle immediately
-
-**Hardware (BSPD circuit) response**: Should never trigger; VCU software check must fire first. If hardware BSPD does trigger → latching fault.
-
-**Recovery**: Motor must stay disabled until accelerator <5% pedal travel
-
-**Software implementation** (`pedal_logic.c`):
-- APPS1/APPS2 sensor voltage thresholds calibrated for 25%/5% pedal positions
-- Brake pressure sensor monitored for engagement
-- If condition detected → `FAULT_PEDAL_PLAUS` set
-- FSM response policy determines action (default: RETURN_NEUTRAL)
-
-Thresholds per `VCU_Torque_Safety_Procedures.md`:
-- 25% pedal = 1.125V (S1), 2.875V (S2)
-- 5% pedal = 0.225V (S1), 3.775V (S2)
-
-**Hardware implementation**: The BSPD circuit monitors current supplied to the tractive system and triggers a `LATCH_FAULT` if load exceeds ~10kW while brakes are engaged. See `DMS-26-VCU-V3.0.pdf` for hardware implementation details.
 ## CAN Heartbeat Timeouts (FSAE EV8.1.6)
+
+See [vcu-watchdog.md](vcu-watchdog.md) for timeout values and monitoring details.
 
 **Inverter Heartbeat** (200ms timeout)
 - Inverter must send M170 status message every ~50ms
-- If VCU doesn't receive within 200ms → `FAULT_CAN_TIMEOUT`
-- Torque cut, FSM transition to fault state
+- If VCU doesn't receive within 200ms: `FAULT_CAN_TIMEOUT`, torque cut, FSM fault state
 
-**BMS Heartbeat** (can be configured)
-- Similar monitoring for battery management system
+**HVC Heartbeat** (includes BMS status)
 - Timeout triggers appropriate fault response
 
 **Dash Fault Indicators (HVC-controlled)**
@@ -174,8 +161,9 @@ FSM enforces these defaults in entry/standby states even if no fault active.
 
 ## References
 
-- **Code**: `Core/User/fsm.c`, `Core/User/input_control.c`, `Core/User/pedal_logic.c`, `Core/User/motor_controller.c`
+- **Code**: `Core/User/fsm.c`, `Core/User/sensor_control.c`, `Core/User/motor_controller.c`
 - **FSAE Rules**:
-  - EV4.7 - Brake System Plausibility Device (BSPD) requirements
+  - EV.7.7 - BSPD hardware circuit
+  - EV4.7 - APPS redundancy and pedal plausibility checks
   - EV8.1.6 - CAN bus safety system shutdown demonstration
 - **Related Docs**: `vcu-finite-state-machine.md`, `vcu-motor-control.md`, `vcu-sensors.md`, `vcu-watchdog.md`, `VCU_Torque_Safety_Procedures.md`

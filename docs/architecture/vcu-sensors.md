@@ -11,10 +11,8 @@ Sensor subsystem acquires analog inputs via ADC with DMA, processes them for fau
    - If disagreement detected → trigger APPS_DISAGREE fault
    - Must validate during each sensor read cycle (~10ms)
 
-2. **Brake + Throttle Plausibility Check (FSAE EV4.7)**
-   - Cannot have mechanical brakes AND accelerator >25% simultaneously
-   - If condition detected → trigger PEDAL_PLAUS fault
-   - Motor must stay disabled until throttle <5%
+2. **Pedal Plausibility Checks (PPC)**
+   - See [vcu-fault-handling.md](vcu-fault-handling.md) for the full PPC definition (APPS agreement, brake+throttle, sensor range)
 
 3. **Sensor range monitoring**
    - Each sensor has min/max valid range
