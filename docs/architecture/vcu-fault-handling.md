@@ -108,9 +108,9 @@ The VCU software PPC brake+throttle check (`FAULT_PEDAL_PLAUS`) is intended to d
 
 See [vcu-watchdog.md](vcu-watchdog.md) for timeout values and monitoring details.
 
-**Inverter Heartbeat** (200ms timeout)
-- Inverter must send M170 status message every ~50ms
-- If VCU doesn't receive within 200ms: `FAULT_CAN_TIMEOUT`, torque cut, FSM fault state
+**Inverter Heartbeat**
+- Loss of heartbeat: `FAULT_CAN_TIMEOUT`, torque cut, FSM fault state
+- See [vcu-motor-control.md](vcu-motor-control.md) for message details and timing
 
 **HVC Heartbeat** (includes BMS status)
 - Timeout triggers appropriate fault response
@@ -130,13 +130,7 @@ The HVC is responsible for driving two dashboard LEDs (BMS Fault, IMD Fault):
 
 See [vcu-shutdown-circuit.md](vcu-shutdown-circuit.md) for SDC latch behaviour.
 
-**Rule EV8.1.6 Compliance**
-- Vehicles using CAN as safety element must demonstrate shutdown
-- If CAN communication interrupted → SDC must open safely
-- Alternative: dedicated hardware watchdog with relay output
-- Current implementation: software watchdog in VCU with GPIO relay control
-
-See `motor_controller.c`, `can_task.c` for heartbeat tracking.
+See [vcu-shutdown-circuit.md](vcu-shutdown-circuit.md) for EV8.1.6 compliance details and [vcu-watchdog.md](vcu-watchdog.md) for heartbeat monitoring.
 
 ## Fault Logging
 

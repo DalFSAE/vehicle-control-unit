@@ -32,9 +32,7 @@ Watchdog system monitors health of critical subsystems. Multiple watchdog mechan
 
 5. **CAN watchdog for safety shutdown system compliance**
    - Per FSAE EV8.1.6: vehicles using CAN as safety element must shutdown if CAN broken
-   - Alternative: dedicated hardware watchdog with relay output
-   - Demonstrates compliance at technical inspection
-   - See also [can.md](../can.md)
+   - See [vcu-shutdown-circuit.md](vcu-shutdown-circuit.md) and [can.md](../can.md)
 
 ## FreeRTOS System Watchdog
 
@@ -73,25 +71,12 @@ See `motor_controller.c` for heartbeat tracking logic.
 
 ## Inverter Fault Monitoring
 
-See also [vcu-motor-control.md](vcu-motor-control.md).
-
-Inverter reports internal faults via M170 CAN message:
-
-- `inv_vsm_state` - inverter state machine state
-- `post_fault` - faults detected after last clear (latched)
-- `run_fault` - faults detected while running (transient)
-
-Examples:
-- Overspeed: Motor exceeds programmed limit
-- Over-temperature: Winding or power stage too hot
-- Over-voltage: Battery voltage spike detected
-- Under-voltage: Battery voltage dipped below limit
-- CAN timeout: Inverter lost command stream for >500ms
+See [vcu-motor-control.md](vcu-motor-control.md) for the full list of inverter faults and message details.
 
 VCU responds based on fault severity:
-- Non-critical faults: Log and continue operation
-- Critical faults: Cut torque, return to NEUTRAL
-- Faults shall clear when the the power to the inverter is cycled
+- Non-critical faults: log and continue operation
+- Critical faults: cut torque, return to NEUTRAL
+- Faults clear when inverter power is cycled
 
 ## Watchdog Timing
 
@@ -128,37 +113,12 @@ Inverter heartbeat timeout
 
 ## FSAE EV8.1.6 Compliance (CAN Watchdog for Safety)
 
-Rule EV8.1.6 states: "Vehicles that use CANbus as a fundamental element of the safety shutdown system will be required to document and demonstrate shutdown equivalent to BRB operation if CAN communication is interrupted."
-
-**Current Implementation**:
-- Software watchdog in VCU monitors CAN heartbeats
-- On heartbeat loss → FSM triggers SDC_OPEN response
-- Vehicle is immediately de-energized (equivalent to BRB - Brake Response Button)
-
-**Demonstration at Technical Inspection**:
-- Must show that loss of CAN communication triggers shutdown
-- Verify no torque is produced when CAN inactive
-- Demonstrate that vehicle cannot move if CAN is disconnected
-
-**Alternative Approach** (not currently implemented):
-- Dedicated hardware watchdog circuit with relay output
-- Monitors CAN traffic independently
-- If CAN silent for >1 second, relay opens SDC
-- No dependency on VCU software
-
-## Future Enhancements
-
-Potential watchdog improvements:
-- Dedicated hardware watchdog circuit (independent of MCU)
-- Redundant CAN bus monitoring
-- Accelerometer-based overspeed detection
-- Temperature sensor monitoring (motor/inverter)
-- Isolation of safety-critical shutdown path
+On CAN heartbeat loss, the VCU de-energizes `SDC_RELAY`, opening the shutdown circuit. See [vcu-shutdown-circuit.md](vcu-shutdown-circuit.md) for the full compliance details and technical inspection requirements.
 
 ## References
 
 - **Code**: `Core/User/app.c`, `Core/User/motor_controller.c`, `Core/User/can_task.c`
 - **FSAE Rules**:
-  - EV4.7 - Sensor fault detection (BSPD check)
+  - EV.7.7 - BSPD hardware circuit
   - EV8.1.6 - CAN watchdog for safety shutdown system
 - **Related Docs**: `vcu-motor-control.md`, `vcu-sensors.md`, `vcu-finite-state-machine.md`, `vcu-fault-handling.md`
