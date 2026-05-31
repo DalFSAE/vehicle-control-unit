@@ -16,22 +16,26 @@ Watchdog system monitors health of critical subsystems. Multiple watchdog mechan
    - Loss of any required heartbeat triggers safe shutdown
    - Timeout thresholds must be conservative (allow for message jitter)
    - Integration with fault handling system required
+   - See also [vcu-shutdown-circuit.md](vcu-shutdown-circuit.md)
 
 3. **Inverter status monitoring**
    - Inverter must transmit M170 status message ~50ms period
    - Loss of heartbeat within 200ms triggers torque cut
    - Inverter faults (overspeed, overtemp) reported via CAN
    - VCU responds based on fault severity
+   - See also [vcu-motor-control.md](vcu-motor-control.md)
 
 4. **Sensor fault detection at high frequency**
    - Sensor plausibility checks run every 10ms (FSM loop rate)
    - APPS disagreement, brake+throttle check, range validation
    - Immediate response to detected faults (no delayed reaction)
+   - See also [vcu-fault-handling.md](vcu-fault-handling.md)
 
 5. **CAN watchdog for safety shutdown system compliance**
    - Per FSAE EV8.1.6: vehicles using CAN as safety element must shutdown if CAN broken
    - Alternative: dedicated hardware watchdog with relay output
    - Demonstrates compliance at technical inspection
+   - See also [can.md](../can.md)
 
 ## FreeRTOS System Watchdog
 
@@ -42,9 +46,7 @@ Watchdog system monitors health of critical subsystems. Multiple watchdog mechan
 
 **Purpose**: Detect if FreeRTOS scheduler hangs (deadlock, infinite loop)
 
-**Implementation**: `app.c`, `app_heartbeat_task()`
-
-If scheduler freezes, heartbeat task never runs, counter stops, watchdog resets MCU.
+See `app.c`, `app_heartbeat_task()`.
 
 ## CAN Heartbeat Monitoring
 
@@ -61,16 +63,18 @@ Critical subsystems must transmit periodic CAN messages or vehicle enters fault 
 
 See `motor_controller.c` for heartbeat tracking logic.
 
-**BMS Heartbeat** (Can be configured)
-- Battery management system sends status periodically
-- Timeout indicates loss of battery communication
-- Vehicle shuts down safely (no operation possible without battery)
+**HVC Heartbeat** (includes BMS status)
+- High Voltage Controller sends status periodically, including BMS data
+- Timeout indicates loss of HV system communication
+- Vehicle shuts down safely (no operation possible without HV)
 
 **Dashboard Heartbeat** (Optional)
 - Telemetry receiver should acknowledge receipt
 - Can detect if data link to external logging is broken
 
 ## Inverter Fault Monitoring
+
+See also [vcu-motor-control.md](vcu-motor-control.md).
 
 Inverter reports internal faults via M170 CAN message:
 
@@ -96,7 +100,7 @@ VCU responds based on fault severity:
 |----------|--------|---------|----------|
 | FreeRTOS heartbeat | 250ms | Hardware dependent | System reset |
 | Inverter CAN | ~50ms | 200ms | Torque cut, FSM fault |
-| BMS CAN | ~100ms | 1000ms | Return to neutral |
+| HVC CAN | ~100ms | 1000ms | Return to neutral |
 | Sensor check | ~10ms | Immediate | Fault raised |
 
 Timing ensures:
@@ -122,13 +126,6 @@ Inverter heartbeat timeout
   → Executes fault response (typically RETURN_NEUTRAL)
   → Vehicle safely stops
 ```
-
-## Safe Defaults
-
-If all watchdogs fail:
-- No command received from FSM → use last known command (conservative)
-- Sensors unavailable → assume maximum safe mode (brakes applied, throttle cut)
-- CAN unavailable → motor disabled, vehicle cannot drive
 
 ## FSAE EV8.1.6 Compliance (CAN Watchdog for Safety)
 
