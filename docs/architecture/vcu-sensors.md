@@ -5,49 +5,47 @@ Sensor subsystem acquires analog inputs via ADC with DMA, processes them for fau
 
 ## Requirements
 
-1. **Hardware-agnostic post-processing**
-   - Sensor logic must be testable via input injection (`vcu_spoof_inputs`)
-   - Input signals must be normalized before FSM consumption
-   - All ADC data must be published to CAN0
-
-2. **Redundant sensor validation (FSAE EV4.7)**
+1. **Redundant sensor validation (FSAE EV4.7)**
    - Two independent APPS sensors (S1, S2) must agree within tolerance
    - Both must sum to ~5V (0.5V offset), scale: S1 (0-4.5V), S2 (4.5V-0V)
    - If disagreement detected → trigger APPS_DISAGREE fault
    - Must validate during each sensor read cycle (~10ms)
 
-3. **Brake + Throttle Plausibility Check (FSAE EV4.7)**
+2. **Brake + Throttle Plausibility Check (FSAE EV4.7)**
    - Cannot have mechanical brakes AND accelerator >25% simultaneously
-   - Thresholds: 1.125V (S1) and 2.875V (S2) for 25% position
    - If condition detected → trigger PEDAL_PLAUS fault
-   - Motor must stay disabled until throttle <5% (0.225V S1, 3.775V S2)
+   - Motor must stay disabled until throttle <5%
 
-4. **Sensor range monitoring**
+3. **Sensor range monitoring**
    - Each sensor has min/max valid range
    - Out-of-range values indicate disconnected/shorted sensors
    - Range faults trigger SENSOR_RANGE fault
    - Each sensor has a struct which includes conversion factors, and sensor settings.
 
-5. **DMA-based acquisition for responsiveness**
+4. **DMA-based acquisition for responsiveness**
    - Uses ADC with DMA to avoid polling overhead
    - Continuous sampling with rolling buffer
    - Timer-triggered conversion for consistent timing
 
-6. **Support for additional sensors**
-   - Wheel speed, suspension and steering potentiometers, etc.
+5. **Support for additional sensors**
+   - Wheel speed (Wheel Turtle Pro), suspension potentiometers, steering angle sensor, thermocouple (see [vcu-thermocouple.md](vcu-thermocouple.md))
 
 
 ## Sensor Types
 
 This list should include all sensors that the VCU supports:
 
-| Sensor | Channel | Range    | Purpose                      | Fault Check         | Datasheet |
-| ------ | ------- | -------- | ---------------------------- | ------------------- | --------- |
-| APPS1  | ADC1    | 0.5-4.5V | Accelerator pedal position   | APPS_DISAGREE       |           |
-| APPS2  | ADC1    | 4.5-0.5V | Redundant accelerator sensor | APPS_DISAGREE       |           |
-| FBPS   | ADC1    | 0.5-4.5V | Front brake pressure         | BRAKE_LIGHT_THRES   |           |
-| RBPS   | ADC1    | 0.5-4.5V | Rear brake pressure          | Pressure monitoring |           |
-| TSCUR  | ADC     | 0.5-4.5V | Tractive System DC curent    | BSPD                |           |
+| Sensor      | Channel | Range    | Purpose                      | Fault Check         | Datasheet |
+| ----------- | ------- | -------- | ---------------------------- | ------------------- | --------- |
+| APPS1       | ADC1    | 0.5-4.5V | Accelerator pedal position   | APPS_DISAGREE       |           |
+| APPS2       | ADC1    | 4.5-0.5V | Redundant accelerator sensor | APPS_DISAGREE       |           |
+| FBPS        | ADC1    | 0.5-4.5V | Front brake pressure         | BRAKE_LIGHT_THRES   |           |
+| RBPS        | ADC1    | 0.5-4.5V | Rear brake pressure          | Pressure monitoring |           |
+| TSCUR       | ADC     | 0.5-4.5V | Tractive System DC current   | BSPD                |           |
+| Wheel Speed | TBD     | TBD      | Wheel speed (Wheel Turtle Pro) | TBD               |           |
+| Suspension  | TBD     | TBD      | Suspension potentiometers    | TBD                 |           |
+| Steering    | TBD     | TBD      | Steering angle               | TBD                 |           |
+| Thermocouple | TBD    | TBD      | Temperature monitoring       | TBD                 | [vcu-thermocouple.md](vcu-thermocouple.md) |
 
 Note: All ADC inputs include a 20k/10k resistor divider, scales 5V signal to 1.67V (Vout = Vin × 10k/30k)
 
@@ -81,7 +79,7 @@ See `sensor_control.c` for acquisition logic.
 - Out-of-range values indicate disconnected/shorted sensors
 - Response policy: `cfg->sensor_range` (default: RETURN_NEUTRAL)
 
-See `input_control.c` for plausibility logic, `pedal_logic.c` for APPS/brake rules.
+See `input_control.c` for plausibility logic, `pedal_logic.c` for APPS/brake rules. See also [vcu-fault-handling.md](vcu-fault-handling.md).
 
 ## Data Publishing
 
