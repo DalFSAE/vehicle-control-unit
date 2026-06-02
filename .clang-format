@@ -18,3 +18,5 @@ SortIncludes: false
 AllowShortCaseLabelsOnASingleLine: true
 IndentCaseLabels: true
 IndentCaseBlocks: false
+InsertBraces: true
+SpaceBeforeParens: ControlStatements 
