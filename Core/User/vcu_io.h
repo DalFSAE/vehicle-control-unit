@@ -54,4 +54,5 @@ void vcu_apply_outputs(const VcuOutputs *out);
 // injected struct verbatim instead of reading hardware.
 void vcu_spoof_inputs(const VcuInputs *spoof);
 void vcu_clear_spoof(void);
+void vcu_fault_inject(uint32_t flags);
 
