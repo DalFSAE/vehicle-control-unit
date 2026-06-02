@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "vcu_io.h"
-#include "vcu_io.h"
 #include "board_outputs.h"
 #include "output_control.h"
 #include "motor_controller.h"
