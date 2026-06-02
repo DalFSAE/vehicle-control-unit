@@ -3,16 +3,10 @@
 #include "vcu_io.h"
 #include "string.h"
 
-#define CMD_BUF_SUZE 64 // used to store incoming USB commands
+#define CMD_BUF_SUZE 64
 
 static uint8_t s_cmd_buf[CMD_BUF_SUZE];
-static uint32_t s_cmd_buf_len = 0; // reset on newline or overflow
-
-enum {
-    CMD_SPOOF_SET = 0x01,
-    CMD_SPOOF_CLEAR = 0x02,
-    CMD_ECHO = 0x45
-};
+static uint32_t s_cmd_buf_len = 0;
 
 uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
     switch (cmd) {
