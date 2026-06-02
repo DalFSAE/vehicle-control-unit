@@ -4,6 +4,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "fsm_task.h"
 
 typedef enum {
     CMD_SPOOF_SET       = 0x01,
@@ -15,5 +16,21 @@ typedef enum {
     CMD_RESET           = 0x07,
     CMD_ECHO            = 0x45,
 } UsbCmd_t;
+
+typedef enum {
+    FSM_CMD_SPOOF_SET,
+    FSM_CMD_SPOOF_CLR,
+    FSM_CMD_STEP,
+    FSM_CMD_RESET,
+    FSM_CMD_FAULT_INJECT,
+} FsmCmdType_t;
+
+typedef struct {
+    FsmCmdType_t type;
+    union {
+        VcuInputs spoof;
+        uint32_t  fault_flags;
+    } payload;
+} FsmCmd_t;
 
 uint32_t usb_cmd_rx(const uint8_t *buf, uint32_t len);

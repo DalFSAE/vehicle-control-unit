@@ -1,11 +1,12 @@
 #include "usb_cmd.h"
 #include "usbd_cdc_if.h"
 #include "vcu_io.h"
+#include "fsm_task.h"
 #include "string.h"
 
 #define CMD_BUF_SUZE 64
 
-static uint8_t s_cmd_buf[CMD_BUF_SUZE];
+static uint8_t  s_cmd_buf[CMD_BUF_SUZE];
 static uint32_t s_cmd_buf_len = 0;
 
 uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
@@ -20,6 +21,34 @@ uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
             }
             return 0xFFFFFFFF;
         case CMD_SPOOF_CLEAR:
+            vcu_clear_spoof();
+            return 0;
+        case CMD_REQUEST_OUTPUTS: {
+            uint8_t resp[2 + sizeof(VcuOutputs)];
+            resp[0] = 0x83;
+            resp[1] = sizeof(VcuOutputs);
+            memcpy(&resp[2], fsm_get_last_outputs(), sizeof(VcuOutputs));
+            CDC_Transmit_FS(resp, sizeof(resp));
+            return 0;
+        }
+        case CMD_REQUEST_STATE: {
+            uint8_t resp[3] = {0x84, 0x01, (uint8_t)fsm_get_state()};
+            CDC_Transmit_FS(resp, sizeof(resp));
+            return 0;
+        }
+        case CMD_STEP:
+            g_fsm_step_requested = true;
+            return 0;
+        case CMD_FAULT_INJECT:
+            if (len >= 4) {
+                uint32_t flags;
+                memcpy(&flags, payload, 4);
+                vcu_fault_inject(flags);
+                return 0;
+            }
+            return 0xFFFFFFFF;
+        case CMD_RESET:
+            g_fsm_reset_requested = true;
             vcu_clear_spoof();
             return 0;
         default:
