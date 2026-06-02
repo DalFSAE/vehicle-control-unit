@@ -30,12 +30,21 @@ typedef struct {...} VcuOutputs;
 
 ## Command Protocol
 
-Frame: `[CMD (1 byte)][LEN (1 byte)[payload (LEN bytes)]`
+Frame format: `[CMD (1 byte)][LEN (1 byte)][payload (LEN bytes)]`
 
+Response format (for commands that return data): `[CMD | 0x80 (1 byte)][optional fields]`
+The response command ID is the request command ID bitwise OR'd with 0x80, allowing the host to correlate responses with requests.
 
-| CMD  | Name      | Payload | Note |
-| 0x01 | SPOOF_SET | VcuInputs (packed) | Enable spoofing, and parse payload |
-| 0x02 | SPOOF_CLR | (none) | Disable spoofing and return inputs to hardware |
+| CMD  | Name            | Payload          | Response | Note |
+|------|-----------------|------------------|----------|------|
+| 0x01 | SPOOF_SET       | 13 bytes (VcuInputs) | none | Enable spoofing with injected inputs |
+| 0x02 | SPOOF_CLEAR     | none             | none | Disable spoofing; resume hardware reads |
+| 0x03 | REQUEST_OUTPUTS | none             | `[0x83][sizeof(VcuOutputs)][VcuOutputs]` | Poll current FSM outputs |
+| 0x04 | REQUEST_STATE   | none             | `[0x84][0x01][state_byte]` | Poll current FSM state (ST_ENTRY=0, ST_STANDBY=1, etc.) |
+| 0x05 | STEP            | none             | none | Manually advance FSM one cycle (step mode) |
+| 0x06 | FAULT_INJECT    | 4 bytes (uint32_t flags) | none | Merge fault flags into spoof inputs |
+| 0x07 | RESET           | none             | none | Reset FSM to ST_ENTRY, clear spoof, clear step mode |
+| 0x45 | ECHO            | arbitrary bytes  | echoed bytes | Loopback for link testing |
 
 ## Python
 
