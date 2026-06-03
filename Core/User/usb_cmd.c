@@ -2,11 +2,10 @@
 #include "usbd_cdc_if.h"
 #include "vcu_io.h"
 #include "fsm_task.h"
-#include "cmsis_os2.h"
-#include "log.h"
 #include <string.h>
 
 #define CMD_BUF_SUZE  64
+#define RESP_BUF_SIZE 64
 
 static uint8_t  s_cmd_buf[CMD_BUF_SUZE];
 static uint32_t s_cmd_buf_len = 0;
@@ -14,14 +13,32 @@ static uint32_t s_cmd_buf_len = 0;
 // Diagnostic counter: incremented each time CDC_Receive_FS delivers data.
 volatile uint32_t g_usb_rx_count = 0;
 
+// Response buffer written from ISR (dispatch_cmd), flushed from task context
+// by usb_cmd_flush_response().  On Cortex-M4 (single-core, in-order stores),
+// volatile ordering is sufficient — no DMB needed.
+static volatile uint8_t  s_resp_buf[RESP_BUF_SIZE];
+static volatile uint16_t s_resp_len = 0;  // 0 = no response pending
+
+static void store_response(const uint8_t *data, uint16_t len) {
+    if (s_resp_len != 0) return;  // prior response not yet sent; drop
+    if (len > RESP_BUF_SIZE) len = RESP_BUF_SIZE;
+    memcpy((uint8_t *)s_resp_buf, data, len);
+    s_resp_len = len;             // written last: acts as publish flag
+}
+
 void usb_cmd_flush_response(void) {
-    // No-op: responses now go through log_queue_binary → s_log_queue.
+    uint16_t len = s_resp_len;
+    if (len == 0) return;
+    if (CDC_Transmit_FS((uint8_t *)s_resp_buf, len) != USBD_BUSY) {
+        s_resp_len = 0;
+    }
+    // If USBD_BUSY, leave s_resp_len set; task retries next iteration.
 }
 
 uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
     switch (cmd) {
         case CMD_ECHO:
-            log_queue_binary(payload, (uint16_t)(len > UART_BUF_SIZE ? UART_BUF_SIZE : len));
+            store_response(payload, (uint16_t)(len > RESP_BUF_SIZE ? RESP_BUF_SIZE : len));
             return 0;
         case CMD_SPOOF_SET:
             if (len >= sizeof(VcuInputs)) {
@@ -37,7 +54,7 @@ uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
             resp[0] = 0x83;
             resp[1] = sizeof(VcuOutputs);
             memcpy(&resp[2], fsm_get_last_outputs(), sizeof(VcuOutputs));
-            log_queue_binary(resp, (uint16_t)sizeof(resp));
+            store_response(resp, (uint16_t)sizeof(resp));
             return 0;
         }
         case CMD_REQUEST_STATE: {
@@ -45,7 +62,7 @@ uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
             resp[0] = 0x84;
             resp[1] = 0x01;
             resp[2] = (uint8_t)fsm_get_state();
-            log_queue_binary(resp, sizeof(resp));
+            store_response(resp, sizeof(resp));
             return 0;
         }
         case CMD_STEP:
