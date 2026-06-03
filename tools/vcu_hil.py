@@ -130,7 +130,8 @@ class VcuHil:
         pending = self.ser.read_all()
         if pending:
             self._drain_logs(pending)
-        self.ser.reset_input_buffer()
+        # Avoid reset_input_buffer(): tcflush(TCIFLUSH) drops CDC-ACM receive URBs on
+        # Linux, permanently breaking reads. read_all() above is sufficient.
         frame = bytes([cmd, len(payload)]) + payload
         self.ser.write(frame)
 
@@ -164,15 +165,21 @@ class VcuHil:
         Returns:
             Received bytes with log lines removed (logs stored in captured_logs)
         """
-        old_timeout = self.ser.timeout
-        if timeout is not None:
-            self.ser.timeout = timeout
-        try:
-            data = self.ser.read(1024)
-            return self._drain_logs(data)
-        finally:
-            if timeout is not None:
-                self.ser.timeout = old_timeout
+        effective_timeout = timeout if timeout is not None else self.ser.timeout
+        deadline = time.monotonic() + effective_timeout
+        # Poll in_waiting rather than relying on termios VTIME, which does not
+        # behave reliably on Linux CDC-ACM devices and causes read() to return
+        # immediately with b'' instead of blocking for the requested timeout.
+        while time.monotonic() < deadline:
+            if self.ser.in_waiting:
+                # Brief pause to let any trailing bytes arrive (multi-packet responses)
+                time.sleep(0.02)
+                result = self._drain_logs(self.ser.read(self.ser.in_waiting))
+                if result:
+                    return result
+                # _drain_logs consumed only log lines; keep waiting for actual response
+            time.sleep(0.001)
+        return b''
 
     def echo(self, data: bytes) -> bytes:
         """

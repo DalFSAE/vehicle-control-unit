@@ -105,12 +105,11 @@ class TestSendCmd:
         hil.send_cmd(0x01, b'\x00' * 255)
         mock_serial.write.assert_called_once()
 
-    def test_resets_input_buffer_before_write(self, hil, mock_serial):
-        call_order = []
-        mock_serial.reset_input_buffer.side_effect = lambda: call_order.append("reset")
-        mock_serial.write.side_effect = lambda _: call_order.append("write")
+    def test_drains_pending_bytes_before_write(self, hil, mock_serial):
+        mock_serial.read_all.return_value = b'[1] INFO stale\n'
         hil.send_cmd(0x01, b'')
-        assert call_order == ["reset", "write"]
+        mock_serial.read_all.assert_called_once()
+        mock_serial.write.assert_called_once()
 
     def test_echo_command_id(self, hil, mock_serial):
         mock_serial.read.return_value = b"hello"
