@@ -243,8 +243,9 @@ class VcuHil:
                 if chunk:
                     saw_data = True
                     raw += chunk
-                    raw = self._drain_logs(raw)  # strip text lines; keep binary remainder
-                    if _HIL_READY_MARKER in chunk:  # check the incoming chunk, not stripped raw
+                    found = _HIL_READY_MARKER in raw  # check before drain strips it
+                    raw = self._drain_logs(raw)
+                    if found:
                         time.sleep(0.05)
                         self.ser.reset_input_buffer()
                         _vcu_log.info("HIL_READY received")
