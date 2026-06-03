@@ -9,7 +9,6 @@
 #include "test_fsm_hil.h"
 #include "test_can.h"
 #include "test_motor_controller.h"
-#include "test_usb_cmd.h"
 #include "vcu_io.h"
 
 void setUp(void) {
@@ -43,18 +42,6 @@ static void run_fsm_tests(void) {
     RUN_TEST(test_fsm_pedal_plaus_returns_to_neutral);
     RUN_TEST(test_if_debug_button_changes_state); // optional, requires user input
 }
-
-static void run_usb_cmd_tests(void) {
-    UNITY_BEGIN();
-    RUN_TEST(test_usb_cmd_echo_roundtrip);
-    RUN_TEST(test_usb_cmd_request_state);
-    RUN_TEST(test_usb_cmd_request_outputs);
-    RUN_TEST(test_usb_cmd_spoof_set);
-    RUN_TEST(test_usb_cmd_step);
-    RUN_TEST(test_usb_cmd_reset);
-    UNITY_END();
-}
-
 
 // ===========================================================================
 // Runners
@@ -91,10 +78,6 @@ void hardware_post_test_task(void *argument) {
     BootResult_t result = hardware_test_post_boot();
     log_printf("===END_HIL_TESTS: %u run, %u failed===\r\n", result.tests_run, result.failures);
 
-    log_printf("===BEGIN_USB_CMD_TESTS===\r\n");
-    run_usb_cmd_tests();
-    log_printf("===END_USB_CMD_TESTS===\r\n");
-
     log_printf("===BEGIN_CAN_TESTS===\r\n");
     run_can_tests();
     log_printf("===END_CAN_TESTS===\r\n");
@@ -104,5 +87,12 @@ void hardware_post_test_task(void *argument) {
     log_printf("===END_MC_TESTS===\r\n");
 
     vcu_clear_spoof();
+
+    // Signal to the host-side Python CLI that boot tests are done and the USB
+    // channel is now clean.  The Python VcuHil.wait_for_ready() drains until
+    // this marker appears, then flushes the input buffer before issuing any
+    // commands.  Must be the last thing emitted before the task exits so the
+    // host never races with boot-test output.
+    log_printf("===HIL_READY===\r\n");
     osThreadExit();
 }
