@@ -63,19 +63,18 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m venv .venv
-          .venv/bin/pip install pytest pyserial
+          py -m venv .venv
+          .venv\Scripts\python.exe -m pip install --upgrade pip
+          .venv\Scripts\python.exe -m pip install -r tools/requirements.txt
 
       - name: Flash firmware
         run: STM32_Programmer_CLI -c port=SWD -w firmware/DMS-24-RTOS-VCU.bin 0x08000000 -rst
 
       - name: Wait for device
-        run: sleep 3
+        run: Start-Sleep -Seconds 3
 
       - name: Run HIL tests
-        env:
-          VCU_PORT: /dev/vcu
-        run: ${{ github.workspace }}/.venv/bin/python -m pytest tools/tests/test_fsm.py -v --tb=short --junit-xml=results.xml
+        run: .venv\Scripts\python.exe -m pytest tools/tests/test_fsm.py -v --tb=short --junit-xml=results.xml
 
       - name: Upload test results
         if: always()

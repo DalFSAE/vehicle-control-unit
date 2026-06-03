@@ -14,21 +14,51 @@ Commands are a 2-byte header [CMD, LEN] followed by LEN payload bytes. The respo
 
 ## Runner Setup
 
-The self-hosted runner must be a Linux machine with the VCU connected via both USB and SWD.
+The self-hosted runner must have the VCU connected via both USB and SWD.
 
-Register the runner under Settings, Actions, Runners and add the label stm32f407 during setup.
+Register the runner under Settings, Actions, Runners and add the label `stm32f407` during setup.
+
+Install STM32CubeProgrammer from ST and make sure `STM32_Programmer_CLI` is on the runner
+PATH. The flash step uses SWD; USB alone is not sufficient for flashing.
+
+### Linux
 
 Install the udev rule to give the board a stable port at /dev/vcu:
 
     sudo cp 99-vcu.rules /etc/udev/rules.d/
     sudo udevadm control --reload-rules && sudo udevadm trigger
 
-Verify with ls -l /dev/vcu. If the symlink does not appear, check the VID/PID with lsusb and update the rule to match.
+Verify with `ls -l /dev/vcu`. If the symlink does not appear, check the VID/PID with
+`lsusb` and update the rule to match.
 
-Install STM32CubeProgrammer from ST and make sure STM32_Programmer_CLI is on the runner PATH. The flash step uses SWD, USB alone is not sufficient for flashing.
+### Windows
+
+Install Python from python.org (the `py` launcher must be available). After installing,
+disable the Microsoft Store app-execution aliases so the Store stub does not shadow the
+real interpreter:
+
+    Settings → Apps → Advanced app settings → App execution aliases
+    Turn off python.exe and python3.exe
+
+Add the STM32CubeProgrammer `bin` directory to the system PATH. The default path is:
+
+    C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeProgrammer\bin
+
+The workflow relies on the board enumerating as COM5 (the default used by the test suite
+on Windows). To pin the board to COM5, open Device Manager, find the board under Ports
+(COM & LPT), go to Properties → Port Settings → Advanced and set the COM port number.
+
+If COM5 is not available, set the `VCU_PORT` environment variable on the runner to the
+correct port (e.g. `COM3`). The test suite reads it automatically.
 
 ## Running Locally
 
-    pytest test_fsm.py --port /dev/vcu -v
+Linux:
 
-VCU_PORT env var can be set instead of passing --port each time.
+    pytest tools/tests/test_fsm.py --port /dev/vcu -v
+
+Windows:
+
+    pytest tools/tests/test_fsm.py --port COM5 -v
+
+`VCU_PORT` env var can be set instead of passing `--port` each time.
