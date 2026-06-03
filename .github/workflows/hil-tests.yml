@@ -73,14 +73,13 @@ jobs:
         run: sleep 3
 
       - name: Run HIL tests
-        working-directory: tools
         env:
           VCU_PORT: /dev/vcu
-        run: ${{ github.workspace }}/.venv/bin/python -m pytest tests/test_fsm.py -v --tb=short --junit-xml=results.xml
+        run: ${{ github.workspace }}/.venv/bin/python -m pytest tools/tests/test_fsm.py -v --tb=short --junit-xml=results.xml
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: hil-test-results
-          path: tools/results.xml
+          path: results.xml
