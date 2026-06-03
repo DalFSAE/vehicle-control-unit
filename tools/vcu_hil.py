@@ -164,15 +164,23 @@ class VcuHil:
         Returns:
             Received bytes with log lines removed (logs stored in captured_logs)
         """
-        old_timeout = self.ser.timeout
-        if timeout is not None:
-            self.ser.timeout = timeout
-        try:
-            data = self.ser.read(1024)
-            return self._drain_logs(data)
-        finally:
-            if timeout is not None:
-                self.ser.timeout = old_timeout
+        effective_timeout = timeout if timeout is not None else self.ser.timeout
+        deadline = time.monotonic() + effective_timeout
+        # Poll in_waiting rather than relying on termios VTIME, which does not
+        # behave reliably on Linux CDC-ACM devices and causes read() to return
+        # immediately with b'' instead of blocking for the requested timeout.
+        while time.monotonic() < deadline:
+            n = self.ser.in_waiting
+            if n:
+                data = self.ser.read(n)
+                # Wait briefly for any trailing bytes in multi-packet responses
+                time.sleep(0.02)
+                extra = self.ser.in_waiting
+                if extra:
+                    data += self.ser.read(extra)
+                return self._drain_logs(data)
+            time.sleep(0.001)
+        return b''
 
     def echo(self, data: bytes) -> bytes:
         """
