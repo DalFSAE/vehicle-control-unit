@@ -170,15 +170,10 @@ class VcuHil:
         # behave reliably on Linux CDC-ACM devices and causes read() to return
         # immediately with b'' instead of blocking for the requested timeout.
         while time.monotonic() < deadline:
-            n = self.ser.in_waiting
-            if n:
-                data = self.ser.read(n)
-                # Wait briefly for any trailing bytes in multi-packet responses
+            if self.ser.in_waiting:
+                # Brief pause to let any trailing bytes arrive (multi-packet responses)
                 time.sleep(0.02)
-                extra = self.ser.in_waiting
-                if extra:
-                    data += self.ser.read(extra)
-                return self._drain_logs(data)
+                return self._drain_logs(self.ser.read(self.ser.in_waiting))
             time.sleep(0.001)
         return b''
 
