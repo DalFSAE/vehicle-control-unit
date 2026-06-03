@@ -61,7 +61,15 @@ jobs:
           name: firmware-debug-bin
           path: firmware
 
-      - name: Install dependencies
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -r tools/requirements.txt
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
         run: |
           python -m venv .venv
           .venv\Scripts\python.exe -m pip install --upgrade pip
@@ -71,9 +79,16 @@ jobs:
         run: STM32_Programmer_CLI -c port=SWD -w firmware/DMS-24-RTOS-VCU.bin 0x08000000 -rst
 
       - name: Wait for device
-        run: Start-Sleep -Seconds 10
+        run: sleep 10
 
-      - name: Run HIL tests
+      - name: Run HIL tests (Linux)
+        if: runner.os == 'Linux'
+        env:
+          VCU_PORT: /dev/vcu
+        run: .venv/bin/python -m pytest tools/tests/test_fsm.py -v --tb=short --junit-xml=results.xml
+
+      - name: Run HIL tests (Windows)
+        if: runner.os == 'Windows'
         run: .venv\Scripts\python.exe -m pytest tools/tests/test_fsm.py -v --tb=short --junit-xml=results.xml
 
       - name: Upload test results
