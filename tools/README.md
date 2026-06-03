@@ -33,12 +33,7 @@ Verify with `ls -l /dev/vcu`. If the symlink does not appear, check the VID/PID 
 
 ### Windows
 
-Install Python from python.org (the `py` launcher must be available). After installing,
-disable the Microsoft Store app-execution aliases so the Store stub does not shadow the
-real interpreter:
-
-    Settings → Apps → Advanced app settings → App execution aliases
-    Turn off python.exe and python3.exe
+Install Python from python.org.
 
 Add the STM32CubeProgrammer `bin` directory to the system PATH. The default path is:
 
