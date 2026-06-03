@@ -96,6 +96,9 @@ class VcuHil:
         """
         if len(payload) > 255:
             raise ValueError(f"Payload too large: {len(payload)} > 255")
+        pending = self.ser.read_all()
+        if pending:
+            self._drain_logs(pending)
         self.ser.reset_input_buffer()
         frame = bytes([cmd, len(payload)]) + payload
         self.ser.write(frame)

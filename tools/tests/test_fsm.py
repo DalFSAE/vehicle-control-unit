@@ -7,20 +7,7 @@ Run with: pytest test_fsm.py --port /dev/ttyACM0 -v
 
 import time
 
-import pytest
-
-from vcu_hil import VcuHil, VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT_CAN_TIMEOUT
-
-
-@pytest.fixture
-def vcu(request):
-    """Fixture providing a VcuHil instance with reset/cleanup."""
-    port = request.config.getoption("--port")
-    with VcuHil(port) as h:
-        time.sleep(0.5)
-        h.reset()
-        time.sleep(0.1)
-        yield h
+from vcu_hil import VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT_CAN_TIMEOUT
 
 
 # Tests
