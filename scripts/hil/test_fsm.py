@@ -21,12 +21,9 @@ def vcu(request):
 
     with VcuHil(port) as h:
         time.sleep(0.5)
+        h.reset()
+        time.sleep(0.1)
         yield h
-        if request.node.rep_call.failed and h.captured_logs:
-            print("\n--- VCU serial log ---")
-            for line in h.captured_logs:
-                print(line)
-            print("----------------------")
 
 
 # Tests
@@ -53,12 +50,13 @@ def test_spoof_and_step_to_neutral(vcu):
 
 
 def test_neutral_to_forward(vcu):
-    """From NEUTRAL, spoof rtd_button, step → should reach FORWARD."""
+    """From NEUTRAL, spoof rtd_button + brake_pressed, step → should reach FORWARD."""
     inputs = VcuInputs(fwrd_switch=True, ts_active=True)
     vcu.spoof_inputs(inputs)
     vcu.step()
 
     inputs.rtd_button = True
+    inputs.brake_pressed = True
     vcu.spoof_inputs(inputs)
     vcu.step()
 
@@ -73,6 +71,7 @@ def test_fault_inject_in_forward(vcu):
     vcu.step()
 
     inputs.rtd_button = True
+    inputs.brake_pressed = True
     vcu.spoof_inputs(inputs)
     vcu.step()
 

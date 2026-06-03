@@ -5,6 +5,7 @@ vcu_hil.py - Serial transport layer for VCU USB CDC binary protocol
 Provides VcuHil class for sending/receiving binary command frames and helpers.
 """
 
+import logging
 import re
 import struct
 import time
@@ -14,6 +15,7 @@ from typing import List, Optional
 import serial
 
 _STM32_LOG_RE = re.compile(rb'\[\s*\d+\][^\n]*\n')
+_vcu_log = logging.getLogger("vcu")
 
 
 # Command IDs (must match UsbCmd_t in usb_cmd.h)
@@ -112,7 +114,9 @@ class VcuHil:
                 result += buf[pos:]
                 break
             result += buf[pos : m.start()]
-            self.captured_logs.append(m.group().decode('ascii', errors='replace').rstrip())
+            line = m.group().decode('ascii', errors='replace').rstrip()
+            self.captured_logs.append(line)
+            _vcu_log.debug(line)
             pos = m.end()
         return result
 
