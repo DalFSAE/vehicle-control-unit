@@ -130,7 +130,8 @@ class VcuHil:
         pending = self.ser.read_all()
         if pending:
             self._drain_logs(pending)
-        self.ser.reset_input_buffer()
+        # Avoid reset_input_buffer(): tcflush(TCIFLUSH) drops CDC-ACM receive URBs on
+        # Linux, permanently breaking reads. read_all() above is sufficient.
         frame = bytes([cmd, len(payload)]) + payload
         self.ser.write(frame)
 
