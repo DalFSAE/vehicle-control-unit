@@ -38,6 +38,9 @@ jobs:
       - name: Build firmware
         run: cmake --build --preset Debug
 
+      - name: Generate binary
+        run: arm-none-eabi-objcopy -O binary build/Debug/DMS-24-RTOS-VCU.elf build/Debug/DMS-24-RTOS-VCU.bin
+
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
