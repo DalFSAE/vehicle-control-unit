@@ -71,7 +71,7 @@ jobs:
         run: STM32_Programmer_CLI -c port=SWD -w firmware/DMS-24-RTOS-VCU.bin 0x08000000 -rst
 
       - name: Wait for device
-        run: Start-Sleep -Seconds 3
+        run: Start-Sleep -Seconds 10
 
       - name: Run HIL tests
         run: .venv\Scripts\python.exe -m pytest tools/tests/test_fsm.py -v --tb=short --junit-xml=results.xml
