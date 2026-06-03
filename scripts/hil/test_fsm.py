@@ -5,8 +5,6 @@ test_fsm.py - HIL pytest suite for FSM control via USB
 Run with: pytest test_fsm.py --port /dev/ttyACM0 -v
 """
 
-import time
-
 import pytest
 
 from vcu_hil import VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT_CAN_TIMEOUT
@@ -16,7 +14,7 @@ from vcu_hil import VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT_CAN_TIM
 def vcu(vcu_ready):
     """Per-test fixture: reset FSM to clean state on the shared session connection."""
     vcu_ready.reset()
-    time.sleep(0.1)
+    vcu_ready.drain_input(idle_timeout=0.2)
     yield vcu_ready
 
 

@@ -102,7 +102,14 @@ class VcuHil:
         """
         if len(payload) > 255:
             raise ValueError(f"Payload too large: {len(payload)} > 255")
-        self.ser.reset_input_buffer()
+        # Discard stale bytes with a non-blocking read instead of tcflush.
+        # tcflush(TCIFLUSH) can interrupt the cdc_acm driver's URB submission
+        # cycle, leaving the firmware's TxState stuck and causing USBD_BUSY
+        # on subsequent responses.
+        old_to = self.ser.timeout
+        self.ser.timeout = 0
+        self.ser.read(256)
+        self.ser.timeout = old_to
         frame = bytes([cmd, len(payload)]) + payload
         self.ser.write(frame)
 
@@ -247,17 +254,25 @@ class VcuHil:
                     raw = self._drain_logs(raw)
                     if found:
                         time.sleep(0.05)
-                        self.ser.reset_input_buffer()
                         _vcu_log.info("HIL_READY received")
                         return True
                 elif not saw_data and (time.monotonic() - (deadline - timeout)) >= idle_timeout:
-                    self.ser.reset_input_buffer()
                     _vcu_log.info("Channel silent at connect time, board already past boot")
                     return True
         finally:
             self.ser.timeout = old_timeout
         _vcu_log.warning("wait_for_ready() timed out after %.1fs", timeout)
         return False
+
+    def drain_input(self, idle_timeout: float = 0.2) -> None:
+        """Read and discard bytes until the channel is silent for idle_timeout seconds."""
+        old_timeout = self.ser.timeout
+        self.ser.timeout = idle_timeout
+        try:
+            while self.ser.read(256):
+                pass
+        finally:
+            self.ser.timeout = old_timeout
 
     def close(self) -> None:
         """Close serial connection."""
