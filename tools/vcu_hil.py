@@ -48,12 +48,12 @@ DBG_LED2 = (1 << 1)
 DBG_LED3 = (1 << 2)
 
 
-_VCUOUTPUTS_FMT = '<??????I?fIB'  # 20 bytes, must match packed VcuOutputs in vcu_io.h
+_VCUOUTPUTS_FMT = '<??????B?fIB'  # 17 bytes, must match packed VcuOutputs in vcu_io.h
 
 
 @dataclass
 class VcuOutputs:
-    """VCU output state (20 bytes packed, must match C struct in vcu_io.h)"""
+    """VCU output state (17 bytes packed, must match C struct in vcu_io.h)"""
     relay_always_on: bool = False
     relay_inverter: bool = False
     brake_light: bool = False

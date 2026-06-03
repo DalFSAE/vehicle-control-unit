@@ -7,7 +7,7 @@ Run with: pytest test_fsm.py --port /dev/ttyACM0 -v
 
 import time
 
-from vcu_hil import VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT_CAN_TIMEOUT
+from vcu_hil import VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT_CAN_TIMEOUT, DBG_LED1, DBG_LED2, DBG_LED3
 
 
 # Tests
@@ -67,9 +67,10 @@ def test_fault_inject_in_forward(vcu):
 
 
 def test_request_outputs_correct_format(vcu):
-    """REQUEST_OUTPUTS should return valid data."""
+    """REQUEST_OUTPUTS should return a parsed VcuOutputs."""
+    from vcu_hil import VcuOutputs
     outputs = vcu.request_outputs()
-    assert len(outputs) > 0
+    assert isinstance(outputs, VcuOutputs)
 
 
 def test_clear_spoof_doesnt_crash(vcu):
@@ -77,3 +78,25 @@ def test_clear_spoof_doesnt_crash(vcu):
     vcu.clear_spoof()
     state = vcu.request_state()
     assert state is not None
+
+def test_led_pattern(vcu):
+    """debug_cmd input should be reflected in debug_leds output after a step."""
+    debug_cmd = DBG_LED1 | DBG_LED3
+    vcu.set_debug_cmd(debug_cmd)
+    vcu.step()
+    outputs = vcu.request_outputs()
+    assert outputs.debug_leds == debug_cmd
+
+def test_printing_outputs(vcu):
+    """Test that printing outputs doesn't crash."""
+    outputs = vcu.request_outputs()
+    print(outputs)
+
+
+def test_inputs_match_outputs(vcu):
+    """Spoofing fwrd_switch+ts_active and stepping should transition to NEUTRAL."""
+    inputs = VcuInputs(fwrd_switch=True, ts_active=True)
+    vcu.spoof_inputs(inputs)
+    vcu.step()
+    assert vcu.request_state() == ST_NEUTRAL
+    
