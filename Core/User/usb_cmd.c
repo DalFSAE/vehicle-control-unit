@@ -33,9 +33,22 @@ void usb_cmd_flush_response(void) {
         return;
     }
     s_resp_pending = false;
-    while (CDC_Transmit_FS(s_resp_buf, s_resp_len) == USBD_BUSY) {
-        osDelay(1);
-    }
+
+    uint8_t r;
+    uint8_t attempts = 0;
+    do {
+        r = CDC_Transmit_FS(s_resp_buf, s_resp_len);
+        if (r == USBD_BUSY) {
+            osDelay(1);
+            attempts++;
+        }
+    } while (r == USBD_BUSY && attempts < 50);
+
+    // Log the result — visible in Python live-log output via _drain_logs.
+    // r=0(OK), r=1(BUSY/timeout), r=2(FAIL)
+    log_printf("[%7u] INFO  HIL    RESP r=%u len=%u att=%u\r\n",
+               (unsigned)HAL_GetTick(), (unsigned)r,
+               (unsigned)s_resp_len, (unsigned)attempts);
 }
 
 uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
