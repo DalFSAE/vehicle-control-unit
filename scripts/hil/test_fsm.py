@@ -9,20 +9,15 @@ import time
 
 import pytest
 
-from vcu_hil import VcuHil, VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT_CAN_TIMEOUT
+from vcu_hil import VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT_CAN_TIMEOUT
 
 
 @pytest.fixture
-def vcu(request, vcu_ready):  # noqa: ARG001 - vcu_ready gates session boot drain
-    """Fixture providing a VcuHil instance with reset/cleanup."""
-    port = request.config.getoption("--port")
-    with VcuHil(port) as h:
-        # Handle board reset on port close (DTR toggle). idle_timeout=0.5 keeps
-        # this fast when the channel is already clean.
-        h.wait_for_ready(timeout=30.0, idle_timeout=0.5)
-        h.reset()
-        time.sleep(0.1)
-        yield h
+def vcu(vcu_ready):
+    """Per-test fixture: reset FSM to clean state on the shared session connection."""
+    vcu_ready.reset()
+    time.sleep(0.1)
+    yield vcu_ready
 
 
 # Tests

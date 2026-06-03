@@ -17,8 +17,8 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope="session")
 def vcu_ready(request):
-    """Drain boot-test output once per session before any test opens a connection."""
+    """Open port once per session, drain boot output, and keep connection alive for all tests."""
     port = request.config.getoption("--port")
     with VcuHil(port) as h:
         h.wait_for_ready(timeout=30.0)
-    yield
+        yield h
