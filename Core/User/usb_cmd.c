@@ -2,17 +2,43 @@
 #include "usbd_cdc_if.h"
 #include "vcu_io.h"
 #include "fsm_task.h"
-#include "string.h"
+#include "cmsis_os2.h"
+#include <string.h>
 
-#define CMD_BUF_SUZE 64
+#define CMD_BUF_SUZE  64
+#define RESP_BUF_SIZE 256
 
 static uint8_t  s_cmd_buf[CMD_BUF_SUZE];
 static uint32_t s_cmd_buf_len = 0;
 
+// Deferred response: populated from USB interrupt context, transmitted by
+// log_usb_task so that CDC_Transmit_FS is always called from task context.
+static uint8_t         s_resp_buf[RESP_BUF_SIZE];
+static uint16_t        s_resp_len     = 0;
+static volatile bool   s_resp_pending = false;
+
+static void queue_response(const uint8_t *data, uint16_t len) {
+    if (!s_resp_pending && len <= RESP_BUF_SIZE) {
+        memcpy(s_resp_buf, data, len);
+        s_resp_len     = len;
+        s_resp_pending = true;
+    }
+}
+
+void usb_cmd_flush_response(void) {
+    if (!s_resp_pending) {
+        return;
+    }
+    s_resp_pending = false;
+    while (CDC_Transmit_FS(s_resp_buf, s_resp_len) == USBD_BUSY) {
+        osDelay(1);
+    }
+}
+
 uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
     switch (cmd) {
         case CMD_ECHO:
-            CDC_Transmit_FS((uint8_t *)payload, len);
+            queue_response(payload, (uint16_t)(len > RESP_BUF_SIZE ? RESP_BUF_SIZE : len));
             return 0;
         case CMD_SPOOF_SET:
             if (len >= sizeof(VcuInputs)) {
@@ -28,7 +54,7 @@ uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
             resp[0] = 0x83;
             resp[1] = sizeof(VcuOutputs);
             memcpy(&resp[2], fsm_get_last_outputs(), sizeof(VcuOutputs));
-            CDC_Transmit_FS(resp, sizeof(resp));
+            queue_response(resp, (uint16_t)sizeof(resp));
             return 0;
         }
         case CMD_REQUEST_STATE: {
@@ -36,7 +62,7 @@ uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
             resp[0] = 0x84;
             resp[1] = 0x01;
             resp[2] = (uint8_t)fsm_get_state();
-            CDC_Transmit_FS(resp, sizeof(resp));
+            queue_response(resp, sizeof(resp));
             return 0;
         }
         case CMD_STEP:

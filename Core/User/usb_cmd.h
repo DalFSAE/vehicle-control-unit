@@ -34,3 +34,7 @@ typedef struct {
 } FsmCmd_t;
 
 uint32_t usb_cmd_rx(const uint8_t *buf, uint32_t len);
+
+// Transmit any pending command response from task context.
+// Must be called from a FreeRTOS task (not from interrupt).
+void usb_cmd_flush_response(void);

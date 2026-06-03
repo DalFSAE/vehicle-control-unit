@@ -12,6 +12,7 @@
 #define LOG_MODULE LOG_SRC_LOG
 #include "log.h"
 #include "sensor_types.h"
+#include "usb_cmd.h"
 
 // ---------------------------------------------------------------------------
 // Helper functions
@@ -355,7 +356,10 @@ void log_usb_task(void *argument) {
     osDelay(1000); // wait for USB host enumeration before transmitting
     LogMsg_t msg;
     for (;;) {
-        if (osMessageQueueGet(s_log_queue, &msg, NULL, osWaitForever) == osOK) {
+        // Flush any command response queued from interrupt context first.
+        usb_cmd_flush_response();
+
+        if (osMessageQueueGet(s_log_queue, &msg, NULL, 10U) == osOK) {
             // Wait until USB is free
             while (CDC_Transmit_FS((uint8_t *)msg.data, msg.len) == USBD_BUSY) {
                 osDelay(1);
