@@ -153,24 +153,32 @@ class VcuHil:
             self.ser.timeout = timeout
         try:
             data = self.ser.read(1024)
+            _vcu_log.info("recv raw (%d bytes): %r", len(data), data)
             return self._drain_logs(data)
         finally:
             if timeout is not None:
                 self.ser.timeout = old_timeout
 
-    def echo(self, data: bytes) -> bytes:
+    def echo(self, data: bytes, retries: int = 3) -> bytes:
         """
-        Send echo command and receive response.
+        Send echo command and receive response.  Retries on empty response.
 
         Args:
             data: Data to echo
+            retries: Max attempts before returning empty bytes
 
         Returns:
             Echoed data
         """
-        self.send_cmd(CMD_ECHO, data)
-        time.sleep(0.01)
-        return self.recv(timeout=0.5)
+        for attempt in range(retries):
+            self.send_cmd(CMD_ECHO, data)
+            time.sleep(0.05)
+            result = self.recv(timeout=0.5)
+            if result:
+                return result
+            _vcu_log.warning("echo attempt %d/%d returned empty", attempt + 1, retries)
+            time.sleep(0.1)
+        return b''
 
     def spoof_inputs(self, inputs: VcuInputs) -> None:
         """Inject spoof inputs into the VCU."""
@@ -269,8 +277,11 @@ class VcuHil:
         old_timeout = self.ser.timeout
         self.ser.timeout = idle_timeout
         try:
-            while self.ser.read(256):
-                pass
+            while True:
+                chunk = self.ser.read(256)
+                if not chunk:
+                    break
+                self._drain_logs(chunk)  # surfaces lines via _vcu_log.debug
         finally:
             self.ser.timeout = old_timeout
 
