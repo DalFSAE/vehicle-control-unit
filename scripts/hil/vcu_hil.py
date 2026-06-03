@@ -142,22 +142,33 @@ class VcuHil:
         """
         Receive bytes from VCU, stripping any interleaved STM32 log lines.
 
+        Loops within the timeout window: if a chunk contains only log lines
+        (e.g. a periodic heartbeat arriving just before the binary response),
+        reading continues until binary data arrives or the deadline is reached.
+
         Args:
             timeout: Override read timeout for this call
 
         Returns:
             Received bytes with log lines removed (logs stored in captured_logs)
         """
+        effective_timeout = timeout if timeout is not None else self.ser.timeout
+        deadline = time.monotonic() + effective_timeout
         old_timeout = self.ser.timeout
-        if timeout is not None:
-            self.ser.timeout = timeout
+        # Short chunk reads let us re-enter the loop quickly after a log-only chunk.
+        self.ser.timeout = min(effective_timeout, 0.1)
         try:
-            data = self.ser.read(1024)
-            _vcu_log.info("recv raw (%d bytes): %r", len(data), data)
-            return self._drain_logs(data)
+            while True:
+                chunk = self.ser.read(1024)
+                if chunk:
+                    _vcu_log.info("recv raw (%d bytes): %r", len(chunk), chunk)
+                    binary = self._drain_logs(chunk)
+                    if binary:
+                        return binary
+                if time.monotonic() >= deadline:
+                    return b''
         finally:
-            if timeout is not None:
-                self.ser.timeout = old_timeout
+            self.ser.timeout = old_timeout
 
     def echo(self, data: bytes, retries: int = 3) -> bytes:
         """
