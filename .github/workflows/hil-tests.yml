@@ -61,15 +61,8 @@ jobs:
           name: firmware-debug-bin
           path: firmware
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest pyserial
+        run: pip3 install --upgrade pytest pyserial
 
       - name: Flash firmware
         run: STM32_Programmer_CLI -c port=SWD -w firmware/DMS-24-RTOS-VCU.bin 0x08000000 -rst
@@ -81,7 +74,7 @@ jobs:
         working-directory: scripts/hil
         env:
           VCU_PORT: /dev/vcu
-        run: pytest test_fsm.py -v --tb=short --junit-xml=results.xml
+        run: python3 -m pytest test_fsm.py -v --tb=short --junit-xml=results.xml
 
       - name: Upload test results
         if: always()
