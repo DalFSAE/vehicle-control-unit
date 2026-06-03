@@ -17,6 +17,9 @@ static uint8_t         s_resp_buf[RESP_BUF_SIZE];
 static uint16_t        s_resp_len     = 0;
 static volatile bool   s_resp_pending = false;
 
+// Diagnostic counter: incremented each time CDC_Receive_FS delivers data.
+volatile uint32_t g_usb_rx_count = 0;
+
 static void queue_response(const uint8_t *data, uint16_t len) {
     if (!s_resp_pending && len <= RESP_BUF_SIZE) {
         memcpy(s_resp_buf, data, len);
@@ -89,6 +92,7 @@ uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
 // so we buffer until we have the complete frame.
 // Frame: [CMD (1 byte)][LEN (1 byte)][payload (LEN bytes)]
 uint32_t usb_cmd_rx(const uint8_t *buf, uint32_t len) {
+    g_usb_rx_count++;
     for (uint32_t i = 0; i < len; i++) {
         if (s_cmd_buf_len < CMD_BUF_SUZE) {
             s_cmd_buf[s_cmd_buf_len++] = buf[i];

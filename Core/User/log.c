@@ -355,9 +355,25 @@ void log_usb_task(void *argument) {
     (void)argument;
     osDelay(1000); // wait for USB host enumeration before transmitting
     LogMsg_t msg;
+    uint32_t iter        = 0;
+    uint32_t prev_rx     = UINT32_MAX;
     for (;;) {
         // Flush any command response queued from interrupt context first.
         usb_cmd_flush_response();
+
+        // Periodic heartbeat so the Python host can verify the task is alive
+        // and detect whether USB OUT data is arriving (g_usb_rx_count changes).
+        if (++iter % 100U == 0U) {
+            uint32_t rx = g_usb_rx_count;
+            if (rx != prev_rx) {
+                log_printf("[%7u] INFO  HIL    RX_CNT a0=%u a1=0\r\n",
+                           (unsigned)HAL_GetTick(), (unsigned)rx);
+                prev_rx = rx;
+            } else {
+                log_printf("[%7u] INFO  HIL    ALIVE a0=0 a1=0\r\n",
+                           (unsigned)HAL_GetTick());
+            }
+        }
 
         if (osMessageQueueGet(s_log_queue, &msg, NULL, 10U) == osOK) {
             // Wait until USB is free
