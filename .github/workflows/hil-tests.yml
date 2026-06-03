@@ -9,7 +9,6 @@ on:
       - 'scripts/hil/**'
       - '.github/workflows/hil-tests.yml'
   pull_request:
-    branches: [ main ]
     paths:
       - 'Core/**'
       - 'USB_DEVICE/**'
