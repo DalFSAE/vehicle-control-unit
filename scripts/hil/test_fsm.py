@@ -22,6 +22,11 @@ def vcu(request):
     with VcuHil(port) as h:
         time.sleep(0.5)
         yield h
+        if request.node.rep_call.failed and h.captured_logs:
+            print("\n--- VCU serial log ---")
+            for line in h.captured_logs:
+                print(line)
+            print("----------------------")
 
 
 # Tests

@@ -5,12 +5,15 @@ vcu_hil.py - Serial transport layer for VCU USB CDC binary protocol
 Provides VcuHil class for sending/receiving binary command frames and helpers.
 """
 
+import re
 import struct
 import time
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 import serial
+
+_STM32_LOG_RE = re.compile(rb'\[\s*\d+\][^\n]*\n')
 
 
 # Command IDs (must match UsbCmd_t in usb_cmd.h)
@@ -76,6 +79,7 @@ class VcuHil:
             timeout: Read timeout in seconds
         """
         self.ser = serial.Serial(port, baud, timeout=timeout, write_timeout=None)
+        self.captured_logs: List[str] = []
         time.sleep(1.0)
 
     def send_cmd(self, cmd: int, payload: bytes = b'') -> None:
@@ -94,22 +98,40 @@ class VcuHil:
         frame = bytes([cmd, len(payload)]) + payload
         self.ser.write(frame)
 
+    def _drain_logs(self, buf: bytes) -> bytes:
+        """
+        Strip STM32 log lines from buf (lines matching [timestamp] ...).
+        Stripped lines are appended to self.captured_logs.
+        Returns the remaining binary bytes.
+        """
+        result = b''
+        pos = 0
+        while pos < len(buf):
+            m = _STM32_LOG_RE.search(buf, pos)
+            if m is None:
+                result += buf[pos:]
+                break
+            result += buf[pos : m.start()]
+            self.captured_logs.append(m.group().decode('ascii', errors='replace').rstrip())
+            pos = m.end()
+        return result
+
     def recv(self, timeout: Optional[float] = None) -> bytes:
         """
-        Receive bytes from VCU.
+        Receive bytes from VCU, stripping any interleaved STM32 log lines.
 
         Args:
             timeout: Override read timeout for this call
 
         Returns:
-            Received bytes
+            Received bytes with log lines removed (logs stored in captured_logs)
         """
         old_timeout = self.ser.timeout
         if timeout is not None:
             self.ser.timeout = timeout
         try:
             data = self.ser.read(1024)
-            return data
+            return self._drain_logs(data)
         finally:
             if timeout is not None:
                 self.ser.timeout = old_timeout
@@ -145,9 +167,10 @@ class VcuHil:
             FsmState_t value (ST_ENTRY, ST_STANDBY, etc.)
         """
         self.send_cmd(CMD_REQUEST_STATE, b'')
-        time.sleep(0.01)
+        time.sleep(0.05)
         resp = self.recv(timeout=0.5)
-        if len(resp) >= 3 and resp[0] == 0x84:
+        # Response format: [0x84, 0x01, state_value]
+        if len(resp) >= 3 and resp[0] == 0x84 and resp[1] == 0x01:
             return resp[2]
         raise ValueError(f"Invalid REQUEST_STATE response: {resp.hex()}")
 
