@@ -351,6 +351,19 @@ void log_printf(const char *format, ...) {
     sink_uart_printf(buf, (size_t)len);
 }
 
+void log_queue_binary(const uint8_t *data, uint16_t len) {
+    if (data == NULL || len == 0 || !s_log_initialized) {
+        return;
+    }
+    LogMsg_t msg;
+    if (len > sizeof(msg.data)) {
+        len = (uint16_t)sizeof(msg.data);
+    }
+    memcpy(msg.data, data, len);
+    msg.len = len;
+    osMessageQueuePut(s_log_queue, &msg, 0, 0);
+}
+
 void log_usb_task(void *argument) {
     (void)argument;
     osDelay(1000); // wait for USB host enumeration before transmitting

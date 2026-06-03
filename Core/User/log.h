@@ -82,6 +82,10 @@ bool log_write(const LogEvent_t *event);
 // Optional plain-text printf-style interface for debug output
 void log_printf(const char *format, ...);
 
+// Queue raw binary bytes to be transmitted via CDC, using the same log queue
+// path as log_printf.  Safe to call from interrupt context.
+void log_queue_binary(const uint8_t *data, uint16_t len);
+
 // Char-at-a-time sink — buffers into lines and forwards to log_printf.
 // Safe to call before log_init(); pre-init output is flushed when log_init() runs.
 void log_putchar(int c);
