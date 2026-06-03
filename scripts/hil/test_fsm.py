@@ -16,9 +16,6 @@ from vcu_hil import VcuHil, VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT
 def vcu(request):
     """Fixture providing a VcuHil instance with reset/cleanup."""
     port = request.config.getoption("--port")
-    if not port:
-        pytest.skip("--port not provided")
-
     with VcuHil(port) as h:
         time.sleep(0.5)
         h.reset()
