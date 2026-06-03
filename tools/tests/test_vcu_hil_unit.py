@@ -50,8 +50,12 @@ def hil(mock_serial):
 
 
 class TestVcuInputsPack:
-    def test_default_pack_is_13_bytes(self):
-        assert len(VcuInputs().pack()) == 13
+    def test_default_pack_is_14_bytes(self):
+        assert len(VcuInputs().pack()) == 14
+
+    def test_debug_cmd_encoded(self):
+        data = VcuInputs(debug_cmd=0x07).pack()
+        assert data[13] == 0x07
 
     def test_fault_flags_encoded(self):
         data = VcuInputs(fault_flags=0xDEAD).pack()
@@ -161,15 +165,34 @@ class TestRequestState:
         assert frame[1] == 0x00  # no payload
 
 
-class TestRequestOutputs:
-    def test_parses_valid_payload(self, hil, mock_serial):
-        payload = b'\x01\x02\x03\x04'
-        mock_serial.read.return_value = bytes([0x83, len(payload)]) + payload
-        assert hil.request_outputs() == payload
+def _make_outputs_response(**kwargs):
+    """Build a mock REQUEST_OUTPUTS response with a valid VcuOutputs payload."""
+    from vcu_hil import VcuOutputs, _VCUOUTPUTS_FMT
+    out = VcuOutputs(**kwargs)
+    payload = struct.pack(
+        _VCUOUTPUTS_FMT,
+        out.relay_always_on, out.relay_inverter, out.brake_light,
+        out.mc_brake_sw, out.can_watchdog, out.tssi_en,
+        out.motor_direction, out.throttle_enabled,
+        out.throttle_request, out.buzzer_beep_ms, out.debug_leds,
+    )
+    return bytes([0x83, len(payload)]) + payload
 
-    def test_empty_payload_ok(self, hil, mock_serial):
-        mock_serial.read.return_value = bytes([0x83, 0x00])
-        assert hil.request_outputs() == b''
+
+class TestRequestOutputs:
+    def test_returns_vcuoutputs(self, hil, mock_serial):
+        from vcu_hil import VcuOutputs
+        mock_serial.read.return_value = _make_outputs_response()
+        assert isinstance(hil.request_outputs(), VcuOutputs)
+
+    def test_parses_fields(self, hil, mock_serial):
+        mock_serial.read.return_value = _make_outputs_response(
+            throttle_enabled=True, throttle_request=0.5, debug_leds=0x03
+        )
+        out = hil.request_outputs()
+        assert out.throttle_enabled is True
+        assert abs(out.throttle_request - 0.5) < 1e-6
+        assert out.debug_leds == 0x03
 
     def test_raises_on_wrong_response_byte(self, hil, mock_serial):
         mock_serial.read.return_value = bytes([0xFF, 0x04]) + b'\x00' * 4
@@ -182,16 +205,10 @@ class TestRequestOutputs:
             hil.request_outputs()
 
     def test_sends_request_outputs_command(self, hil, mock_serial):
-        mock_serial.read.return_value = bytes([0x83, 0x00])
+        mock_serial.read.return_value = _make_outputs_response()
         hil.request_outputs()
         frame = mock_serial.write.call_args[0][0]
         assert frame[0] == CMD_REQUEST_OUTPUTS
-
-    def test_truncates_to_payload_len(self, hil, mock_serial):
-        # Extra bytes beyond payload_len should be ignored
-        mock_serial.read.return_value = bytes([0x83, 0x02, 0xAA, 0xBB, 0xCC])
-        result = hil.request_outputs()
-        assert result == bytes([0xAA, 0xBB])
 
 
 class TestFaultInject:

@@ -33,6 +33,13 @@ void vcu_fault_inject(uint32_t flags) {
     vcu_spoof_inputs(&spoofed);
 }
 
+// Apply debug LED states from FSM outputs to hardware.
+void vcu_apply_debug_leds(uint8_t debug_leds) {
+    board_output_set(OUTPUT_DEBUG_LED4, debug_leds & 0x01);
+    board_output_set(OUTPUT_DEBUG_LED5, (debug_leds >> 1) & 0x01);
+    board_output_set(OUTPUT_DEBUG_LED6, (debug_leds >> 2) & 0x01);
+}
+
 // Edge detection helper (persistent prev state per call site)
 static bool rising_edge(bool signal, bool *prev) {
     bool edge = signal && !(*prev);
@@ -101,4 +108,7 @@ void vcu_apply_outputs(const VcuOutputs *out) {
         .speed_mode_enable       = false,
     };
     motor_controller_set_cmd(&cmd);
+
+    // Debug LEDs
+    vcu_apply_debug_leds(out->debug_leds);
 }
