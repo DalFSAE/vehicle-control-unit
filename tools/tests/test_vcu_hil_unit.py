@@ -50,8 +50,12 @@ def hil(mock_serial):
 
 
 class TestVcuInputsPack:
-    def test_default_pack_is_13_bytes(self):
-        assert len(VcuInputs().pack()) == 13
+    def test_default_pack_is_14_bytes(self):
+        assert len(VcuInputs().pack()) == 14
+
+    def test_debug_cmd_encoded(self):
+        data = VcuInputs(debug_cmd=0x07).pack()
+        assert data[13] == 0x07
 
     def test_fault_flags_encoded(self):
         data = VcuInputs(fault_flags=0xDEAD).pack()

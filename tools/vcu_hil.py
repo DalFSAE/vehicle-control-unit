@@ -42,10 +42,39 @@ FAULT_PEDAL_PLAUS   = (1 << 1)
 FAULT_SENSOR_RANGE  = (1 << 2)
 FAULT_CAN_TIMEOUT   = (1 << 3)
 
+# debug_cmd bitfield (must match vcu_io.h comment)
+DBG_LED1 = (1 << 0)
+DBG_LED2 = (1 << 1)
+DBG_LED3 = (1 << 2)
+
+
+_VCUOUTPUTS_FMT = '<??????I?fIB'  # 20 bytes, must match packed VcuOutputs in vcu_io.h
+
+
+@dataclass
+class VcuOutputs:
+    """VCU output state (20 bytes packed, must match C struct in vcu_io.h)"""
+    relay_always_on: bool = False
+    relay_inverter: bool = False
+    brake_light: bool = False
+    mc_brake_sw: bool = False
+    can_watchdog: bool = False
+    tssi_en: bool = False
+    motor_direction: int = 0
+    throttle_enabled: bool = False
+    throttle_request: float = 0.0
+    buzzer_beep_ms: int = 0
+    debug_leds: int = 0           # bitfield: DBG_LED1 | DBG_LED2 | DBG_LED3
+
+    @classmethod
+    def unpack(cls, data: bytes) -> 'VcuOutputs':
+        fields = struct.unpack_from(_VCUOUTPUTS_FMT, data)
+        return cls(*fields)
+
 
 @dataclass
 class VcuInputs:
-    """VCU input state (13 bytes packed, must match C struct in vcu_io.h)"""
+    """VCU input state (14 bytes packed, must match C struct in vcu_io.h)"""
     fault_flags: int = 0
     throttle_request: float = 0.0
     brake_pressed: bool = False
@@ -53,11 +82,12 @@ class VcuInputs:
     fwrd_switch: bool = False
     rvrs_switch: bool = False
     ts_active: bool = False
+    debug_cmd: int = 0          # bitfield: DBG_LED1 | DBG_LED2 | DBG_LED3
 
     def pack(self) -> bytes:
-        """Pack into 13-byte binary format"""
+        """Pack into 14-byte binary format"""
         return struct.pack(
-            '<If?????',
+            '<If?????B',
             self.fault_flags,
             self.throttle_request,
             self.brake_pressed,
@@ -65,6 +95,7 @@ class VcuInputs:
             self.fwrd_switch,
             self.rvrs_switch,
             self.ts_active,
+            self.debug_cmd,
         )
 
 
@@ -181,20 +212,20 @@ class VcuHil:
             return resp[2]
         raise ValueError(f"Invalid REQUEST_STATE response: {resp.hex()}")
 
-    def request_outputs(self) -> bytes:
-        """
-        Poll current VcuOutputs.
-
-        Returns:
-            Raw VcuOutputs bytes from the device
-        """
+    def request_outputs(self) -> VcuOutputs:
+        """Poll current VcuOutputs from the device."""
         self.send_cmd(CMD_REQUEST_OUTPUTS, b'')
         time.sleep(0.01)
         resp = self.recv(timeout=0.5)
         if len(resp) >= 2 and resp[0] == 0x83:
             payload_len = resp[1]
-            return resp[2 : 2 + payload_len]
+            payload = resp[2 : 2 + payload_len]
+            return VcuOutputs.unpack(payload)
         raise ValueError(f"Invalid REQUEST_OUTPUTS response: {resp.hex()}")
+
+    def set_debug_cmd(self, cmd: int) -> None:
+        """Spoof debug command bits (e.g. DBG_LED1 | DBG_LED3) into the next FSM step."""
+        self.spoof_inputs(VcuInputs(debug_cmd=cmd))
 
     def step(self) -> None:
         """Manually advance FSM one cycle (step mode)."""
