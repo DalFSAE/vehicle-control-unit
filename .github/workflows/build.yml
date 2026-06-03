@@ -34,6 +34,12 @@ jobs:
           name: firmware-debug-elf
           path: build/Debug/DMS-24-RTOS-VCU.elf
 
+      - name: Upload firmware binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-debug-bin
+          path: build/Debug/DMS-24-RTOS-VCU.bin
+
   unit-tests:
     runs-on: ubuntu-latest
 
