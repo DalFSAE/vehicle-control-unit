@@ -174,7 +174,10 @@ class VcuHil:
             if self.ser.in_waiting:
                 # Brief pause to let any trailing bytes arrive (multi-packet responses)
                 time.sleep(0.02)
-                return self._drain_logs(self.ser.read(self.ser.in_waiting))
+                result = self._drain_logs(self.ser.read(self.ser.in_waiting))
+                if result:
+                    return result
+                # _drain_logs consumed only log lines; keep waiting for actual response
             time.sleep(0.001)
         return b''
 
