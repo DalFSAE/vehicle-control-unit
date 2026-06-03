@@ -24,12 +24,12 @@ jobs:
           pip install pytest pyserial
 
       - name: Run unit tests
-        working-directory: scripts/hil
-        run: pytest test_vcu_hil_unit.py -v --tb=short --junit-xml=results.xml
+        working-directory: tools
+        run: pytest tests/test_vcu_hil_unit.py -v --tb=short --junit-xml=results.xml
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-results
-          path: scripts/hil/results.xml
+          path: tools/results.xml
