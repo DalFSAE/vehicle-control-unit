@@ -84,7 +84,9 @@ class VcuHil:
             baud: Baud rate (default 115200)
             timeout: Read timeout in seconds
         """
-        self.ser = serial.Serial(port, baud, timeout=timeout, write_timeout=None)
+        # dsrdtr=False prevents the STM32 from resetting when the host opens or
+        # closes the port (DTR toggle triggers NVIC_SystemReset on many CDC builds).
+        self.ser = serial.Serial(port, baud, timeout=timeout, write_timeout=None, dsrdtr=False)
         self.captured_logs: List[str] = []
         time.sleep(1.0)
 
@@ -231,7 +233,7 @@ class VcuHil:
         Returns False only if boot output streams continuously past the hard timeout.
         """
         deadline = time.monotonic() + timeout
-        accumulated = b''
+        raw = b''
         saw_data = False
         old_timeout = self.ser.timeout
         self.ser.timeout = 0.1
@@ -240,9 +242,9 @@ class VcuHil:
                 chunk = self.ser.read(256)
                 if chunk:
                     saw_data = True
-                    accumulated += chunk
-                    self._drain_logs(accumulated)
-                    if _HIL_READY_MARKER in accumulated:
+                    raw += chunk
+                    raw = self._drain_logs(raw)  # strip text lines; keep binary remainder
+                    if _HIL_READY_MARKER in chunk:  # check the incoming chunk, not stripped raw
                         time.sleep(0.05)
                         self.ser.reset_input_buffer()
                         _vcu_log.info("HIL_READY received")
