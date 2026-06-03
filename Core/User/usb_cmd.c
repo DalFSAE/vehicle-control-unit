@@ -3,6 +3,7 @@
 #include "vcu_io.h"
 #include "fsm_task.h"
 #include "cmsis_os2.h"
+#include "log.h"
 #include <string.h>
 
 #define CMD_BUF_SUZE  64
