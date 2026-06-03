@@ -62,7 +62,9 @@ jobs:
           path: firmware
 
       - name: Install dependencies
-        run: pip3 install --upgrade pytest pyserial
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install pytest pyserial
 
       - name: Flash firmware
         run: STM32_Programmer_CLI -c port=SWD -w firmware/DMS-24-RTOS-VCU.bin 0x08000000 -rst
@@ -74,7 +76,7 @@ jobs:
         working-directory: scripts/hil
         env:
           VCU_PORT: /dev/vcu
-        run: python3 -m pytest test_fsm.py -v --tb=short --junit-xml=results.xml
+        run: ${{ github.workspace }}/.venv/bin/python -m pytest test_fsm.py -v --tb=short --junit-xml=results.xml
 
       - name: Upload test results
         if: always()
