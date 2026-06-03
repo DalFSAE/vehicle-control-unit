@@ -13,13 +13,8 @@ from vcu_hil import VcuHil, VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT
 
 
 @pytest.fixture
-def vcu(request, vcu_ready):  # noqa: ARG001 — vcu_ready is the boot-drain gate
-    """Fixture providing a VcuHil instance with reset/cleanup.
-
-    Depends on the session-scoped ``vcu_ready`` fixture (conftest.py) which
-    drains the ===HIL_READY=== sentinel before this fixture opens its own
-    connection, ensuring the USB channel is clean.
-    """
+def vcu(request, vcu_ready):  # noqa: ARG001 - vcu_ready gates boot drain
+    """Fixture providing a VcuHil instance with reset/cleanup."""
     port = request.config.getoption("--port")
     with VcuHil(port) as h:
         time.sleep(0.5)

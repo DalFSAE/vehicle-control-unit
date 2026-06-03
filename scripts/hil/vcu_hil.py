@@ -15,15 +15,10 @@ from typing import List, Optional
 import serial
 
 _STM32_LOG_RE = re.compile(rb'\[\s*\d+\][^\n]*\n')
-# Also strip banner/marker lines such as ===BEGIN_HIL_TESTS=== and Unity
-# output that the on-boot self-tests emit.  These are pure ASCII and never
-# form part of a binary response frame.
-_BANNER_LINE_RE = re.compile(rb'[^\n]*===\s*[^\n]*\n')
+_BANNER_LINE_RE = re.compile(rb'[^\n]*===\s*[^\n]*\n')  # boot-test markers/Unity lines
 _vcu_log = logging.getLogger("vcu")
 
-# Sentinel emitted by the firmware at the end of hardware_post_test_task,
-# after all on-boot tests have finished.  The host calls wait_for_ready() to
-# drain everything up to (and including) this marker before issuing commands.
+# Emitted by firmware after all on-boot self-tests finish; wait_for_ready() drains until it appears.
 _HIL_READY_MARKER = b"===HIL_READY==="
 
 
@@ -110,20 +105,10 @@ class VcuHil:
         self.ser.write(frame)
 
     def _drain_logs(self, buf: bytes) -> bytes:
-        """
-        Strip ASCII log/banner lines from buf, returning only binary bytes.
-
-        Removes:
-          - STM32 structured log lines:  [timestamp] ...\\n
-          - Boot-test banner/marker lines: anything containing ===...===
-
-        Stripped lines are appended to self.captured_logs.
-        Returns the remaining (binary response) bytes.
-        """
+        """Strip STM32 log lines and boot-test banners from buf, return remaining binary bytes."""
         result = b''
         pos = 0
         while pos < len(buf):
-            # Find the earliest match across both text-line patterns.
             m_log    = _STM32_LOG_RE.search(buf, pos)
             m_banner = _BANNER_LINE_RE.search(buf, pos)
 
@@ -131,7 +116,7 @@ class VcuHil:
                 result += buf[pos:]
                 break
 
-            # Pick whichever match starts earlier (prefer log over banner on tie).
+            # Pick whichever match starts earlier.
             if m_banner is None or (m_log is not None and m_log.start() <= m_banner.start()):
                 m = m_log
             else:
@@ -238,53 +223,37 @@ class VcuHil:
 
     def wait_for_ready(self, timeout: float = 15.0, idle_timeout: float = 2.0) -> bool:
         """
-        Drain serial output until the firmware's ===HIL_READY=== sentinel is
-        received, or until the channel goes quiet.
+        Drain serial output until ===HIL_READY=== is received or the channel is silent.
 
-        Two exit conditions:
-        - **Sentinel found**: firmware just finished boot tests → flush buffer,
-          return True.
-        - **Idle channel**: no bytes arrive for ``idle_timeout`` seconds →
-          board already past boot and will never re-emit the sentinel → return
-          True immediately (non-fatal fast path).
-        - **Hard timeout**: ``timeout`` seconds elapsed with continuous data but
-          no sentinel → return False as a last resort.
-
-        Should be called once per session (via the session-scoped ``vcu_ready``
-        fixture in conftest.py) before any commands are issued.
+        If no data arrives within idle_timeout seconds we assume the board booted before
+        we connected (sentinel already passed). Once any data is seen we commit to waiting
+        for the sentinel, because mid-boot gaps between test suites can exceed idle_timeout.
+        Returns False only if boot output streams continuously past the hard timeout.
         """
         deadline = time.monotonic() + timeout
-        last_data = time.monotonic()
         accumulated = b''
+        saw_data = False
         old_timeout = self.ser.timeout
-        self.ser.timeout = 0.1  # short poll slices so idle detection is snappy
+        self.ser.timeout = 0.1
         try:
             while time.monotonic() < deadline:
                 chunk = self.ser.read(256)
                 if chunk:
-                    last_data = time.monotonic()
+                    saw_data = True
                     accumulated += chunk
                     self._drain_logs(accumulated)
                     if _HIL_READY_MARKER in accumulated:
                         time.sleep(0.05)
                         self.ser.reset_input_buffer()
-                        _vcu_log.info("HIL_READY received — channel is clean")
+                        _vcu_log.info("HIL_READY received")
                         return True
-                elif time.monotonic() - last_data >= idle_timeout:
-                    # Channel has been quiet long enough: board is already past
-                    # boot and the sentinel was emitted before we connected.
+                elif not saw_data and (time.monotonic() - (deadline - timeout)) >= idle_timeout:
                     self.ser.reset_input_buffer()
-                    _vcu_log.info(
-                        "Channel idle for %.1fs — board already past boot, proceeding",
-                        idle_timeout,
-                    )
+                    _vcu_log.info("Channel silent at connect time, board already past boot")
                     return True
         finally:
             self.ser.timeout = old_timeout
-        _vcu_log.warning(
-            "wait_for_ready() timed out after %.1fs without sentinel or idle gap",
-            timeout,
-        )
+        _vcu_log.warning("wait_for_ready() timed out after %.1fs", timeout)
         return False
 
     def close(self) -> None:

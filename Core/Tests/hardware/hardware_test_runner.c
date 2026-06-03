@@ -88,11 +88,7 @@ void hardware_post_test_task(void *argument) {
 
     vcu_clear_spoof();
 
-    // Signal to the host-side Python CLI that boot tests are done and the USB
-    // channel is now clean.  The Python VcuHil.wait_for_ready() drains until
-    // this marker appears, then flushes the input buffer before issuing any
-    // commands.  Must be the last thing emitted before the task exits so the
-    // host never races with boot-test output.
+    // Must be last: signals the Python CLI that the channel is clean.
     log_printf("===HIL_READY===\r\n");
     osThreadExit();
 }
