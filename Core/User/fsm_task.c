@@ -51,7 +51,6 @@ void fsm_task(void *arg) {
 
         state = next;
         g_fsm_state = state;
-
         vcu_apply_outputs(&out);
         osDelay(FSM_PERIOD_MS);
     }
