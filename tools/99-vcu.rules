@@ -1,0 +1,4 @@
+# Udev rule for DalFSAE VCU (STM32F4 USB CDC)
+# Install: sudo cp 99-vcu.rules /etc/udev/rules.d/
+#          sudo udevadm control --reload-rules && sudo udevadm trigger
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", SYMLINK+="vcu", MODE="0666"

@@ -27,11 +27,13 @@ typedef struct __attribute__((packed)) {
     bool     fwrd_switch;
     bool     rvrs_switch;
     bool     ts_active;
+    uint8_t  debug_cmd; // bitfield: bit0=LED1, bit1=LED2, bit2=LED3. 1=on, 0=off. (remaining bits reserved)
 } VcuInputs;
-_Static_assert(sizeof(VcuInputs) == 13, "VcuInputs size mismatch");
+_Static_assert(sizeof(VcuInputs) == 14, "VcuInputs size mismatch");
 
 // Outputs produced by the FSM each cycle, applied by vcu_apply_outputs().
-typedef struct {
+// Packed so it can be read wholesale over USB for HIL testing.
+typedef struct __attribute__((packed)) {
     bool       relay_always_on;
     bool       relay_inverter;
     bool       brake_light;
@@ -42,6 +44,7 @@ typedef struct {
     bool       throttle_enabled;
     float      throttle_request; // [0.0, 1.0]
     uint32_t   buzzer_beep_ms;
+    uint8_t    debug_leds; // bitfield: bit0=LED1, bit1=LED2, bit2=LED3. 1=on, 0=off. (remaining bits reserved)
 } VcuOutputs;
 
 // Assemble VcuInputs from all sensor and device module getters.
@@ -54,4 +57,5 @@ void vcu_apply_outputs(const VcuOutputs *out);
 // injected struct verbatim instead of reading hardware.
 void vcu_spoof_inputs(const VcuInputs *spoof);
 void vcu_clear_spoof(void);
+void vcu_fault_inject(uint32_t flags);
 
