@@ -6,3 +6,4 @@
 /cmake_install.cmake
 /Core/Tests/unit/build
 /Core/Tests/unit/compile_commands.json
+/__pycache__
