@@ -9,6 +9,7 @@
 #include "test_fsm_hil.h"
 #include "test_can.h"
 #include "test_motor_controller.h"
+#include "test_usb_cmd.h"
 #include "vcu_io.h"
 
 void setUp(void) {
@@ -43,6 +44,17 @@ static void run_fsm_tests(void) {
     RUN_TEST(test_if_debug_button_changes_state); // optional, requires user input
 }
 
+static void run_usb_cmd_tests(void) {
+    UNITY_BEGIN();
+    RUN_TEST(test_usb_cmd_echo_roundtrip);
+    RUN_TEST(test_usb_cmd_request_state);
+    RUN_TEST(test_usb_cmd_request_outputs);
+    RUN_TEST(test_usb_cmd_spoof_set);
+    RUN_TEST(test_usb_cmd_step);
+    RUN_TEST(test_usb_cmd_reset);
+    UNITY_END();
+}
+
 
 // ===========================================================================
 // Runners
@@ -74,13 +86,23 @@ BootResult_t hardware_test_post_boot(void) {
 
 void hardware_post_test_task(void *argument) {
     (void)argument;
+
     log_printf("===BEGIN_HIL_TESTS===\r\n");
     BootResult_t result = hardware_test_post_boot();
     log_printf("===END_HIL_TESTS: %u run, %u failed===\r\n", result.tests_run, result.failures);
+
+    log_printf("===BEGIN_USB_CMD_TESTS===\r\n");
+    run_usb_cmd_tests();
+    log_printf("===END_USB_CMD_TESTS===\r\n");
+
     log_printf("===BEGIN_CAN_TESTS===\r\n");
     run_can_tests();
+    log_printf("===END_CAN_TESTS===\r\n");
+
     log_printf("===BEGIN_MC_TESTS===\r\n");
     run_mc_tests();
+    log_printf("===END_MC_TESTS===\r\n");
+
     vcu_clear_spoof();
     osThreadExit();
 }
