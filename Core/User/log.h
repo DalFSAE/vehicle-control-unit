@@ -34,6 +34,8 @@ typedef enum {
     EVT_COMMAND_REJECTED,
     EVT_TASK_CREATED,
     EVT_HEARTBEAT,
+    EVT_FSM_RESET,
+    EVT_FSM_STEP,
     EVT_COUNT // must be last
 } LogEventId_t;
 

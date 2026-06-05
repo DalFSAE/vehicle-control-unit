@@ -125,6 +125,8 @@ static const char *log_event_str(LogEventId_t event_id) {
         case EVT_COMMAND_REJECTED: return "CMD_REJECTED";
         case EVT_TASK_CREATED: return "TASK_CREATED";
         case EVT_HEARTBEAT: return "HEARTBEAT";
+        case EVT_FSM_RESET: return "FSM_RESET";
+        case EVT_FSM_STEP: return "FSM_STEP";
         default: return "UNKNOWN_EVENT";
     }
 }

@@ -47,13 +47,15 @@ void fsm_task(void *arg) {
     for (;;) {
         if (g_fsm_reset_requested) {
             g_fsm_reset_requested = false;
-            state                 = ST_ENTRY;
+            LOG_EVENT(LOG_LEVEL_INFO, EVT_FSM_RESET, state, ST_ENTRY);
+            state = ST_ENTRY;
             vcu_clear_spoof();
         }
 
         vcu_gather_inputs(&in);
-        FsmState_t next = step_fsm(state, &fault_cfg, &in, &out);
+        out = (VcuOutputs){0};
         out.debug_leds = in.debug_cmd;
+        FsmState_t next = step_fsm(state, &fault_cfg, &in, &out);
 
         if (next != state) {
             LOG_EVENT(LOG_LEVEL_INFO, EVT_STATE_CHANGE, state, next);
@@ -73,6 +75,7 @@ void fsm_task(void *arg) {
 
         if (g_fsm_step_requested) {
             g_fsm_step_requested = false;
+            LOG_EVENT(LOG_LEVEL_DEBUG, EVT_FSM_STEP, state, 0);
         } else {
             osDelay(FSM_PERIOD_MS);
         }
