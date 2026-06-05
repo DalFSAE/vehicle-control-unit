@@ -4,9 +4,9 @@
 #include "fsm_task.h"
 #include "string.h"
 
-#define CMD_BUF_SUZE 64
+#define CMD_BUF_SIZE 64
 
-static uint8_t  s_cmd_buf[CMD_BUF_SUZE];
+static uint8_t  s_cmd_buf[CMD_BUF_SIZE];
 static uint32_t s_cmd_buf_len = 0;
 
 uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
@@ -64,7 +64,7 @@ uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
 // Frame: [CMD (1 byte)][LEN (1 byte)][payload (LEN bytes)]
 uint32_t usb_cmd_rx(const uint8_t *buf, uint32_t len) {
     for (uint32_t i = 0; i < len; i++) {
-        if (s_cmd_buf_len < CMD_BUF_SUZE) {
+        if (s_cmd_buf_len < CMD_BUF_SIZE) {
             s_cmd_buf[s_cmd_buf_len++] = buf[i];
         }
 
