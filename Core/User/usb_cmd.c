@@ -9,6 +9,8 @@
 static uint8_t  s_cmd_buf[CMD_BUF_SIZE];
 static uint32_t s_cmd_buf_len = 0;
 
+// Handle a fully-assembled command frame. Called by usb_cmd_rx once a complete
+// frame [CMD][LEN][payload] has been buffered. See docs/architecture/vcu-input-spoof.md
 uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
     switch (cmd) {
         case CMD_ECHO:
