@@ -25,7 +25,7 @@ uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
             return 0;
         case CMD_REQUEST_OUTPUTS: {
             static uint8_t resp[2 + sizeof(VcuOutputs)];
-            resp[0] = 0x83;
+            resp[0] = CMD_REPLY_OUTPUT;
             resp[1] = sizeof(VcuOutputs);
             memcpy(&resp[2], fsm_get_last_outputs(), sizeof(VcuOutputs));
             CDC_Transmit_FS(resp, sizeof(resp));
@@ -33,7 +33,7 @@ uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
         }
         case CMD_REQUEST_STATE: {
             static uint8_t resp[3];
-            resp[0] = 0x84;
+            resp[0] = CMD_REPLY_STATE;
             resp[1] = 0x01;
             resp[2] = (uint8_t)fsm_get_state();
             CDC_Transmit_FS(resp, sizeof(resp));
