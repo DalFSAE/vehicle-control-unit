@@ -1,7 +1,6 @@
 #include "torque_processing.h"
 
 static motor_torque_config_t config;
-static bool initialized = false; //tracks if the motor configuration was initialized
 
 //this function returns an enum value defined in the header file
 static torque_state_t determine_state(float value){
@@ -22,6 +21,9 @@ static torque_state_t determine_state(float value){
     }
     else if(value <= config.pedal_hi){
         return TORQUE_STATE_ACCEL_FULL;
+    }
+    else{
+        return TORQUE_STATE_ERROR;
     }
 }
 
@@ -57,7 +59,6 @@ static float state_accel_full(void){
 
 void motor_torque_init(motor_torque_config_t cfg){
     config = cfg;
-    initialized = true;
 }
 
 float motor_torque(SensorInfo_t sensor){
