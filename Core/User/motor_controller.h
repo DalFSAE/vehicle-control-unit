@@ -29,7 +29,7 @@ typedef struct {
 // Must be called after OS starts (creates mutex).
 void motor_controller_init(void);
 
-// Thread-safe command cache — written by FSM via vcu_apply_outputs().
+// Thread-safe command cache - written by FSM via vcu_apply_outputs().
 void motor_controller_set_cmd(const MotorControllerCmd_t *cmd);
 void motor_controller_get_cmd(MotorControllerCmd_t *out);
 
