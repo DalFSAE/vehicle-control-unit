@@ -64,7 +64,7 @@ void motor_torque_init(motor_torque_config_t cfg){
 float motor_torque(SensorInfo_t sensor){
     torque_state_t state = determine_state(sensor.normalizedValue);
     switch(state){
-        case TORQUE_STATE_ERROR:      return state_error();
+            case TORQUE_STATE_ERROR:      return state_error();
         case TORQUE_STATE_REGEN_FULL: return state_regen_full();
         case TORQUE_STATE_REGEN_RAMP: return state_regen_ramp(sensor.normalizedValue);
         case TORQUE_STATE_COAST:      return state_coast();
