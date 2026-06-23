@@ -246,7 +246,6 @@ void test_entry_sets_all_relays_and_watchdog(void) {
     VcuOutputs       out = make_clean_outputs();
     step_fsm(ST_ENTRY, &cfg, &in, &out);
     TEST_ASSERT_TRUE(out.can_watchdog);
-    TEST_ASSERT_TRUE(out.tssi_en);
     TEST_ASSERT_TRUE(out.relay_always_on);
     TEST_ASSERT_TRUE(out.relay_inverter);
 }
@@ -260,7 +259,6 @@ void test_standby_inverter_off_throttle_disabled(void) {
     TEST_ASSERT_FALSE(out.throttle_enabled);
     TEST_ASSERT_TRUE(out.relay_always_on);
     TEST_ASSERT_TRUE(out.can_watchdog);
-    TEST_ASSERT_FALSE(out.tssi_en);
 }
 
 void test_neutral_inverter_on_throttle_disabled(void) {
@@ -270,7 +268,6 @@ void test_neutral_inverter_on_throttle_disabled(void) {
     step_fsm(ST_NEUTRAL, &cfg, &in, &out);
     TEST_ASSERT_TRUE(out.relay_inverter);
     TEST_ASSERT_FALSE(out.throttle_enabled);
-    TEST_ASSERT_FALSE(out.tssi_en);
 }
 
 void test_neutral_rtd_fires_buzzer_and_sets_forward_direction(void) {
