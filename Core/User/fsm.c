@@ -107,6 +107,11 @@ static FsmEvent_t forward_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
         LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_SENSOR_RANGE, cfg->sensor_range);
         return fault_response_to_event(cfg->sensor_range);
     }
+    if (fault_active(in, FAULT_CAN_TIMEOUT)) {
+        out->throttle_enabled = false;
+        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_CAN_TIMEOUT, cfg->can_timeout);
+        return fault_response_to_event(cfg->can_timeout);
+    }
 
     out->throttle_enabled  = true;
     out->throttle_request  = in->throttle_request;
