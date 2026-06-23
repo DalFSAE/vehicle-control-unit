@@ -71,11 +71,14 @@
         "VOLTAGESCALING",
         "yarray"
     ],
-    "cmake.cmakePath": "cmake",
+    "cmake.cmakePath": "cube-cmake",
     "stm32cube-ide-clangd.path": "cube",
     "stm32cube-ide-clangd.arguments": [
         "starm-clangd",
         "--query-driver=/usr/bin/arm-none-eabi-gcc*",
         "--query-driver=/usr/bin/arm-none-eabi-g++*"
+    ],
+    "cmake.configureArgs": [
+        "-DCMAKE_COMMAND=cube-cmake"
     ],
 }
