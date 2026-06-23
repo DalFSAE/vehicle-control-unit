@@ -99,4 +99,24 @@ def test_inputs_match_outputs(vcu):
     vcu.spoof_inputs(inputs)
     vcu.step()
     assert vcu.request_state() == ST_NEUTRAL
+
+
+def test_can_timeout_in_forward_returns_neutral(vcu):
+    """FAULT_CAN_TIMEOUT injected in FORWARD should return FSM to ST_NEUTRAL."""
+    # Walk to FORWARD
+    inputs = VcuInputs(fwrd_switch=True, ts_active=True)
+    vcu.spoof_inputs(inputs)
+    vcu.step()
+    assert vcu.request_state() == ST_NEUTRAL
+
+    inputs.rtd_button = True
+    inputs.brake_pressed = True
+    vcu.spoof_inputs(inputs)
+    vcu.step()
+    assert vcu.request_state() == ST_FORWARD
+
+    # Inject CAN timeout fault and step — FSM must return to NEUTRAL
+    vcu.fault_inject(FAULT_CAN_TIMEOUT)
+    vcu.step()
+    assert vcu.request_state() == ST_NEUTRAL
     
