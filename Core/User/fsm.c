@@ -66,7 +66,6 @@ static FsmEvent_t entry_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, 
     (void)cfg;
     (void)in;
     out->can_watchdog    = true;
-    out->tssi_en         = true;
     out->relay_always_on = true;
     out->relay_inverter  = true;
     return FSM_EV_OK;
@@ -78,7 +77,6 @@ static FsmEvent_t standby_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
     out->relay_always_on  = true;
     out->relay_inverter   = false;
     out->can_watchdog     = true;
-    out->tssi_en          = false;
 
     if (in->fwrd_switch && in->ts_active) {
         return FSM_EV_READY;
@@ -93,7 +91,6 @@ static FsmEvent_t neutral_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
     out->relay_always_on  = true;
     out->relay_inverter   = true;
     out->can_watchdog     = true;
-    out->tssi_en          = false;
 
 #if VCU_ENABLE_REVERSE
     if (!(in->fwrd_switch || in->rvrs_switch)) {
@@ -155,7 +152,6 @@ static FsmEvent_t reverse_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
     out->relay_always_on = true;
     out->relay_inverter  = true;
     out->can_watchdog    = true;
-    out->tssi_en         = false;
     out->motor_direction = MOTOR_DIR_REVERSE;
 
     if (!in->rvrs_switch) {
@@ -204,19 +200,18 @@ static FsmEvent_t fault_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, 
     out->relay_inverter   = false;
     out->relay_always_on  = true;
     out->can_watchdog     = true;
-    out->tssi_en          = false; // TSSI light on = active fault indicator
     return FSM_EV_FAULT;
 }
 
 typedef FsmEvent_t (*StateFn_t)(const FsmFaultConfig_t *, const VcuInputs *, VcuOutputs *);
 
 static const StateFn_t state_fns[ST_COUNT] = {
-    [ST_ENTRY] = entry_state,     
+    [ST_ENTRY]   = entry_state,     
     [ST_STANDBY] = standby_state, 
     [ST_NEUTRAL] = neutral_state,
     [ST_FORWARD] = forward_state, 
     [ST_REVERSE] = reverse_state, 
-    [ST_FAULT] = fault_state,
+    [ST_FAULT]   = fault_state,
 };
 
 FsmState_t step_fsm(FsmState_t current, const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
