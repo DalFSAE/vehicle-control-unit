@@ -97,7 +97,7 @@ static FsmEvent_t neutral_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
     out->tssi_en          = false;
 
 #if VCU_ENABLE_REVERSE
-    if (!(in->fwrd_switch || in->rvrs_switch) || !in->ts_active) {
+    if (!(in->fwrd_switch || in->rvrs_switch)) {
         return FSM_EV_NOTREADY;
     }
     if (in->rvrs_switch && in->rtd_button && in->brake_pressed) {
@@ -106,7 +106,7 @@ static FsmEvent_t neutral_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
         return FSM_EV_RTD_REV;
     }
 #else
-    if (!in->fwrd_switch || !in->ts_active) {
+    if (!in->fwrd_switch) {
         return FSM_EV_NOTREADY;
     }
 #endif

@@ -142,13 +142,15 @@ void test_neutral_notready_when_switch_released(void) {
     TEST_ASSERT_EQUAL(ST_STANDBY, step_fsm(ST_NEUTRAL, &cfg, &in, &out));
 }
 
-void test_neutral_notready_when_ts_active_lost(void) {
+void test_neutral_stays_when_ts_active_lost_but_switch_held(void) {
+    // ts_active loss in NEUTRAL does not drop to STANDBY; only switch release does.
+    // STANDBY = inverter off; NEUTRAL = inverter on, waiting for RTD.
     FsmFaultConfig_t cfg = FaultConfig_default();
     VcuInputs        in = make_clean_inputs();
     in.fwrd_switch = true;
     in.ts_active = false;
     VcuOutputs out = make_clean_outputs();
-    TEST_ASSERT_EQUAL(ST_STANDBY, step_fsm(ST_NEUTRAL, &cfg, &in, &out));
+    TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_NEUTRAL, &cfg, &in, &out));
 }
 
 // ST_FORWARD
@@ -534,7 +536,7 @@ int main(void) {
     RUN_TEST(test_neutral_to_forward_on_full_rtd_sequence);
     RUN_TEST(test_neutral_rtd_requires_all_three_conditions);
     RUN_TEST(test_neutral_notready_when_switch_released);
-    RUN_TEST(test_neutral_notready_when_ts_active_lost);
+    RUN_TEST(test_neutral_stays_when_ts_active_lost_but_switch_held);
     RUN_TEST(test_forward_stays_when_healthy);
     RUN_TEST(test_forward_to_neutral_when_switch_released);
     RUN_TEST(test_reverse_stays_in_reverse);
