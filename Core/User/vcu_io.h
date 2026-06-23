@@ -45,6 +45,7 @@ typedef struct __attribute__((packed)) {
     float      throttle_request; // [0.0, 1.0]
     uint32_t   buzzer_beep_ms;
     uint8_t    debug_leds; // bitfield: bit0=LED1, bit1=LED2, bit2=LED3. 1=on, 0=off. (remaining bits reserved)
+    bool       sdc_open;  // true = de-energize SDC relay (open shutdown circuit)
 } VcuOutputs;
 
 // Assemble VcuInputs from all sensor and device module getters.
