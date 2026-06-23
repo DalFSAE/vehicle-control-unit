@@ -20,7 +20,7 @@ import warnings
 
 import pandas as pd
 
-from vcu_hil import VcuHil, VcuInputs, VcuOutputs, ST_ENTRY, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, ST_REVERSE
+from vcu_hil import VcuHil, VcuInputs, VcuOutputs, ST_ENTRY, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, ST_REVERSE, ST_FAULT
 
 _STATE_NAMES = {
     ST_ENTRY:   "ENTRY",
@@ -28,6 +28,7 @@ _STATE_NAMES = {
     ST_NEUTRAL: "NEUTRAL",
     ST_FORWARD: "FORWARD",
     ST_REVERSE: "REVERSE",
+    ST_FAULT:   "FAULT",
 }
 
 log = logging.getLogger(__name__)

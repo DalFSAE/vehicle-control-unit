@@ -10,6 +10,8 @@ typedef enum {
     FAULT_PEDAL_PLAUS   = (1u << 1),
     FAULT_SENSOR_RANGE  = (1u << 2),
     FAULT_CAN_TIMEOUT   = (1u << 3),
+    FAULT_BMS           = (1u << 4), // TODO: populate from HVC CAN (BMS fault flag)
+    FAULT_IMD           = (1u << 5), // TODO: populate from HVC CAN (IMD fault flag)
 } FaultFlags_t;
 
 typedef enum {
@@ -39,12 +41,13 @@ typedef struct __attribute__((packed)) {
     bool       brake_light;
     bool       mc_brake_sw;  // active-low on MC; true = not braking
     bool       can_watchdog;
-    bool       tssi_en;      // true = TSSI light disabled
+    bool       tssi_en;      // true = TSSI flashing red (BMS/IMD fault); false = green
     MotorDir_t motor_direction;
     bool       throttle_enabled;
     float      throttle_request; // [0.0, 1.0]
     uint32_t   buzzer_beep_ms;
     uint8_t    debug_leds; // bitfield: bit0=LED1, bit1=LED2, bit2=LED3. 1=on, 0=off. (remaining bits reserved)
+    bool       sdc_open;  // true = de-energize SDC relay (open shutdown circuit)
 } VcuOutputs;
 
 // Assemble VcuInputs from all sensor and device module getters.

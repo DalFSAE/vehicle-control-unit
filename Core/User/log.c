@@ -148,6 +148,7 @@ static const char *log_fault_flag_str(uint32_t flag) {
         case (1u << 0): return "APPS_DISAGREE";
         case (1u << 1): return "PEDAL_PLAUS";
         case (1u << 2): return "SENSOR_RANGE";
+        case (1u << 3): return "CAN_TIMEOUT";
         default: return "UNKNOWN_FAULT";
     }
 }
@@ -169,6 +170,7 @@ static const char *log_fsm_state_str(uint32_t state) {
         case 2u: return "NEUTRAL";
         case 3u: return "FORWARD";
         case 4u: return "REVERSE";
+        case 5u: return "FAULT";
         default: return "UNKNOWN";
     }
 }
