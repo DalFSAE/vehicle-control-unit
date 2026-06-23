@@ -10,12 +10,12 @@
 
 static const FsmState_t transition_table[ST_COUNT][FSM_EV_COUNT] = {
     // [state]       OK           READY        NOTREADY     RTD          RTD_REV      STOP        FAULT
-    [ST_ENTRY]   = {ST_STANDBY,  ST_STANDBY,  ST_STANDBY,  ST_STANDBY,  ST_STANDBY,  ST_STANDBY, ST_FAULT},
-    [ST_STANDBY] = {ST_STANDBY,  ST_NEUTRAL,  ST_STANDBY,  ST_STANDBY,  ST_STANDBY,  ST_STANDBY, ST_FAULT},
-    [ST_NEUTRAL] = {ST_NEUTRAL,  ST_NEUTRAL,  ST_STANDBY,  ST_FORWARD,  ST_REVERSE,  ST_STANDBY, ST_FAULT},
-    [ST_FORWARD] = {ST_FORWARD,  ST_FORWARD,  ST_STANDBY,  ST_FORWARD,  ST_FORWARD,  ST_NEUTRAL, ST_FAULT},
-    [ST_REVERSE] = {ST_REVERSE,  ST_REVERSE,  ST_STANDBY,  ST_REVERSE,  ST_REVERSE,  ST_NEUTRAL, ST_FAULT},
-    [ST_FAULT]   = {ST_FAULT,    ST_FAULT,    ST_FAULT,    ST_FAULT,    ST_FAULT,    ST_FAULT,   ST_FAULT},
+    [ST_ENTRY]   = {ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_FAULT},
+    [ST_STANDBY] = {ST_STANDBY, ST_NEUTRAL, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_FAULT},
+    [ST_NEUTRAL] = {ST_NEUTRAL, ST_NEUTRAL, ST_STANDBY, ST_FORWARD, ST_REVERSE, ST_STANDBY, ST_FAULT},
+    [ST_FORWARD] = {ST_FORWARD, ST_FORWARD, ST_STANDBY, ST_FORWARD, ST_FORWARD, ST_NEUTRAL, ST_FAULT},
+    [ST_REVERSE] = {ST_REVERSE, ST_REVERSE, ST_STANDBY, ST_REVERSE, ST_REVERSE, ST_NEUTRAL, ST_FAULT},
+    [ST_FAULT]   = {ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT},
 };
 
 // ---------------------------------------------------------------------------
@@ -39,13 +39,12 @@ FsmFaultConfig_t FaultConfig_default(void) {
 
 // Apply a fault response policy: cut throttle, set any additional outputs,
 // and return the FSM event that drives the transition.
-static FsmEvent_t fault_response(FmsFaultResponse_t resp,
-                                 const VcuInputs *in, VcuOutputs *out) {
+static FsmEvent_t fault_response(FmsFaultResponse_t resp, const VcuInputs *in, VcuOutputs *out) {
     (void)in;
     out->throttle_enabled = false; // every fault cuts throttle
     switch (resp) {
         case FAULT_RESP_CUT_THROTTLE:
-            return FSM_EV_OK;   // stay in current state, throttle zeroed
+            return FSM_EV_OK; // stay in current state, throttle zeroed
         case FAULT_RESP_RETURN_NEUTRAL:
             return FSM_EV_STOP; // drop to neutral
         case FAULT_RESP_SDC_OPEN:
@@ -212,12 +211,12 @@ static FsmEvent_t fault_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, 
 typedef FsmEvent_t (*StateFn_t)(const FsmFaultConfig_t *, const VcuInputs *, VcuOutputs *);
 
 static const StateFn_t state_fns[ST_COUNT] = {
-    [ST_ENTRY]   = entry_state,
-    [ST_STANDBY] = standby_state,
+    [ST_ENTRY] = entry_state,     
+    [ST_STANDBY] = standby_state, 
     [ST_NEUTRAL] = neutral_state,
-    [ST_FORWARD] = forward_state,
-    [ST_REVERSE] = reverse_state,
-    [ST_FAULT]   = fault_state,
+    [ST_FORWARD] = forward_state, 
+    [ST_REVERSE] = reverse_state, 
+    [ST_FAULT] = fault_state,
 };
 
 FsmState_t step_fsm(FsmState_t current, const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
