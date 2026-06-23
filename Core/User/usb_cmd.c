@@ -75,10 +75,6 @@ uint32_t usb_cmd_rx(const uint8_t *buf, uint32_t len) {
             continue;
         }
 
-<<<<<<< 101-replay-telemetry
-        // wait until we have the complete frame (CMD + LEN + payload)
-        uint32_t frame_len = s_cmd_buf[1] + 2;
-=======
         // reject frames too large to buffer to prevent deadlock where frame_len
         // exceeds CMD_BUF_SIZE and s_cmd_buf_len never reaches it
         uint32_t frame_len = s_cmd_buf[1] + 2;
@@ -87,7 +83,6 @@ uint32_t usb_cmd_rx(const uint8_t *buf, uint32_t len) {
             continue;
         }
         // wait until we have the complete frame (CMD + LEN + payload)
->>>>>>> hw3.0-refactor
         if (s_cmd_buf_len < frame_len) {
             continue;
         }
