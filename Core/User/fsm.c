@@ -116,6 +116,11 @@ static FsmEvent_t neutral_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
 }
 
 static FsmEvent_t forward_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
+    out->relay_always_on = true;
+    out->relay_inverter  = true;
+    out->can_watchdog    = true;
+    out->motor_direction = MOTOR_DIR_FORWARD;
+
     if (!in->fwrd_switch) {
         // Driver deliberately released switch; soft stop, not a fault.
         out->throttle_enabled = false;
