@@ -31,9 +31,21 @@ void can_task(void *arg) {
     };
     dash_set_leds(&led_cmd);
 
+    bool handshake_done = false;
+
     for (;;) {
         MotorControllerCmd_t cmd;
         motor_controller_get_cmd(&cmd);
+
+        // PM100DX enable lockout: must send a disable frame before enabling.
+        if (!cmd.inv_enable) {
+            handshake_done = false;
+        } else if (!handshake_done) {
+            cmd.inv_enable        = false;
+            cmd.torque_command_nm = 0.0f;
+            handshake_done        = true;
+        }
+
         cmd.rolling_counter = rolling_counter++ & 0x0Fu;
         can_tx_send_inverter_cmd(&cmd);
         dash_tx_cmd();
