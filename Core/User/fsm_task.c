@@ -54,6 +54,7 @@ void fsm_task(void *arg) {
         vcu_gather_inputs(&in);
         FsmState_t next = step_fsm(state, &fault_cfg, &in, &out);
         out.debug_leds = in.debug_cmd;
+        out.tssi_en    = false; // TODO: set from FAULT_BMS | FAULT_IMD once HVC CAN parsing is wired up
 
         if (next != state) {
             LOG_EVENT(LOG_LEVEL_INFO, EVT_STATE_CHANGE, state, next);
