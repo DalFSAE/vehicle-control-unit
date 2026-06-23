@@ -1,6 +1,5 @@
 #pragma once
 #include <stdbool.h>
-#include "sensor_types.h"
 //struct containing configurables that will impact the torque algorithm calculation
 //these variables were selected via the torque parameters graph on page 53 of https://github.com/DalFSAE/motor-controller-fw/blob/main/docs/Software%20User%20Manual%20(V3_6)%20(1).pdf
 //regenerative torque is assumed to be negative.
@@ -26,4 +25,4 @@ typedef enum {
 } torque_state_t;
 
 void motor_torque_init(motor_torque_config_t cfg);
-float motor_torque(SensorInfo_t sensor);
+float motor_torque(float pedal_pos);

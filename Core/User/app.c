@@ -10,6 +10,7 @@
 #include "sensor_control.h"
 #include "can_task.h"
 #include "motor_controller.h"
+#include "torque_processing.h"
 #include "dash.h"
 #include "can.h"
 #include "can_bus.h"
@@ -101,6 +102,16 @@ void app_post_boot(void) {
     can_bus_init(&hcan1, CAN_MODE_NORMAL);
 
     motor_controller_init();
+    motor_torque_init((motor_torque_config_t){
+        .pedal_lo           = 0.05f,
+        .pedal_hi           = 0.95f,
+        .accel_min          = 0.10f,
+        .coast_lo           = 0.45f,
+        .coast_hi           = 0.55f,
+        .accel_max          = 0.90f,
+        .motor_torque_limit = 150.0f,
+        .regen_torque_limit = 0.0f,
+    });
     dash_init();
 }
 

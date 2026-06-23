@@ -6,6 +6,7 @@
 #include "board_outputs.h"
 #include "output_control.h"
 #include "motor_controller.h"
+#include "torque_processing.h"
 #include "sensor_control.h"
 #include "input_control.h"
 #include "dio.h"
@@ -103,7 +104,7 @@ void vcu_apply_outputs(const VcuOutputs *out) {
     MotorControllerCmd_t cmd = {
         .inv_enable              = out->throttle_enabled,
         .motor_direction_forward = (out->motor_direction == MOTOR_DIR_FORWARD),
-        .torque_command_nm       = out->throttle_enabled ? out->throttle_request * MC_TORQUE_MAX_NM : 0.0f,
+        .torque_command_nm       = out->throttle_enabled ? motor_torque(out->throttle_request) : 0.0f,
         .torque_limit_nm         = MC_TORQUE_LIMIT_NM,
         .inv_discharge           = false,
         .speed_mode_enable       = false,
