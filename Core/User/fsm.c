@@ -92,6 +92,10 @@ static FsmEvent_t neutral_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
     out->relay_inverter   = true;
     out->can_watchdog     = true;
 
+    if (in->fault_flags != 0) {
+        return FSM_EV_OK;
+    }
+
 #if VCU_ENABLE_REVERSE
     if (!(in->fwrd_switch || in->rvrs_switch)) {
         return FSM_EV_NOTREADY;
