@@ -24,12 +24,14 @@
 #include "dac.h"
 #include "dma.h"
 #include "tim.h"
-#include "usb_otg.h"
+#include "usb_device.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app.h"
+#include "board_outputs.h"
+#include <stdint.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -99,13 +101,13 @@ int main(void)
   MX_CAN1_Init();
   MX_CAN2_Init();
   MX_TIM1_Init();
-  MX_USB_OTG_FS_USB_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM9_Init();
   MX_DAC_Init();
   /* USER CODE BEGIN 2 */
-  app_init();
+  uint32_t status = app_init();
+  (void)status;
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -210,6 +212,10 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+    for (uint32_t i = 0; i < OUTPUT_COUNT; i++) {
+        board_output_disable(i);
+    }
+    board_output_enable(OUTPUT_DEBUG_LED5);
   }
   /* USER CODE END Error_Handler_Debug */
 }
