@@ -56,6 +56,7 @@ void fsm_task(void *arg) {
         out = (VcuOutputs){0};
         out.debug_leds = in.debug_cmd;
         FsmState_t next = step_fsm(state, &fault_cfg, &in, &out);
+        out.debug_leds = in.debug_cmd;
 
         if (next != state) {
             LOG_EVENT(LOG_LEVEL_INFO, EVT_STATE_CHANGE, state, next);
