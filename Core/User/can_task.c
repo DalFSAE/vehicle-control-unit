@@ -34,21 +34,13 @@ void can_task(void *arg) {
     bool handshake_done = false;
 
     for (;;) {
+
         MotorControllerCmd_t cmd;
         motor_controller_get_cmd(&cmd);
-
-        // PM100DX enable lockout: must send a disable frame before enabling.
-        // See PM100DX datasheet section 2.2.1 "Inverter Enable Safety Options" for details.
-        if (!cmd.inv_enable) {
-            handshake_done = false;
-        } else if (!handshake_done) {
-            cmd.inv_enable        = false;
-            cmd.torque_command_nm = 0.0f;
-            handshake_done        = true;
-        }
-
+        motor_controller_remove_lockout(handshake_done, &cmd);
         cmd.rolling_counter = rolling_counter++ & 0x0Fu;
         can_tx_send_inverter_cmd(&cmd);
+
         dash_tx_cmd();
 
         uint8_t  vsm    = mc_vsm_state();

@@ -24,6 +24,18 @@ static osMutexId_t s_cmd_mutex    = NULL;
 
 // Lifecycle
 
+// PM100DX enable lockout: must send a disable frame before enabling.
+// See PM100DX datasheet section 2.2.1 "Inverter Enable Safety Options" for details.
+void motor_controller_remove_lockout(bool handshake_done, motorcontrollercmd_t *cmd) {
+    if (!cmd->inv_enable) {
+        handshake_done = false;
+    } else if (!handshake_done) {
+        cmd->inv_enable        = false;
+        cmd->torque_command_nm = 0.0f;
+        handshake_done        = true;
+    }
+}
+
 void motor_controller_init(void) {
     s_cmd_mutex = osMutexNew(NULL);
 }
