@@ -38,6 +38,7 @@ void can_task(void *arg) {
         motor_controller_get_cmd(&cmd);
 
         // PM100DX enable lockout: must send a disable frame before enabling.
+        // See PM100DX datasheet section 2.2.1 "Inverter Enable Safety Options" for details.
         if (!cmd.inv_enable) {
             handshake_done = false;
         } else if (!handshake_done) {
