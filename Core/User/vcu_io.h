@@ -39,7 +39,7 @@ typedef struct __attribute__((packed)) {
     bool       relay_always_on;
     bool       relay_inverter;
     bool       brake_light;
-    bool       mc_brake_sw;  // active-low on MC; true = not braking
+    bool       mc_brake_sw;  // Deprecated; active-low on MC; true = not braking
     bool       can_watchdog;
     bool       tssi_en;      // true = TSSI flashing red (BMS/IMD fault); false = green
     MotorDir_t motor_direction;
