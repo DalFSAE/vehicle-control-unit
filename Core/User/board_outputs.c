@@ -10,8 +10,8 @@ typedef struct {
 } BoardOutputsGPIO_t;
 
 static const BoardOutputsGPIO_t board_outputs_map[OUTPUT_COUNT] = {
-    [OUTPUT_DEBUG_LED4] = {LD4_GPIO_Port, LD4_Pin},
     [OUTPUT_DEBUG_LED3] = {LD3_GPIO_Port, LD3_Pin},
+    [OUTPUT_DEBUG_LED4] = {LD4_GPIO_Port, LD4_Pin},
     [OUTPUT_DEBUG_LED5] = {LD5_GPIO_Port, LD5_Pin},
     [OUTPUT_DEBUG_LED6] = {LD6_GPIO_Port, LD6_Pin},
     [OUTPUT_ALWAYS_ON] = {PWR_ALWAYSON_GPIO_Port, PWR_ALWAYSON_Pin},

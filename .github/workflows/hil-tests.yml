@@ -1,0 +1,84 @@
+name: HIL Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Core/**'
+      - 'USB_DEVICE/**'
+      - 'tools/**'
+      - '.github/workflows/hil-tests.yml'
+  pull_request:
+    paths:
+      - 'Core/**'
+      - 'USB_DEVICE/**'
+      - 'tools/**'
+      - '.github/workflows/hil-tests.yml'
+
+jobs:
+  build:
+    name: Build Firmware
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ARM toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            gcc-arm-none-eabi \
+            binutils-arm-none-eabi \
+            libnewlib-arm-none-eabi
+
+      - name: Configure CMake
+        run: cmake --preset Debug
+
+      - name: Build firmware
+        run: cmake --build --preset Debug
+
+      - name: Generate binary
+        run: arm-none-eabi-objcopy -O binary build/Debug/DMS-24-RTOS-VCU.elf build/Debug/DMS-24-RTOS-VCU.bin
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-debug-bin
+          path: build/Debug/DMS-24-RTOS-VCU.bin
+
+  hil-tests:
+    name: Hardware-in-Loop Tests
+    runs-on: [self-hosted, stm32f407]
+    needs: build
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-debug-bin
+          path: firmware
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv\Scripts\python.exe -m pip install --upgrade pip
+          .venv\Scripts\python.exe -m pip install -r tools/requirements.txt
+
+      - name: Flash firmware
+        run: STM32_Programmer_CLI -c port=SWD -w firmware/DMS-24-RTOS-VCU.bin 0x08000000 -rst
+
+      - name: Wait for device
+        run: Start-Sleep -Seconds 10
+
+      - name: Run HIL tests
+        run: .venv\Scripts\python.exe -m pytest tools/tests/test_fsm.py -v --tb=short --junit-xml=results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hil-test-results
+          path: results.xml
