@@ -88,6 +88,8 @@ void vcu_apply_outputs(const VcuOutputs *out) {
     dio_write(CAN_WATCHDOG, out->can_watchdog);
     dio_write(TSSI_EN, out->tssi_en);
     dio_write(MC_BRAKE_SW, out->mc_brake_sw);
+    dio_write(CAN1_TERMINATION, out->can1_termination);
+    dio_write(CAN2_TERMINATION, out->can2_termination);
 
     // Buzzer
     if (out->buzzer_beep_ms) {

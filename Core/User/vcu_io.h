@@ -40,6 +40,8 @@ typedef struct __attribute__((packed)) {
     bool       mc_brake_sw;  // active-low on MC; true = not braking
     bool       can_watchdog;
     bool       tssi_en;      // true = TSSI light disabled
+    bool       can1_termination; //true = terminated, false = disconnected
+    bool       can2_termination; //true = terminated, false = disconnected
     MotorDir_t motor_direction;
     bool       throttle_enabled;
     float      throttle_request; // [0.0, 1.0]

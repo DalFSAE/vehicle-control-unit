@@ -15,7 +15,9 @@ typedef enum {
     MC_BRAKE_SW, 
     DASH_SWITCH,
     BUZZER, 
-    CAN_WATCHDOG
+    CAN_WATCHDOG,
+    CAN1_TERMINATION,
+    CAN2_TERMINATION 
 } DIO_Channel_t;
 
 // helpers 
