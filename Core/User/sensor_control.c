@@ -1,3 +1,4 @@
+#include "sensor_types.h"
 #define LOG_MODULE LOG_SRC_SENSOR
 #include "log.h"
 
@@ -47,6 +48,18 @@ void sensor_control_register_thread(osThreadId_t thread_id) {
 
 osThreadId_t sensor_task_get_handle(void) {
     return s_sensor_thread;
+}
+
+int sensor_get_raw(SensorType_t ch){ //returns raw adc value
+    return g_sensors[ch].currentAdcValue;
+}
+
+float sensor_get_voltage_min(SensorType_t ch){
+    return g_sensors[ch].voltageMin;
+}
+
+float sensor_get_voltage_max(SensorType_t ch){
+    return g_sensors[ch].voltageMax;
 }
 
 float sensor_get_throttle(void) {

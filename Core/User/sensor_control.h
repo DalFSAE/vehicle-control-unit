@@ -14,6 +14,11 @@ void set_dac_out(uint32_t dacOut);
 
 osThreadId_t sensor_task_get_handle(void);
 
+//getters for calibration
+int sensor_get_raw(SensorType_t ch); //int to match Sensor
+float sensor_get_voltage_min(SensorType_t ch);
+float sensor_get_voltage_max(SensorType_t ch);
+
 // Getters for processed sensor state (thread safe).
 float    sensor_get_throttle(void);
 bool     sensor_get_brake(void);
