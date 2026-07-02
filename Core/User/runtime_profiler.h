@@ -11,4 +11,4 @@ typedef struct {
 } profiler_t;
 
 void profiler_start(profiler_t *p);
-void profiler_end(profiler_t *p, LogEventId_t event_id, uint32_t a0, uint32_t a1);
+void profiler_end(profiler_t *p, LogEventId_t event_id);
