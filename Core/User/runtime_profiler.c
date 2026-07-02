@@ -13,8 +13,7 @@ void profiler_start(profiler_t *p) {
     p->running  = true;
 }
 
-void profiler_end(profiler_t *p, LogEventId_t event_id, uint32_t a0,
-                  uint32_t a1) { // including a1 to match log.h architecture
+void profiler_end(profiler_t *p, LogEventId_t event_id) { // including a1 to match log.h architecture
     if (!p || !p->running) {
         return;
     }
@@ -24,5 +23,5 @@ void profiler_end(profiler_t *p, LogEventId_t event_id, uint32_t a0,
 
     p->running = false;
 
-    LOG_EVENT(LOG_LEVEL_INFO, event_id, elapsed, a0);
+    LOG_EVENT(LOG_LEVEL_INFO, event_id, elapsed, 0);
 }
