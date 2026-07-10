@@ -50,6 +50,24 @@ typedef struct __attribute__((packed)) {
     bool       sdc_open;  // true = de-energize SDC relay (open shutdown circuit)
 } VcuOutputs;
 
+// Set all fields of *out to safe defaults (relays off, throttle disabled, etc.)
+static void outputs_default(VcuOutputs *out) {
+    *out = (VcuOutputs){
+        .relay_always_on  = false,
+        .relay_inverter   = false,
+        .brake_light      = false,
+        .mc_brake_sw      = false,
+        .can_watchdog     = false,
+        .tssi_en          = false,
+        .motor_direction  = MOTOR_DIR_FORWARD,
+        .throttle_enabled = false,
+        .throttle_request = 0.0f,
+        .buzzer_beep_ms   = 0u,
+        .debug_leds       = 0u,
+        .sdc_open         = true,
+    };
+}
+
 // Assemble VcuInputs from all sensor and device module getters.
 void vcu_gather_inputs(VcuInputs *in);
 
