@@ -6,7 +6,6 @@
 #include "board_outputs.h"
 #include "output_control.h"
 #include "motor_controller.h"
-#include "torque_processing.h"
 #include "sensor_control.h"
 #include "input_control.h"
 #include "dio.h"

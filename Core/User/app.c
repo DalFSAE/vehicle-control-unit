@@ -10,7 +10,6 @@
 #include "sensor_control.h"
 #include "can_task.h"
 #include "motor_controller.h"
-#include "torque_processing.h"
 #include "dash.h"
 #include "can.h"
 #include "can_bus.h"
