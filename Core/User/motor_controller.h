@@ -72,4 +72,5 @@ typedef enum {
 } torque_state_t;
 
 void motor_torque_init(motor_torque_config_t cfg);
+motor_torque_config_t motor_torque_get_config(void); // for tests to save/restore
 float motor_torque(float pedal_pos);

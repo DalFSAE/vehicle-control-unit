@@ -42,6 +42,10 @@ void motor_torque_init(motor_torque_config_t cfg) {
     config = cfg;
 }
 
+motor_torque_config_t motor_torque_get_config(void) {
+    return config;
+}
+
 bool mc_is_ready(void) {
     return s_inv.vsm_state >= MC_VSM_READY;
 }
