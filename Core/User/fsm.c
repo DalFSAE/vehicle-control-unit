@@ -58,6 +58,26 @@ static FsmEvent_t fault_response(FmsFaultResponse_t resp, const VcuInputs *in, V
     }
 }
 
+static FsmEvent_t check_for_drive_fault(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
+    if (fault_active(in, FAULT_APPS_DISAGREE)) {
+        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_APPS_DISAGREE, cfg->apps_disagree);
+        return fault_response(cfg->apps_disagree, in, out);
+    }
+    if (fault_active(in, FAULT_PEDAL_PLAUS)) {
+        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_PEDAL_PLAUS, cfg->pedal_plaus);
+        return fault_response(cfg->pedal_plaus, in, out);
+    }
+    if (fault_active(in, FAULT_SENSOR_RANGE)) {
+        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_SENSOR_RANGE, cfg->sensor_range);
+        return fault_response(cfg->sensor_range, in, out);
+    }
+    if (fault_active(in, FAULT_CAN_TIMEOUT)) {
+        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_CAN_TIMEOUT, cfg->can_timeout);
+        return fault_response(cfg->can_timeout, in, out);
+    }
+    return FSM_EV_OK;
+}
+
 // ---------------------------------------------------------------------------
 // State functions
 // ---------------------------------------------------------------------------
@@ -124,21 +144,9 @@ static FsmEvent_t forward_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
         LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, 0, cfg->ts_lost);
         return fault_response(cfg->ts_lost, in, out);
     }
-    if (fault_active(in, FAULT_APPS_DISAGREE)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_APPS_DISAGREE, cfg->apps_disagree);
-        return fault_response(cfg->apps_disagree, in, out);
-    }
-    if (fault_active(in, FAULT_PEDAL_PLAUS)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_PEDAL_PLAUS, cfg->pedal_plaus);
-        return fault_response(cfg->pedal_plaus, in, out);
-    }
-    if (fault_active(in, FAULT_SENSOR_RANGE)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_SENSOR_RANGE, cfg->sensor_range);
-        return fault_response(cfg->sensor_range, in, out);
-    }
-    if (fault_active(in, FAULT_CAN_TIMEOUT)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_CAN_TIMEOUT, cfg->can_timeout);
-        return fault_response(cfg->can_timeout, in, out);
+    FsmEvent_t drive_fault = check_for_drive_fault(cfg, in, out);
+    if (drive_fault != FSM_EV_OK) {
+        return drive_fault;
     }
 
     out->throttle_enabled = true;
@@ -160,22 +168,10 @@ static FsmEvent_t reverse_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
         LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, 0, cfg->ts_lost);
         return fault_response(cfg->ts_lost, in, out);
     }
-    if (fault_active(in, FAULT_APPS_DISAGREE)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_APPS_DISAGREE, cfg->apps_disagree);
-        return fault_response(cfg->apps_disagree, in, out);
-    }
-    if (fault_active(in, FAULT_PEDAL_PLAUS)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_PEDAL_PLAUS, cfg->pedal_plaus);
-        return fault_response(cfg->pedal_plaus, in, out);
-    }
-    if (fault_active(in, FAULT_SENSOR_RANGE)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_SENSOR_RANGE, cfg->sensor_range);
-        return fault_response(cfg->sensor_range, in, out);
-    }
-    if (fault_active(in, FAULT_CAN_TIMEOUT)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_CAN_TIMEOUT, cfg->can_timeout);
-        return fault_response(cfg->can_timeout, in, out);
-    }
+    FsmEvent_t drive_fault = check_for_drive_fault(cfg, in, out);
+    if (drive_fault != FSM_EV_OK) { 
+        return drive_fault;
+    } 
 
     out->throttle_enabled = true;
     out->throttle_request = in->throttle_request * VCU_REVERSE_THROTTLE_SCALE;
