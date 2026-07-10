@@ -1,5 +1,4 @@
 #include "app.h"
-#include "can_term.h"
 #include "cmsis_os2.h"
 #include "main.h"
 #include "board_outputs.h"

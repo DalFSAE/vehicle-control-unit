@@ -3,7 +3,7 @@
 #include "vcu_io.h"
 #include "fsm_task.h"
 #include "string.h"
-#include "can_term.h"
+#include "output_control.h"
 
 #define CMD_BUF_SIZE 64
 
