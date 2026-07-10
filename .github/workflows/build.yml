@@ -27,3 +27,47 @@ jobs:
 
       - name: Build Debug firmware
         run: cmake --build --preset Debug
+
+      - name: Generate binary
+        run: arm-none-eabi-objcopy -O binary build/Debug/DMS-24-RTOS-VCU.elf build/Debug/DMS-24-RTOS-VCU.bin
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-debug-elf
+          path: build/Debug/DMS-24-RTOS-VCU.elf
+
+      - name: Upload firmware binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-debug-bin
+          path: build/Debug/DMS-24-RTOS-VCU.bin
+
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake gcc
+
+      - name: Configure
+        run: cmake -S Core/Tests/unit -B Core/Tests/unit/build
+
+      - name: Build
+        run: cmake --build Core/Tests/unit/build --parallel $(nproc)
+
+      - name: Run tests
+        run: |
+          ctest --test-dir Core/Tests/unit/build \
+                --output-on-failure \
+                --output-junit test-results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: Core/Tests/unit/build/test-results.xml

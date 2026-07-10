@@ -1,6 +1,7 @@
 {
     "clangd.arguments": [
-        "--compile-commands-dir=${workspaceFolder}/build/Debug"
+        "--compile-commands-dir=${workspaceFolder}/build/Debug",
+        "--query-driver=/usr/bin/arm-none-eabi-gcc*,/usr/bin/arm-none-eabi-g++*"
     ],
     "C_Cpp.default.compileCommands": "${workspaceFolder}/build/Debug/compile_commands.json",
     "cmake.configureOnOpen": true,
@@ -70,14 +71,11 @@
         "VOLTAGESCALING",
         "yarray"
     ],
-    "cmake.cmakePath": "cube-cmake",
-    "cmake.configureArgs": [
-        "-DCMAKE_COMMAND=cube-cmake"
-    ],
+    "cmake.cmakePath": "cmake",
     "stm32cube-ide-clangd.path": "cube",
     "stm32cube-ide-clangd.arguments": [
         "starm-clangd",
-        "--query-driver=${env:CUBE_BUNDLE_PATH}/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-gcc*",
-        "--query-driver=${env:CUBE_BUNDLE_PATH}/gnu-tools-for-stm32/14.3.1+st.2/bin/arm-none-eabi-g++*"
+        "--query-driver=/usr/bin/arm-none-eabi-gcc*",
+        "--query-driver=/usr/bin/arm-none-eabi-g++*"
     ],
 }
