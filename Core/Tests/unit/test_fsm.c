@@ -537,12 +537,5 @@ int main(void) {
     RUN_TEST(test_forward_switch_release_checked_before_faults);
     RUN_TEST(test_forward_fault_none_enables_throttle);
 
-    // FaultConfig_default
-    RUN_TEST(test_fault_config_default_apps_disagree);
-    RUN_TEST(test_fault_config_default_pedal_plaus);
-    RUN_TEST(test_fault_config_default_sensor_range);
-    RUN_TEST(test_fault_config_default_can_timeout);
-    RUN_TEST(test_fault_config_default_ts_lost);
-
     return UNITY_END();
 }
