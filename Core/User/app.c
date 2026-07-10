@@ -109,7 +109,7 @@ void app_post_boot(void) {
         .coast_hi           = 0.55f,
         .accel_max          = 0.90f,
         .motor_torque_limit = 150.0f,
-        .regen_torque_limit = 0.0f,
+        .regen_torque_limit = -20.0f,
     });
     dash_init();
 }

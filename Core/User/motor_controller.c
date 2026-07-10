@@ -9,6 +9,7 @@
 
 #include <string.h>
 #include <stddef.h>
+#include <math.h>
 
 
 // Private inverter state written from ISR, read from task context.
@@ -28,7 +29,9 @@ static osMutexId_t          s_cmd_mutex = NULL;
 // Configurable torque parameters
 static motor_torque_config_t config;
 
-// Lifecycle
+// ---------------------------------------------------------------------------
+// Motor controller state getters
+// ---------------------------------------------------------------------------
 
 void motor_controller_init(void) {
     s_cmd_mutex = osMutexNew(NULL);
@@ -125,8 +128,6 @@ const CanNode_t inverter_node = {
     .rx = inverter_rx,
 };
 
-// State getters
-
 bool mc_is_ready(void) {
     return s_inv.vsm_state >= MC_VSM_READY;
 }
@@ -143,10 +144,22 @@ uint8_t mc_vsm_state(void) {
     return s_inv.vsm_state;
 }
 
+// ---------------------------------------------------------------------------
+// Torque processing
+// ---------------------------------------------------------------------------
+
+static float clampf(float value, float lo, float hi) {
+    if (value < lo) return lo;
+    if (value > hi) return hi;
+    return value;
+}
+
 // this function returns an enum value defined in the header file
 static torque_state_t determine_pedal_state(float value) {
     if (value < config.pedal_lo) {
-        return TORQUE_STATE_ERROR;
+        // Below the resting deadzone: this is the pedal's normal at-rest
+        // position, not a fault. Treat the same as coast (0 Nm).
+        return TORQUE_STATE_DEADZONE_LO;
     } else if (value <= config.accel_min) {
         return TORQUE_STATE_REGEN_FULL;
     } else if (value <= config.coast_lo) {
@@ -158,13 +171,17 @@ static torque_state_t determine_pedal_state(float value) {
     } else if (value <= config.pedal_hi) {
         return TORQUE_STATE_ACCEL_FULL;
     } else {
-        return TORQUE_STATE_ERROR;
+        // Above pedal_hi: pedal is fully (or over-) pressed. Genuine
+        // open/short faults are caught upstream by sensor_out_of_range()
+        // (pedal_logic.c) which uses a wider [-0.1, 1.1] band; within
+        // [pedal_hi, 1.0] this is just "pedal floored," so keep commanding
+        // full torque rather than cliff to 0 Nm.
+        return TORQUE_STATE_ACCEL_FULL;
     }
 }
 
 // these functions are used to calculate the torque output based on the current state of the pedal position
-static float state_error(void) {
-    LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, 0, 0);
+static float state_deadzone_lo(void) {
     return 0.0f;
 }
 
@@ -189,14 +206,23 @@ static float state_accel_full(void) {
 }
 
 float motor_torque(float pedal_pos) {
+    pedal_pos = clampf(pedal_pos, 0.0f, 1.0f);
+
     torque_state_t state = determine_pedal_state(pedal_pos);
+    float torque_nm;
     switch (state) {
-        case TORQUE_STATE_ERROR:      return state_error();
-        case TORQUE_STATE_REGEN_FULL: return state_regen_full();
-        case TORQUE_STATE_REGEN_RAMP: return state_regen_ramp(pedal_pos);
-        case TORQUE_STATE_COAST:      return state_coast();
-        case TORQUE_STATE_ACCEL_RAMP: return state_accel_ramp(pedal_pos);
-        case TORQUE_STATE_ACCEL_FULL: return state_accel_full();
-        default:                      return state_error();
+        case TORQUE_STATE_DEADZONE_LO: torque_nm = state_deadzone_lo();          break;
+        case TORQUE_STATE_REGEN_FULL:  torque_nm = state_regen_full();           break;
+        case TORQUE_STATE_REGEN_RAMP:  torque_nm = state_regen_ramp(pedal_pos);  break;
+        case TORQUE_STATE_COAST:       torque_nm = state_coast();                break;
+        case TORQUE_STATE_ACCEL_RAMP:  torque_nm = state_accel_ramp(pedal_pos);  break;
+        case TORQUE_STATE_ACCEL_FULL:  torque_nm = state_accel_full();           break;
+        default:                       torque_nm = state_deadzone_lo();          break;
     }
+
+    // Regen is negative torque, accel is positive; clamp to the configured
+    // envelope so a bad config or float rounding can't exceed either limit.
+    float regen_floor = -fabsf(config.regen_torque_limit);
+    float accel_ceil  =  fabsf(config.motor_torque_limit);
+    return clampf(torque_nm, regen_floor, accel_ceil);
 }

@@ -63,12 +63,12 @@ typedef struct{
 
 //this enum represents all the possible torque output states
 typedef enum {
-    TORQUE_STATE_ERROR,
+    TORQUE_STATE_DEADZONE_LO, // pedal at rest, below pedal_lo: 0 Nm, not a fault
     TORQUE_STATE_REGEN_FULL,
     TORQUE_STATE_REGEN_RAMP,
     TORQUE_STATE_COAST,
     TORQUE_STATE_ACCEL_RAMP,
-    TORQUE_STATE_ACCEL_FULL,
+    TORQUE_STATE_ACCEL_FULL,  // also covers pedal > pedal_hi (floored pedal)
 } torque_state_t;
 
 void motor_torque_init(motor_torque_config_t cfg);
