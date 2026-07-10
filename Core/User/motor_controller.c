@@ -42,7 +42,27 @@ void motor_torque_init(motor_torque_config_t cfg) {
     config = cfg;
 }
 
-// Command cache
+bool mc_is_ready(void) {
+    return s_inv.vsm_state >= MC_VSM_READY;
+}
+
+bool mc_has_timeout(void) {
+    return (HAL_GetTick() - s_inv.last_rx_tick_ms) > MC_HEARTBEAT_TIMEOUT_MS;
+}
+
+uint32_t mc_fault_bitmap(void) {
+    return s_inv.post_fault | s_inv.run_fault;
+}
+
+uint8_t mc_vsm_state(void) {
+    return s_inv.vsm_state;
+}
+
+
+// ---------------------------------------------------------------------------
+// Command interface
+// ---------------------------------------------------------------------------
+
 void motor_controller_set_cmd(const MotorControllerCmd_t *cmd) {
     if (cmd == NULL || s_cmd_mutex == NULL)
         return;
@@ -59,7 +79,7 @@ void motor_controller_get_cmd(MotorControllerCmd_t *out) {
     osMutexRelease(s_cmd_mutex);
 }
 
-// CAN TX
+// Inverter CAN TX called from can_task context
 void can_tx_send_inverter_cmd(const MotorControllerCmd_t *cmd) {
     if (cmd == NULL) {
         return;
@@ -81,7 +101,7 @@ void can_tx_send_inverter_cmd(const MotorControllerCmd_t *cmd) {
     can_bus_transmit(CAN0_POWERTRAIN_M192_COMMAND_MESSAGE_FRAME_ID, buf, sizeof(buf));
 }
 
-// CAN RX called from ISR context via can_bus dispatch.
+// Inverter CAN RX called from ISR context via can_bus dispatch.
 void inverter_rx(uint32_t id, const uint8_t *data, size_t len) {
     switch (id) {
         case CAN0_POWERTRAIN_M170_INTERNAL_STATES_FRAME_ID: {
@@ -127,22 +147,6 @@ const CanNode_t inverter_node = {
     .name = "inverter",
     .rx = inverter_rx,
 };
-
-bool mc_is_ready(void) {
-    return s_inv.vsm_state >= MC_VSM_READY;
-}
-
-bool mc_has_timeout(void) {
-    return (HAL_GetTick() - s_inv.last_rx_tick_ms) > MC_HEARTBEAT_TIMEOUT_MS;
-}
-
-uint32_t mc_fault_bitmap(void) {
-    return s_inv.post_fault | s_inv.run_fault;
-}
-
-uint8_t mc_vsm_state(void) {
-    return s_inv.vsm_state;
-}
 
 // ---------------------------------------------------------------------------
 // Torque processing
@@ -205,9 +209,12 @@ static float state_accel_full(void) {
     return config.motor_torque_limit;
 }
 
+// Main torque calculation function. Called from vcu_apply_outputs() to convert normalized pedal position to torque command.
 float motor_torque(float pedal_pos) {
+    // Clamp to [0, 1] to avoid negative torque or exceeding configured limits.
     pedal_pos = clampf(pedal_pos, 0.0f, 1.0f);
 
+    // Determine the torque state based on the pedal position and compute the corresponding torque.
     torque_state_t state = determine_pedal_state(pedal_pos);
     float torque_nm;
     switch (state) {
