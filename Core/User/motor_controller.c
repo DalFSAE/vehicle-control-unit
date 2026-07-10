@@ -143,9 +143,8 @@ uint8_t mc_vsm_state(void) {
     return s_inv.vsm_state;
 }
 
-
 // this function returns an enum value defined in the header file
-static torque_state_t determine_state(float value) {
+static torque_state_t determine_pedal_state(float value) {
     if (value < config.pedal_lo) {
         return TORQUE_STATE_ERROR;
     } else if (value <= config.accel_min) {
@@ -163,8 +162,9 @@ static torque_state_t determine_state(float value) {
     }
 }
 
-// right now, error just throws no torque output, which is the same as state_coast. 
+// these functions are used to calculate the torque output based on the current state of the pedal position
 static float state_error(void) {
+    LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, 0, 0);
     return 0.0f;
 }
 
@@ -189,7 +189,7 @@ static float state_accel_full(void) {
 }
 
 float motor_torque(float pedal_pos) {
-    torque_state_t state = determine_state(pedal_pos);
+    torque_state_t state = determine_pedal_state(pedal_pos);
     switch (state) {
         case TORQUE_STATE_ERROR:      return state_error();
         case TORQUE_STATE_REGEN_FULL: return state_regen_full();
