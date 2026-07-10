@@ -96,9 +96,6 @@ void vcu_apply_outputs(const VcuOutputs *out) {
     }
     buzzer_update();
 
-    // Motor direction
-    mc_set_direction(out->motor_direction);
-
     // Build motor controller command and push to cache (can_task sends it).
     MotorControllerCmd_t cmd = {
         .inv_enable              = out->throttle_enabled,
