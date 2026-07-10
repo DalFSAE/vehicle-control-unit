@@ -31,7 +31,7 @@ FsmFaultConfig_t FaultConfig_default(void) {
         .apps_disagree = FAULT_RESP_CUT_THROTTLE,
         .pedal_plaus   = FAULT_RESP_RETURN_NEUTRAL,
         .sensor_range  = FAULT_RESP_RETURN_NEUTRAL,
-        .can_timeout   = FAULT_RESP_RETURN_NEUTRAL,
+        .can_timeout   = FAULT_RESP_SDC_OPEN,
         .ts_lost       = FAULT_RESP_RETURN_NEUTRAL,
     };
     return cfg;
