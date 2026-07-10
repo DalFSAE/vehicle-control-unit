@@ -58,15 +58,16 @@ def test_fault_inject_in_forward(vcu):
     inputs.brake_pressed = True
     vcu.spoof_inputs(inputs)
     vcu.step()
-
+    
     vcu.fault_inject(FAULT_CAN_TIMEOUT)
     vcu.step()
-
+    time.sleep(0.5)
     state = vcu.request_state()
     assert state == ST_NEUTRAL
 
     vcu.fault_inject(FAULT_NONE)
     vcu.step()
+    time.sleep(0.5)
 
     state = vcu.request_state()
     assert state == ST_FORWARD
