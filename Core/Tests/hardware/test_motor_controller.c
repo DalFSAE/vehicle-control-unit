@@ -158,31 +158,56 @@ void test_mc_no_active_faults(void) {
 }
 
 // Sweeps throttle from 0 to 100% in FORWARD state and verifies the motor
-// controller command cache at each step. fsm_task emits EVT_IO_CHANGE at
-// DEBUG level automatically on each output change, producing a readable
-// trace of the full sweep on serial.
+// controller command cache at each step against a torque curve this test
+// installs itself (not a straight line, see motor_controller.c's
+// motor_torque()), so it doesn't drift out of sync with app.c's tuning.
+// fsm_task emits EVT_IO_CHANGE at DEBUG level automatically on each output
+// change, producing a readable trace of the full sweep on serial.
 void test_mc_throttle_sweep(void) {
     suspend_sensor();
     walk_to_neutral();
     walk_to_forward();
     TEST_ASSERT_EQUAL_MESSAGE(ST_FORWARD, g_fsm_state, "FSM must reach FORWARD before sweep");
 
-    static const float steps[] = {0.0f, 0.25f, 0.5f, 0.75f, 1.0f};
+    motor_torque_config_t saved_cfg = motor_torque_get_config();
+    const motor_torque_config_t test_cfg = {
+        .pedal_lo           = 0.05f,
+        .pedal_hi           = 0.95f,
+        .accel_min          = 0.10f,
+        .coast_lo           = 0.45f,
+        .coast_hi           = 0.55f,
+        .accel_max          = 0.90f,
+        .motor_torque_limit = 150.0f,
+        .regen_torque_limit = -20.0f,
+    };
+    motor_torque_init(test_cfg);
+
+    // Expected torque at each pedal position, computed from test_cfg above.
+    static const struct {
+        float pedal;
+        float expected_nm;
+    } steps[] = {
+        {0.00f,   0.00f}, // < pedal_lo: at-rest deadzone, no torque
+        {0.25f, -11.43f}, // REGEN_RAMP: (1-(0.25-0.10)/(0.45-0.10)) * -20
+        {0.50f,   0.00f}, // COAST band
+        {0.75f,  85.71f}, // ACCEL_RAMP: (0.75-0.55)/(0.90-0.55) * 150
+        {1.00f, 150.00f}, // > pedal_hi: floored pedal, full torque
+    };
     for (size_t i = 0; i < sizeof(steps) / sizeof(steps[0]); i++) {
-        g_spoof.throttle_request = steps[i];
+        g_spoof.throttle_request = steps[i].pedal;
         vcu_spoof_inputs(&g_spoof);
         osDelay(FSM_SETTLE_MS); // FSM ticks, applies outputs, emits EVT_IO_CHANGE
 
         MotorControllerCmd_t cmd;
         motor_controller_get_cmd(&cmd);
 
-        float expected_nm = steps[i] * MC_TORQUE_MAX_NM;
-        TEST_ASSERT_FLOAT_WITHIN_MESSAGE(0.5f, expected_nm, cmd.torque_command_nm,
-            "Torque command does not match throttle request");
+        TEST_ASSERT_FLOAT_WITHIN_MESSAGE(0.5f, steps[i].expected_nm, cmd.torque_command_nm,
+            "Torque command does not match torque curve");
         TEST_ASSERT_TRUE_MESSAGE(cmd.inv_enable,              "Inverter must be enabled in FORWARD");
         TEST_ASSERT_TRUE_MESSAGE(cmd.motor_direction_forward, "Direction must be forward");
     }
 
+    motor_torque_init(saved_cfg);
     clear_inputs();
     resume_sensor();
 }
