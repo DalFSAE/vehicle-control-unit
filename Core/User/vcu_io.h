@@ -51,9 +51,9 @@ typedef struct __attribute__((packed)) {
 } VcuOutputs;
 
 // Set all fields of *out to safe defaults (relays off, throttle disabled, etc.)
-static void outputs_default(VcuOutputs *out) {
+static inline void outputs_default(VcuOutputs *out) {
     *out = (VcuOutputs){
-        .relay_always_on  = false,
+        .relay_always_on  = true,
         .relay_inverter   = false,
         .brake_light      = false,
         .mc_brake_sw      = false,
