@@ -9,13 +9,13 @@
 // ---------------------------------------------------------------------------
 
 static const FsmState_t transition_table[ST_COUNT][FSM_EV_COUNT] = {
-    // [state]       OK           READY        NOTREADY     RTD          RTD_REV      STOP        FAULT
-    [ST_ENTRY]   = {ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_FAULT},
-    [ST_STANDBY] = {ST_STANDBY, ST_NEUTRAL, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_FAULT},
-    [ST_NEUTRAL] = {ST_NEUTRAL, ST_NEUTRAL, ST_STANDBY, ST_FORWARD, ST_REVERSE, ST_STANDBY, ST_FAULT},
-    [ST_FORWARD] = {ST_FORWARD, ST_FORWARD, ST_STANDBY, ST_FORWARD, ST_FORWARD, ST_NEUTRAL, ST_FAULT},
-    [ST_REVERSE] = {ST_REVERSE, ST_REVERSE, ST_STANDBY, ST_REVERSE, ST_REVERSE, ST_NEUTRAL, ST_FAULT},
-    [ST_FAULT]   = {ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT},
+    // [state]       OK           READY        NOTREADY     RTD          RTD_REV      STOP        FAULT       FAULT_CUT
+    [ST_ENTRY]   = {ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_FAULT,   ST_ENTRY},
+    [ST_STANDBY] = {ST_STANDBY, ST_NEUTRAL, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_STANDBY, ST_FAULT,   ST_STANDBY},
+    [ST_NEUTRAL] = {ST_NEUTRAL, ST_NEUTRAL, ST_STANDBY, ST_FORWARD, ST_REVERSE, ST_STANDBY, ST_FAULT,   ST_NEUTRAL},
+    [ST_FORWARD] = {ST_FORWARD, ST_FORWARD, ST_STANDBY, ST_FORWARD, ST_FORWARD, ST_NEUTRAL, ST_FAULT,   ST_FORWARD},
+    [ST_REVERSE] = {ST_REVERSE, ST_REVERSE, ST_STANDBY, ST_REVERSE, ST_REVERSE, ST_NEUTRAL, ST_FAULT,   ST_REVERSE},
+    [ST_FAULT]   = {ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT,   ST_FAULT},
 };
 
 // ---------------------------------------------------------------------------
@@ -28,10 +28,10 @@ static bool fault_active(const VcuInputs *in, uint32_t flag) {
 
 FsmFaultConfig_t FaultConfig_default(void) {
     FsmFaultConfig_t cfg = {
-        .apps_disagree = FAULT_RESP_CUT_THROTTLE,
-        .pedal_plaus   = FAULT_RESP_RETURN_NEUTRAL,
+        .apps_disagree = FAULT_RESP_RETURN_NEUTRAL,
+        .pedal_plaus   = FAULT_RESP_CUT_THROTTLE,
         .sensor_range  = FAULT_RESP_RETURN_NEUTRAL,
-        .can_timeout   = FAULT_RESP_RETURN_NEUTRAL,
+        .can_timeout   = FAULT_RESP_SDC_OPEN,
         .ts_lost       = FAULT_RESP_RETURN_NEUTRAL,
     };
     return cfg;
@@ -44,7 +44,7 @@ static FsmEvent_t fault_response(FmsFaultResponse_t resp, const VcuInputs *in, V
     out->throttle_enabled = false; // every fault cuts throttle
     switch (resp) {
         case FAULT_RESP_CUT_THROTTLE:
-            return FSM_EV_OK; // stay in current state, throttle zeroed
+            return FSM_EV_FAULT_CUT; // stay in current state, throttle zeroed
         case FAULT_RESP_RETURN_NEUTRAL:
             return FSM_EV_STOP; // drop to neutral
         case FAULT_RESP_SDC_OPEN:
@@ -56,6 +56,37 @@ static FsmEvent_t fault_response(FmsFaultResponse_t resp, const VcuInputs *in, V
         default:
             return FSM_EV_OK;
     }
+}
+
+// Returns the highest-priority active drive fault flag (0 if none) and, via *resp
+static uint32_t active_drive_fault(const FsmFaultConfig_t *cfg, const VcuInputs *in, FmsFaultResponse_t *resp) {
+    if (fault_active(in, FAULT_APPS_DISAGREE)) {
+        *resp = cfg->apps_disagree;
+        return FAULT_APPS_DISAGREE;
+    }
+    if (fault_active(in, FAULT_PEDAL_PLAUS)) {
+        *resp = cfg->pedal_plaus;
+        return FAULT_PEDAL_PLAUS;
+    }
+    if (fault_active(in, FAULT_SENSOR_RANGE)) {
+        *resp = cfg->sensor_range;
+        return FAULT_SENSOR_RANGE;
+    }
+    if (fault_active(in, FAULT_CAN_TIMEOUT)) {
+        *resp = cfg->can_timeout;
+        return FAULT_CAN_TIMEOUT;
+    }
+    return 0;
+}
+
+static FsmEvent_t check_for_drive_fault(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
+    FmsFaultResponse_t resp;
+    uint32_t            flag = active_drive_fault(cfg, in, &resp);
+    if (flag == 0) {
+        return FSM_EV_OK;
+    }
+    LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, flag, resp);
+    return fault_response(resp, in, out);
 }
 
 // ---------------------------------------------------------------------------
@@ -82,10 +113,24 @@ static FsmEvent_t standby_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
 }
 
 static FsmEvent_t neutral_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
-    (void)cfg;
     out->relay_inverter = true;
     out->brake_light    = in->brake_pressed;
     out->sdc_open       = false;
+
+    // A persistent drive fault holds the car here and refuses RTD instead of
+    // bouncing back into FORWARD/REVERSE every tick. Auto-recovers once the
+    // fault clears.
+    FmsFaultResponse_t resp;
+    if (active_drive_fault(cfg, in, &resp)) {
+        if (resp == FAULT_RESP_LATCH_FAULT) {
+            out->sdc_open = true;
+            return FSM_EV_FAULT; // escalate to latched ST_FAULT
+        }
+        if (resp == FAULT_RESP_SDC_OPEN) {
+            out->sdc_open = true; // hold SDC open while the fault persists
+        }
+        return FSM_EV_OK; // stay in NEUTRAL; do not grant RTD
+    }
 
 #if VCU_ENABLE_REVERSE
     if (!(in->fwrd_switch || in->rvrs_switch)) {
@@ -124,21 +169,9 @@ static FsmEvent_t forward_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
         LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, 0, cfg->ts_lost);
         return fault_response(cfg->ts_lost, in, out);
     }
-    if (fault_active(in, FAULT_APPS_DISAGREE)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_APPS_DISAGREE, cfg->apps_disagree);
-        return fault_response(cfg->apps_disagree, in, out);
-    }
-    if (fault_active(in, FAULT_PEDAL_PLAUS)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_PEDAL_PLAUS, cfg->pedal_plaus);
-        return fault_response(cfg->pedal_plaus, in, out);
-    }
-    if (fault_active(in, FAULT_SENSOR_RANGE)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_SENSOR_RANGE, cfg->sensor_range);
-        return fault_response(cfg->sensor_range, in, out);
-    }
-    if (fault_active(in, FAULT_CAN_TIMEOUT)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_CAN_TIMEOUT, cfg->can_timeout);
-        return fault_response(cfg->can_timeout, in, out);
+    FsmEvent_t drive_fault = check_for_drive_fault(cfg, in, out);
+    if (drive_fault != FSM_EV_OK) {
+        return drive_fault;
     }
 
     out->throttle_enabled = true;
@@ -160,22 +193,10 @@ static FsmEvent_t reverse_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
         LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, 0, cfg->ts_lost);
         return fault_response(cfg->ts_lost, in, out);
     }
-    if (fault_active(in, FAULT_APPS_DISAGREE)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_APPS_DISAGREE, cfg->apps_disagree);
-        return fault_response(cfg->apps_disagree, in, out);
-    }
-    if (fault_active(in, FAULT_PEDAL_PLAUS)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_PEDAL_PLAUS, cfg->pedal_plaus);
-        return fault_response(cfg->pedal_plaus, in, out);
-    }
-    if (fault_active(in, FAULT_SENSOR_RANGE)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_SENSOR_RANGE, cfg->sensor_range);
-        return fault_response(cfg->sensor_range, in, out);
-    }
-    if (fault_active(in, FAULT_CAN_TIMEOUT)) {
-        LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, FAULT_CAN_TIMEOUT, cfg->can_timeout);
-        return fault_response(cfg->can_timeout, in, out);
-    }
+    FsmEvent_t drive_fault = check_for_drive_fault(cfg, in, out);
+    if (drive_fault != FSM_EV_OK) { 
+        return drive_fault;
+    } 
 
     out->throttle_enabled = true;
     out->throttle_request = in->throttle_request * VCU_REVERSE_THROTTLE_SCALE;

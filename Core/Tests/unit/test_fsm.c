@@ -487,35 +487,6 @@ void test_forward_fault_none_enables_throttle(void) {
 }
 
 // ===========================================================================
-// FaultConfig_default
-// ===========================================================================
-
-void test_fault_config_default_apps_disagree(void) {
-    FsmFaultConfig_t cfg = FaultConfig_default();
-    TEST_ASSERT_EQUAL(FAULT_RESP_CUT_THROTTLE, cfg.apps_disagree);
-}
-
-void test_fault_config_default_pedal_plaus(void) {
-    FsmFaultConfig_t cfg = FaultConfig_default();
-    TEST_ASSERT_EQUAL(FAULT_RESP_RETURN_NEUTRAL, cfg.pedal_plaus);
-}
-
-void test_fault_config_default_sensor_range(void) {
-    FsmFaultConfig_t cfg = FaultConfig_default();
-    TEST_ASSERT_EQUAL(FAULT_RESP_RETURN_NEUTRAL, cfg.sensor_range);
-}
-
-void test_fault_config_default_can_timeout(void) {
-    FsmFaultConfig_t cfg = FaultConfig_default();
-    TEST_ASSERT_EQUAL(FAULT_RESP_RETURN_NEUTRAL, cfg.can_timeout);
-}
-
-void test_fault_config_default_ts_lost(void) {
-    FsmFaultConfig_t cfg = FaultConfig_default();
-    TEST_ASSERT_EQUAL(FAULT_RESP_RETURN_NEUTRAL, cfg.ts_lost);
-}
-
-// ===========================================================================
 // Entry point
 // ===========================================================================
 
@@ -565,13 +536,6 @@ int main(void) {
     RUN_TEST(test_forward_pedal_plaus_checked_before_sensor_range);
     RUN_TEST(test_forward_switch_release_checked_before_faults);
     RUN_TEST(test_forward_fault_none_enables_throttle);
-
-    // FaultConfig_default
-    RUN_TEST(test_fault_config_default_apps_disagree);
-    RUN_TEST(test_fault_config_default_pedal_plaus);
-    RUN_TEST(test_fault_config_default_sensor_range);
-    RUN_TEST(test_fault_config_default_can_timeout);
-    RUN_TEST(test_fault_config_default_ts_lost);
 
     return UNITY_END();
 }

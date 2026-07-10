@@ -41,13 +41,14 @@ typedef enum {
 } FsmState_t;
 
 typedef enum {
-    FSM_EV_OK,       // stay in current state
-    FSM_EV_READY,    // switch UP + ts_active both true
-    FSM_EV_NOTREADY, // switch DOWN or ts_active lost
-    FSM_EV_RTD,      // rtd sequence complete - forward
-    FSM_EV_RTD_REV,  // rtd sequence complete - reverse
-    FSM_EV_STOP,     // soft stop - return to neutral
-    FSM_EV_FAULT,    // latch into ST_FAULT (SDC open, power cycle required)
+    FSM_EV_OK,        // stay in current state
+    FSM_EV_READY,     // switch UP + ts_active both true
+    FSM_EV_NOTREADY,  // switch DOWN or ts_active lost
+    FSM_EV_RTD,       // rtd sequence complete - forward
+    FSM_EV_RTD_REV,   // rtd sequence complete - reverse
+    FSM_EV_STOP,      // soft stop - return to neutral
+    FSM_EV_FAULT,     // latch into ST_FAULT (SDC open, power cycle required)
+    FSM_EV_FAULT_CUT, // cut throttle and stay in current state
     FSM_EV_COUNT
 } FsmEvent_t;
 
