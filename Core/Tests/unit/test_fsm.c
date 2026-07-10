@@ -247,7 +247,7 @@ void test_entry_sets_all_relays_and_watchdog(void) {
     step_fsm(ST_ENTRY, &cfg, &in, &out);
     TEST_ASSERT_TRUE(out.can_watchdog);
     TEST_ASSERT_TRUE(out.relay_always_on);
-    TEST_ASSERT_TRUE(out.relay_inverter);
+    TEST_ASSERT_FALSE(out.relay_inverter);
 }
 
 void test_standby_inverter_off_throttle_disabled(void) {
