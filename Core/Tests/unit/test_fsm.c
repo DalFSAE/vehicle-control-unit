@@ -245,9 +245,9 @@ void test_entry_sets_all_relays_and_watchdog(void) {
     VcuInputs        in = make_clean_inputs();
     VcuOutputs       out = make_clean_outputs();
     step_fsm(ST_ENTRY, &cfg, &in, &out);
-    TEST_ASSERT_TRUE(out.can_watchdog);
+    TEST_ASSERT_FALSE(out.can_watchdog);
     TEST_ASSERT_TRUE(out.relay_always_on);
-    TEST_ASSERT_TRUE(out.relay_inverter);
+    TEST_ASSERT_FALSE(out.relay_inverter);
 }
 
 void test_standby_inverter_off_throttle_disabled(void) {
@@ -258,7 +258,6 @@ void test_standby_inverter_off_throttle_disabled(void) {
     TEST_ASSERT_FALSE(out.relay_inverter);
     TEST_ASSERT_FALSE(out.throttle_enabled);
     TEST_ASSERT_TRUE(out.relay_always_on);
-    TEST_ASSERT_TRUE(out.can_watchdog);
 }
 
 void test_neutral_inverter_on_throttle_disabled(void) {

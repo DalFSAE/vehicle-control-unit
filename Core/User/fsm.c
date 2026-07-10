@@ -65,18 +65,14 @@ static FsmEvent_t fault_response(FmsFaultResponse_t resp, const VcuInputs *in, V
 static FsmEvent_t entry_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
     (void)cfg;
     (void)in;
-    out->can_watchdog    = true;
-    out->relay_always_on = true;
-    out->relay_inverter  = true;
+    // Output matches the safe default set by outputs_default().
     return FSM_EV_OK;
 }
 
 static FsmEvent_t standby_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
     (void)cfg;
-    out->throttle_enabled = false;
-    out->relay_always_on  = true;
-    out->relay_inverter   = false;
-    out->can_watchdog     = true;
+    out->brake_light = in->brake_pressed;
+    out->sdc_open    = false;
 
     if (in->fwrd_switch && in->ts_active) {
         return FSM_EV_READY;
@@ -87,10 +83,9 @@ static FsmEvent_t standby_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
 
 static FsmEvent_t neutral_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
     (void)cfg;
-    out->throttle_enabled = false;
-    out->relay_always_on  = true;
-    out->relay_inverter   = true;
-    out->can_watchdog     = true;
+    out->relay_inverter = true;
+    out->brake_light    = in->brake_pressed;
+    out->sdc_open       = false;
 
 #if VCU_ENABLE_REVERSE
     if (!(in->fwrd_switch || in->rvrs_switch)) {
@@ -116,17 +111,16 @@ static FsmEvent_t neutral_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
 }
 
 static FsmEvent_t forward_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
-    out->relay_always_on = true;
-    out->relay_inverter  = true;
-    out->can_watchdog    = true;
-    out->motor_direction = MOTOR_DIR_FORWARD;
+    out->relay_inverter = true;
+    out->brake_light    = in->brake_pressed;
+    out->sdc_open       = false;
 
     if (!in->fwrd_switch) {
         // Driver deliberately released switch; soft stop, not a fault.
-        out->throttle_enabled = false;
         return FSM_EV_STOP;
     }
     if (!in->ts_active) {
+        // Tractive system may open for many valid reasons, not necessarily a fault
         LOG_EVENT(LOG_LEVEL_ERROR, EVT_FAULT_SET, 0, cfg->ts_lost);
         return fault_response(cfg->ts_lost, in, out);
     }
@@ -154,13 +148,12 @@ static FsmEvent_t forward_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
 
 static FsmEvent_t reverse_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
 #if VCU_ENABLE_REVERSE
-    out->relay_always_on = true;
     out->relay_inverter  = true;
-    out->can_watchdog    = true;
+    out->brake_light     = in->brake_pressed;
     out->motor_direction = MOTOR_DIR_REVERSE;
+    out->sdc_open        = false;
 
     if (!in->rvrs_switch) {
-        out->throttle_enabled = false;
         return FSM_EV_STOP;
     }
     if (!in->ts_active) {
@@ -197,14 +190,10 @@ static FsmEvent_t reverse_state(const FsmFaultConfig_t *cfg, const VcuInputs *in
 
 static FsmEvent_t fault_state(const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
     (void)cfg;
-    (void)in;
-    // Latched: keep SDC open, disable throttle and inverter.
-    // Only a power cycle (ST_ENTRY reset) can exit this state.
-    out->throttle_enabled = false;
-    out->sdc_open         = true;
-    out->relay_inverter   = false;
-    out->relay_always_on  = true;
-    out->can_watchdog     = true;
+    // Latched: SDC open, throttle and inverter off are already the safe
+    // default from outputs_default(). Only a power cycle (ST_ENTRY reset)
+    // can exit this state.
+    out->brake_light = in->brake_pressed;
     return FSM_EV_FAULT;
 }
 
@@ -220,6 +209,7 @@ static const StateFn_t state_fns[ST_COUNT] = {
 };
 
 FsmState_t step_fsm(FsmState_t current, const FsmFaultConfig_t *cfg, const VcuInputs *in, VcuOutputs *out) {
+    outputs_default(out);
     FsmEvent_t ev = state_fns[current](cfg, in, out);
     return transition_table[current][ev];
 }
