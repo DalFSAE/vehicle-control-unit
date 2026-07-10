@@ -153,11 +153,13 @@ static const char *log_fault_flag_str(uint32_t flag) {
     }
 }
 
-// Keep in sync with FaultResponse_t in fsm.h.
+// Keep in sync with FmsFaultResponse_t in fsm.h.
 static const char *log_fault_resp_str(uint32_t resp) {
     switch (resp) {
         case 0u: return "CUT_THROTTLE";
         case 1u: return "RETURN_NEUTRAL";
+        case 2u: return "SDC_OPEN";
+        case 3u: return "LATCH_FAULT";
         default: return "UNKNOWN_RESP";
     }
 }
