@@ -7,7 +7,7 @@ Run with: pytest test_fsm.py --port /dev/ttyACM0 -v
 
 import time
 
-from vcu_hil import VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT_CAN_TIMEOUT, DBG_LED1, DBG_LED2, DBG_LED3
+from vcu_hil import VcuInputs, ST_STANDBY, ST_NEUTRAL, ST_FORWARD, FAULT_NONE, FAULT_CAN_TIMEOUT, DBG_LED1, DBG_LED2, DBG_LED3
 
 
 # Tests
@@ -63,7 +63,13 @@ def test_fault_inject_in_forward(vcu):
     vcu.step()
 
     state = vcu.request_state()
-    assert state is not None
+    assert state == ST_NEUTRAL
+
+    vcu.fault_inject(FAULT_NONE)
+    vcu.step()
+
+    state = vcu.request_state()
+    assert state == ST_FORWARD
 
 
 def test_request_outputs_correct_format(vcu):
