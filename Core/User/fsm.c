@@ -28,8 +28,8 @@ static bool fault_active(const VcuInputs *in, uint32_t flag) {
 
 FsmFaultConfig_t FaultConfig_default(void) {
     FsmFaultConfig_t cfg = {
-        .apps_disagree = FAULT_RESP_CUT_THROTTLE,
-        .pedal_plaus   = FAULT_RESP_RETURN_NEUTRAL,
+        .apps_disagree = FAULT_RESP_RETURN_NEUTRAL,
+        .pedal_plaus   = FAULT_RESP_CUT_THROTTLE,
         .sensor_range  = FAULT_RESP_RETURN_NEUTRAL,
         .can_timeout   = FAULT_RESP_SDC_OPEN,
         .ts_lost       = FAULT_RESP_RETURN_NEUTRAL,
