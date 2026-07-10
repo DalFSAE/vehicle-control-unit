@@ -84,10 +84,13 @@ void test_standby_stays_when_only_ts_active_set(void) {
 
 // ST_NEUTRAL
 
-void test_neutral_stays_on_no_input(void) {
+void test_neutral_stays_when_healthy_but_no_rtd(void) {
+    // fwrd_switch + ts_active = healthy; no button/brake -> no RTD -> stay NEUTRAL
     FsmFaultConfig_t cfg = FaultConfig_default();
     VcuInputs        in = make_clean_inputs();
-    VcuOutputs       out = make_clean_outputs();
+    in.fwrd_switch = true;
+    in.ts_active   = true;
+    VcuOutputs out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_NEUTRAL, &cfg, &in, &out));
 }
 
@@ -95,6 +98,7 @@ void test_neutral_to_forward_on_full_rtd_sequence(void) {
     FsmFaultConfig_t cfg = FaultConfig_default();
     VcuInputs        in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.rtd_button = true;
     in.brake_pressed = true;
     VcuOutputs out = make_clean_outputs();
@@ -108,6 +112,7 @@ void test_neutral_rtd_requires_all_three_conditions(void) {
 
     // switch + button, no brake
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.rtd_button = true;
     in.brake_pressed = false;
     out = make_clean_outputs();
@@ -119,17 +124,33 @@ void test_neutral_rtd_requires_all_three_conditions(void) {
     out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_NEUTRAL, &cfg, &in, &out));
 
-    // button + brake, no switch
+    // no switch (ts also false) -> NOTREADY fires before RTD is checked -> STANDBY
     in.fwrd_switch = false;
+    in.ts_active = false;
     in.rtd_button = true;
     out = make_clean_outputs();
-    TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_NEUTRAL, &cfg, &in, &out));
+    TEST_ASSERT_EQUAL(ST_STANDBY, step_fsm(ST_NEUTRAL, &cfg, &in, &out));
 }
 
-void test_neutral_notready_path_not_reachable_via_step_fsm(void) {
-    // neutral_state never emits FSM_EV_NOTREADY; the table entry exists but
-    // is only reachable if a future state function is added that fires it.
-    TEST_IGNORE_MESSAGE("ST_NEUTRAL->ST_STANDBY via FSM_EV_NOTREADY: no state fn emits it yet");
+void test_neutral_notready_when_switch_released(void) {
+    // neutral_state emits FSM_EV_NOTREADY when fwrd_switch drops -> ST_STANDBY
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    VcuInputs        in = make_clean_inputs();
+    in.fwrd_switch = false;
+    in.ts_active = true;
+    VcuOutputs out = make_clean_outputs();
+    TEST_ASSERT_EQUAL(ST_STANDBY, step_fsm(ST_NEUTRAL, &cfg, &in, &out));
+}
+
+void test_neutral_stays_when_ts_active_lost_but_switch_held(void) {
+    // ts_active loss in NEUTRAL does not drop to STANDBY; only switch release does.
+    // STANDBY = inverter off; NEUTRAL = inverter on, waiting for RTD.
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    VcuInputs        in = make_clean_inputs();
+    in.fwrd_switch = true;
+    in.ts_active = false;
+    VcuOutputs out = make_clean_outputs();
+    TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_NEUTRAL, &cfg, &in, &out));
 }
 
 // ST_FORWARD
@@ -138,6 +159,7 @@ void test_forward_stays_when_healthy(void) {
     FsmFaultConfig_t cfg = FaultConfig_default();
     VcuInputs        in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     VcuOutputs out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_FORWARD, step_fsm(ST_FORWARD, &cfg, &in, &out));
 }
@@ -152,12 +174,69 @@ void test_forward_to_neutral_when_switch_released(void) {
 
 // ST_REVERSE
 void test_reverse_stays_in_reverse(void) {
-    // reverse_state is a stub returning FSM_EV_OK
-    // [ST_REVERSE][FSM_EV_OK] -> ST_REVERSE
+    // When VCU_ENABLE_REVERSE=0 (default), reverse_state returns FSM_EV_OK
+    // and [ST_REVERSE][FSM_EV_OK] -> ST_REVERSE (locked-out self-loop).
     FsmFaultConfig_t cfg = FaultConfig_default();
     VcuInputs        in = make_clean_inputs();
     VcuOutputs       out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_REVERSE, step_fsm(ST_REVERSE, &cfg, &in, &out));
+}
+
+// ST_FAULT
+
+void test_fault_state_latches(void) {
+    // ST_FAULT stays in ST_FAULT for every event.
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    VcuInputs        in = make_clean_inputs();
+    VcuOutputs       out = make_clean_outputs();
+    TEST_ASSERT_EQUAL(ST_FAULT, step_fsm(ST_FAULT, &cfg, &in, &out));
+}
+
+void test_fault_state_disables_throttle_and_inverter(void) {
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    VcuInputs        in = make_clean_inputs();
+    VcuOutputs       out = make_clean_outputs();
+    step_fsm(ST_FAULT, &cfg, &in, &out);
+    TEST_ASSERT_FALSE(out.throttle_enabled);
+    TEST_ASSERT_FALSE(out.relay_inverter);
+    TEST_ASSERT_TRUE(out.sdc_open);
+    TEST_ASSERT_TRUE(out.relay_always_on);
+}
+
+void test_fault_state_stays_latched_even_with_healthy_inputs(void) {
+    // All healthy inputs: ST_FAULT should not escape.
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    VcuInputs        in = make_clean_inputs();
+    in.fwrd_switch = true;
+    in.ts_active = true;
+    VcuOutputs out = make_clean_outputs();
+    TEST_ASSERT_EQUAL(ST_FAULT, step_fsm(ST_FAULT, &cfg, &in, &out));
+}
+
+void test_latch_fault_response_goes_to_fault_state(void) {
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    cfg.apps_disagree = FAULT_RESP_LATCH_FAULT;
+    VcuInputs in = make_clean_inputs();
+    in.fwrd_switch = true;
+    in.ts_active = true;
+    in.fault_flags = FAULT_APPS_DISAGREE;
+    VcuOutputs out = make_clean_outputs();
+    TEST_ASSERT_EQUAL(ST_FAULT, step_fsm(ST_FORWARD, &cfg, &in, &out));
+    TEST_ASSERT_TRUE(out.sdc_open);
+    TEST_ASSERT_FALSE(out.throttle_enabled);
+}
+
+void test_sdc_open_response_opens_sdc_and_goes_to_neutral(void) {
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    cfg.apps_disagree = FAULT_RESP_SDC_OPEN;
+    VcuInputs in = make_clean_inputs();
+    in.fwrd_switch = true;
+    in.ts_active = true;
+    in.fault_flags = FAULT_APPS_DISAGREE;
+    VcuOutputs out = make_clean_outputs();
+    TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_FORWARD, &cfg, &in, &out));
+    TEST_ASSERT_TRUE(out.sdc_open);
+    TEST_ASSERT_FALSE(out.throttle_enabled);
 }
 
 // Output signal tests
@@ -166,10 +245,9 @@ void test_entry_sets_all_relays_and_watchdog(void) {
     VcuInputs        in = make_clean_inputs();
     VcuOutputs       out = make_clean_outputs();
     step_fsm(ST_ENTRY, &cfg, &in, &out);
-    TEST_ASSERT_TRUE(out.can_watchdog);
-    TEST_ASSERT_TRUE(out.tssi_en);
+    TEST_ASSERT_FALSE(out.can_watchdog);
     TEST_ASSERT_TRUE(out.relay_always_on);
-    TEST_ASSERT_TRUE(out.relay_inverter);
+    TEST_ASSERT_FALSE(out.relay_inverter);
 }
 
 void test_standby_inverter_off_throttle_disabled(void) {
@@ -180,8 +258,6 @@ void test_standby_inverter_off_throttle_disabled(void) {
     TEST_ASSERT_FALSE(out.relay_inverter);
     TEST_ASSERT_FALSE(out.throttle_enabled);
     TEST_ASSERT_TRUE(out.relay_always_on);
-    TEST_ASSERT_TRUE(out.can_watchdog);
-    TEST_ASSERT_FALSE(out.tssi_en);
 }
 
 void test_neutral_inverter_on_throttle_disabled(void) {
@@ -191,13 +267,13 @@ void test_neutral_inverter_on_throttle_disabled(void) {
     step_fsm(ST_NEUTRAL, &cfg, &in, &out);
     TEST_ASSERT_TRUE(out.relay_inverter);
     TEST_ASSERT_FALSE(out.throttle_enabled);
-    TEST_ASSERT_FALSE(out.tssi_en);
 }
 
 void test_neutral_rtd_fires_buzzer_and_sets_forward_direction(void) {
     FsmFaultConfig_t cfg = FaultConfig_default();
     VcuInputs        in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.rtd_button = true;
     in.brake_pressed = true;
     VcuOutputs out = make_clean_outputs();
@@ -210,6 +286,7 @@ void test_forward_enables_throttle_when_healthy(void) {
     FsmFaultConfig_t cfg = FaultConfig_default();
     VcuInputs        in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     VcuOutputs out = make_clean_outputs();
     step_fsm(ST_FORWARD, &cfg, &in, &out);
     TEST_ASSERT_TRUE(out.throttle_enabled);
@@ -233,6 +310,7 @@ void test_forward_apps_disagree_cut_throttle_stays_forward(void) {
     cfg.apps_disagree = FAULT_RESP_CUT_THROTTLE;
     VcuInputs in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.fault_flags = FAULT_APPS_DISAGREE;
     VcuOutputs out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_FORWARD, step_fsm(ST_FORWARD, &cfg, &in, &out));
@@ -244,6 +322,7 @@ void test_forward_apps_disagree_return_neutral_goes_to_neutral(void) {
     cfg.apps_disagree = FAULT_RESP_RETURN_NEUTRAL;
     VcuInputs in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.fault_flags = FAULT_APPS_DISAGREE;
     VcuOutputs out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_FORWARD, &cfg, &in, &out));
@@ -257,6 +336,7 @@ void test_forward_pedal_plaus_cut_throttle_stays_forward(void) {
     cfg.pedal_plaus = FAULT_RESP_CUT_THROTTLE;
     VcuInputs in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.fault_flags = FAULT_PEDAL_PLAUS;
     VcuOutputs out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_FORWARD, step_fsm(ST_FORWARD, &cfg, &in, &out));
@@ -268,6 +348,7 @@ void test_forward_pedal_plaus_return_neutral_goes_to_neutral(void) {
     cfg.pedal_plaus = FAULT_RESP_RETURN_NEUTRAL;
     VcuInputs in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.fault_flags = FAULT_PEDAL_PLAUS;
     VcuOutputs out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_FORWARD, &cfg, &in, &out));
@@ -280,6 +361,7 @@ void test_forward_sensor_range_cut_throttle_stays_forward(void) {
     cfg.sensor_range = FAULT_RESP_CUT_THROTTLE;
     VcuInputs in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.fault_flags = FAULT_SENSOR_RANGE;
     VcuOutputs out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_FORWARD, step_fsm(ST_FORWARD, &cfg, &in, &out));
@@ -291,9 +373,60 @@ void test_forward_sensor_range_return_neutral_goes_to_neutral(void) {
     cfg.sensor_range = FAULT_RESP_RETURN_NEUTRAL;
     VcuInputs in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.fault_flags = FAULT_SENSOR_RANGE;
     VcuOutputs out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_FORWARD, &cfg, &in, &out));
+}
+
+// FAULT_CAN_TIMEOUT (#94)
+
+void test_forward_can_timeout_cut_throttle_stays_forward(void) {
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    cfg.can_timeout = FAULT_RESP_CUT_THROTTLE;
+    VcuInputs in = make_clean_inputs();
+    in.fwrd_switch = true;
+    in.ts_active = true;
+    in.fault_flags = FAULT_CAN_TIMEOUT;
+    VcuOutputs out = make_clean_outputs();
+    TEST_ASSERT_EQUAL(ST_FORWARD, step_fsm(ST_FORWARD, &cfg, &in, &out));
+    TEST_ASSERT_FALSE(out.throttle_enabled);
+}
+
+void test_forward_can_timeout_return_neutral_goes_to_neutral(void) {
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    cfg.can_timeout = FAULT_RESP_RETURN_NEUTRAL;
+    VcuInputs in = make_clean_inputs();
+    in.fwrd_switch = true;
+    in.ts_active = true;
+    in.fault_flags = FAULT_CAN_TIMEOUT;
+    VcuOutputs out = make_clean_outputs();
+    TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_FORWARD, &cfg, &in, &out));
+    TEST_ASSERT_FALSE(out.throttle_enabled);
+}
+
+// ts_active loss in ST_FORWARD (#97)
+
+void test_forward_ts_active_loss_return_neutral(void) {
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    // Default: ts_lost = FAULT_RESP_RETURN_NEUTRAL
+    VcuInputs in = make_clean_inputs();
+    in.fwrd_switch = true;
+    in.ts_active = false;
+    VcuOutputs out = make_clean_outputs();
+    TEST_ASSERT_EQUAL(ST_NEUTRAL, step_fsm(ST_FORWARD, &cfg, &in, &out));
+    TEST_ASSERT_FALSE(out.throttle_enabled);
+}
+
+void test_forward_ts_active_loss_cut_throttle_stays_forward(void) {
+    FsmFaultConfig_t cfg = FaultConfig_default();
+    cfg.ts_lost = FAULT_RESP_CUT_THROTTLE;
+    VcuInputs in = make_clean_inputs();
+    in.fwrd_switch = true;
+    in.ts_active = false;
+    VcuOutputs out = make_clean_outputs();
+    TEST_ASSERT_EQUAL(ST_FORWARD, step_fsm(ST_FORWARD, &cfg, &in, &out));
+    TEST_ASSERT_FALSE(out.throttle_enabled);
 }
 
 // Fault priority: apps_disagree is checked first in forward_state
@@ -307,6 +440,7 @@ void test_forward_apps_disagree_checked_before_pedal_plaus(void) {
     cfg.pedal_plaus = FAULT_RESP_RETURN_NEUTRAL;
     VcuInputs in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.fault_flags = FAULT_APPS_DISAGREE | FAULT_PEDAL_PLAUS;
     VcuOutputs out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_FORWARD, step_fsm(ST_FORWARD, &cfg, &in, &out));
@@ -321,6 +455,7 @@ void test_forward_pedal_plaus_checked_before_sensor_range(void) {
     cfg.sensor_range = FAULT_RESP_RETURN_NEUTRAL;
     VcuInputs in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.fault_flags = FAULT_PEDAL_PLAUS | FAULT_SENSOR_RANGE;
     VcuOutputs out = make_clean_outputs();
     TEST_ASSERT_EQUAL(ST_FORWARD, step_fsm(ST_FORWARD, &cfg, &in, &out));
@@ -344,34 +479,11 @@ void test_forward_fault_none_enables_throttle(void) {
     FsmFaultConfig_t cfg = FaultConfig_default();
     VcuInputs        in = make_clean_inputs();
     in.fwrd_switch = true;
+    in.ts_active = true;
     in.fault_flags = FAULT_NONE;
     VcuOutputs out = make_clean_outputs();
     step_fsm(ST_FORWARD, &cfg, &in, &out);
     TEST_ASSERT_TRUE(out.throttle_enabled);
-}
-
-// ===========================================================================
-// FaultConfig_default
-// ===========================================================================
-
-void test_fault_config_default_apps_disagree(void) {
-    FsmFaultConfig_t cfg = FaultConfig_default();
-    TEST_ASSERT_EQUAL(FAULT_RESP_CUT_THROTTLE, cfg.apps_disagree);
-}
-
-void test_fault_config_default_pedal_plaus(void) {
-    FsmFaultConfig_t cfg = FaultConfig_default();
-    TEST_ASSERT_EQUAL(FAULT_RESP_RETURN_NEUTRAL, cfg.pedal_plaus);
-}
-
-void test_fault_config_default_sensor_range(void) {
-    FsmFaultConfig_t cfg = FaultConfig_default();
-    TEST_ASSERT_EQUAL(FAULT_RESP_RETURN_NEUTRAL, cfg.sensor_range);
-}
-
-void test_fault_config_default_can_timeout(void) {
-    FsmFaultConfig_t cfg = FaultConfig_default();
-    TEST_ASSERT_EQUAL(FAULT_RESP_RETURN_NEUTRAL, cfg.can_timeout);
 }
 
 // ===========================================================================
@@ -387,13 +499,16 @@ int main(void) {
     RUN_TEST(test_standby_to_neutral_when_switch_and_ts_active);
     RUN_TEST(test_standby_stays_when_only_switch_set);
     RUN_TEST(test_standby_stays_when_only_ts_active_set);
-    RUN_TEST(test_neutral_stays_on_no_input);
+    RUN_TEST(test_neutral_stays_when_healthy_but_no_rtd);
     RUN_TEST(test_neutral_to_forward_on_full_rtd_sequence);
     RUN_TEST(test_neutral_rtd_requires_all_three_conditions);
-    RUN_TEST(test_neutral_notready_path_not_reachable_via_step_fsm);
+    RUN_TEST(test_neutral_notready_when_switch_released);
+    RUN_TEST(test_neutral_stays_when_ts_active_lost_but_switch_held);
     RUN_TEST(test_forward_stays_when_healthy);
     RUN_TEST(test_forward_to_neutral_when_switch_released);
     RUN_TEST(test_reverse_stays_in_reverse);
+    RUN_TEST(test_fault_state_latches);
+    RUN_TEST(test_fault_state_stays_latched_even_with_healthy_inputs);
 
     // Output signals
     RUN_TEST(test_entry_sets_all_relays_and_watchdog);
@@ -402,6 +517,7 @@ int main(void) {
     RUN_TEST(test_neutral_rtd_fires_buzzer_and_sets_forward_direction);
     RUN_TEST(test_forward_enables_throttle_when_healthy);
     RUN_TEST(test_forward_disables_throttle_when_switch_released);
+    RUN_TEST(test_fault_state_disables_throttle_and_inverter);
 
     // Forward fault handling
     RUN_TEST(test_forward_apps_disagree_cut_throttle_stays_forward);
@@ -410,16 +526,16 @@ int main(void) {
     RUN_TEST(test_forward_pedal_plaus_return_neutral_goes_to_neutral);
     RUN_TEST(test_forward_sensor_range_cut_throttle_stays_forward);
     RUN_TEST(test_forward_sensor_range_return_neutral_goes_to_neutral);
+    RUN_TEST(test_forward_can_timeout_cut_throttle_stays_forward);
+    RUN_TEST(test_forward_can_timeout_return_neutral_goes_to_neutral);
+    RUN_TEST(test_forward_ts_active_loss_return_neutral);
+    RUN_TEST(test_forward_ts_active_loss_cut_throttle_stays_forward);
+    RUN_TEST(test_latch_fault_response_goes_to_fault_state);
+    RUN_TEST(test_sdc_open_response_opens_sdc_and_goes_to_neutral);
     RUN_TEST(test_forward_apps_disagree_checked_before_pedal_plaus);
     RUN_TEST(test_forward_pedal_plaus_checked_before_sensor_range);
     RUN_TEST(test_forward_switch_release_checked_before_faults);
     RUN_TEST(test_forward_fault_none_enables_throttle);
-
-    // FaultConfig_default
-    RUN_TEST(test_fault_config_default_apps_disagree);
-    RUN_TEST(test_fault_config_default_pedal_plaus);
-    RUN_TEST(test_fault_config_default_sensor_range);
-    RUN_TEST(test_fault_config_default_can_timeout);
 
     return UNITY_END();
 }

@@ -148,15 +148,20 @@ static const char *log_fault_flag_str(uint32_t flag) {
         case (1u << 0): return "APPS_DISAGREE";
         case (1u << 1): return "PEDAL_PLAUS";
         case (1u << 2): return "SENSOR_RANGE";
+        case (1u << 3): return "CAN_TIMEOUT";
+        case (1u << 4): return "BMS";
+        case (1u << 5): return "IMD";
         default: return "UNKNOWN_FAULT";
     }
 }
 
-// Keep in sync with FaultResponse_t in fsm.h.
+// Keep in sync with FmsFaultResponse_t in fsm.h.
 static const char *log_fault_resp_str(uint32_t resp) {
     switch (resp) {
         case 0u: return "CUT_THROTTLE";
         case 1u: return "RETURN_NEUTRAL";
+        case 2u: return "SDC_OPEN";
+        case 3u: return "LATCH_FAULT";
         default: return "UNKNOWN_RESP";
     }
 }
@@ -169,6 +174,7 @@ static const char *log_fsm_state_str(uint32_t state) {
         case 2u: return "NEUTRAL";
         case 3u: return "FORWARD";
         case 4u: return "REVERSE";
+        case 5u: return "FAULT";
         default: return "UNKNOWN";
     }
 }

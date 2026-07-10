@@ -80,9 +80,10 @@ void vcu_apply_outputs(const VcuOutputs *out) {
     }
 
     // Relays
-    out->relay_always_on ? board_output_enable(OUTPUT_ALWAYS_ON) : board_output_disable(OUTPUT_ALWAYS_ON);
-    out->relay_inverter ? board_output_enable(OUTPUT_INVERTER) : board_output_disable(OUTPUT_INVERTER);
-    out->brake_light ? board_output_enable(OUTPUT_BRAKE_LIGHT) : board_output_disable(OUTPUT_BRAKE_LIGHT);
+    out->relay_always_on ? board_output_enable(OUTPUT_ALWAYS_ON)   : board_output_disable(OUTPUT_ALWAYS_ON);
+    out->relay_inverter  ? board_output_enable(OUTPUT_INVERTER)     : board_output_disable(OUTPUT_INVERTER);
+    out->brake_light     ? board_output_enable(OUTPUT_BRAKE_LIGHT)  : board_output_disable(OUTPUT_BRAKE_LIGHT);
+    out->sdc_open        ? board_output_disable(OUTPUT_SDC)         : board_output_enable(OUTPUT_SDC);
 
     // Digital outputs
     dio_write(CAN_WATCHDOG, out->can_watchdog);
@@ -94,9 +95,6 @@ void vcu_apply_outputs(const VcuOutputs *out) {
         buzzer_beep(out->buzzer_beep_ms);
     }
     buzzer_update();
-
-    // Motor direction
-    mc_set_direction(out->motor_direction);
 
     // Build motor controller command and push to cache (can_task sends it).
     MotorControllerCmd_t cmd = {

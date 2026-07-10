@@ -34,6 +34,7 @@ ST_STANDBY = 1
 ST_NEUTRAL = 2
 ST_FORWARD = 3
 ST_REVERSE = 4
+ST_FAULT   = 5
 
 # Fault flags (must match FaultFlags_t in vcu_io.h)
 FAULT_NONE          = 0
@@ -48,12 +49,12 @@ DBG_LED2 = (1 << 1)
 DBG_LED3 = (1 << 2)
 
 
-_VCUOUTPUTS_FMT = '<??????B?fIB'  # 17 bytes, must match packed VcuOutputs in vcu_io.h
+_VCUOUTPUTS_FMT = '<??????B?fIB?'  # 18 bytes, must match packed VcuOutputs in vcu_io.h
 
 
 @dataclass
 class VcuOutputs:
-    """VCU output state (17 bytes packed, must match C struct in vcu_io.h)"""
+    """VCU output state (18 bytes packed, must match C struct in vcu_io.h)"""
     relay_always_on: bool = False
     relay_inverter: bool = False
     brake_light: bool = False
@@ -65,6 +66,7 @@ class VcuOutputs:
     throttle_request: float = 0.0
     buzzer_beep_ms: int = 0
     debug_leds: int = 0           # bitfield: DBG_LED1 | DBG_LED2 | DBG_LED3
+    sdc_open: bool = False        # true = SDC relay de-energized (shutdown circuit open)
 
     @classmethod
     def unpack(cls, data: bytes) -> 'VcuOutputs':
