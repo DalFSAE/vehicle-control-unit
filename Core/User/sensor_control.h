@@ -35,6 +35,9 @@ typedef enum {
     FBPS,
     RBPS,
     CUR,
+    PRESSURE1,
+    PRESSURE2,
+    FLOW,
     NUM_SENSORS  // This is optional, but useful to denote the number of sensors
 } SensorType_t;
 

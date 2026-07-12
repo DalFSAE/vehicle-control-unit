@@ -224,10 +224,16 @@ void process_adc(SensorInfo_t *sensors){
     // curr sensor = adc_buf[1]
     sensors[APPS1].currentAdcValue = adc_buf[2];
     sensors[APPS2].currentAdcValue = adc_buf[3];
+
+    // TODO: confirm these buffer indices against the actual ADC channel scan
+    // order configured in CubeMX - assumed to be the next two channels in sequence.
+    sensors[PRESSURE1].currentAdcValue = adc_buf[4];
+    sensors[PRESSURE2].currentAdcValue = adc_buf[5];
     
     // sensors[FBPS].currentAdcValue = sensors[APPS2].currentAdcValue; // FOR TESTING so that pedal checks can be done !! 
 
     for (int i = 0; i < NUM_SENSORS; ++i){
+        if (i == FLOW) continue; // FLOW is pulse-based, not ADC - handled by process_flow_sensor()
         sensors[i].normalizedValue = adc_to_normalized(sensors[i].currentAdcValue, sensors[i].voltageMin, sensors[i].voltageMax, ADC_RESOLUTION_MAX);
     }
     // Do scaling and linear approximations as necessary 
@@ -266,7 +272,16 @@ void sensorInputTask(void *argument) {
         [APPS1] = {"APPS1", 1.0f, 2.0f, 0, 0.0f},
         [APPS2] = {"APPS2", 1.0f, 2.0f, 0, 0.0f},
         [FBPS]  = {"FBPS" , 0.0f, 3.3f, 0, 0.0f},
-        [RBPS]  = {"RBPS" , 0.0f, 3.3f, 0, 0.0f},       
+        [RBPS]  = {"RBPS" , 0.0f, 3.3f, 0, 0.0f},
+
+        // 30 PSI transducer (assumed - confirm exact part/PSI rating), 0.5-4.5V linear output on a 5V supply.
+        // WARNING: 4.5V exceeds the STM32F4 ADC's ~3.3V input limit - needs a voltage divider
+        // in hardware before wiring to an ADC pin, or these voltageMin/Max values must reflect
+        // the divided voltage, not the sensor's native output.
+        [PRESSURE1] = {"PRESSURE1", 0.5f, 4.5f, 0, 0.0f},
+        [PRESSURE2] = {"PRESSURE2", 0.5f, 4.5f, 0, 0.0f},
+        // Pulse-based (YF-B3), not a voltage sensor - voltageMin/Max unused, see process_flow_sensor()     
+        [FLOW]      = {"FLOW",      0.0f, 0.0f, 0, 0.0f},
     };
 
     pedalStatus_t pedalStatus = {
