@@ -83,10 +83,13 @@ void vcu_apply_outputs(const VcuOutputs *out) {
     out->relay_always_on ? board_output_enable(OUTPUT_ALWAYS_ON)   : board_output_disable(OUTPUT_ALWAYS_ON);
     out->relay_inverter  ? board_output_enable(OUTPUT_INVERTER)     : board_output_disable(OUTPUT_INVERTER);
     out->brake_light     ? board_output_enable(OUTPUT_BRAKE_LIGHT)  : board_output_disable(OUTPUT_BRAKE_LIGHT);
-    out->sdc_open        ? board_output_disable(OUTPUT_SDC)         : board_output_enable(OUTPUT_SDC);
+
+    // SDC relay: sdc_open and can_watchdog (CAN heartbeat timeout) both independently
+    // request an open shutdown circuit, so either one holds it de-energized.
+    bool sdc_energize = !out->sdc_open && !out->can_watchdog;
+    sdc_energize ? board_output_enable(OUTPUT_SDC) : board_output_disable(OUTPUT_SDC);
 
     // Digital outputs
-    dio_write(CAN_WATCHDOG, out->can_watchdog);
     dio_write(TSSI_EN, out->tssi_en);
     dio_write(MC_BRAKE_SW, out->mc_brake_sw);
 
