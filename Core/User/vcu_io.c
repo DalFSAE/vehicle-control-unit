@@ -141,6 +141,8 @@ void vcu_apply_outputs(const VcuOutputs *out) {
         return;
     }
 
+    log_output_changes(out);
+
     // Relays
     out->relay_always_on ? board_output_enable(OUTPUT_ALWAYS_ON)   : board_output_disable(OUTPUT_ALWAYS_ON);
     out->relay_inverter  ? board_output_enable(OUTPUT_INVERTER)     : board_output_disable(OUTPUT_INVERTER);
