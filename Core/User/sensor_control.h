@@ -1,50 +1,20 @@
- #ifndef SENSOR_CONTROL
- #define SENSOR_CONTROL
+#pragma once
 
+#include "sensor_types.h"
+#include "cmsis_os2.h"
+#include <stdbool.h>
+#include <stdint.h>
 
-typedef enum {
-    PDP_OKAY    = 0x00U,
-    PDP_ERROR   = 0x01U,
-    PDP_TIMEOUT = 0x03U,
-    PDP_LATCH   = 0x04U
-} PDP_StatusTypeDef;
+#define MOCK_ADC true
 
-
-
-
-
-/**
- * @struct SensorInfo_s
- * @brief Structure to hold ADC and voltage information for a sensor.
- *
- * This structure contains the ADC range, the nominal voltage range, the current
- * ADC value, and the normalized value for a sensor.
- */
-typedef struct {
-    const char* name;      /** Name of the sensor */
-    float voltageMin;      /** Minimum nominal voltage */
-    float voltageMax;      /** Maximum nominal voltage */
-    int currentAdcValue;   /** Current ADC value */
-    float normalizedValue; /** Normalized value (0.0 - 1.0) */
-} SensorInfo_t;
-
-
-typedef enum {
-    APPS1,
-    APPS2,
-    FBPS,
-    RBPS,
-    CUR,
-    NUM_SENSORS  // This is optional, but useful to denote the number of sensors
-} SensorType_t;
-
-
-/// @brief Enable or disable the throttle output
-/// @param enable true = output enabled 
-void enable_throttle(bool enable);
-
-void sensor_init();
-
+void sensor_control_register_thread(osThreadId_t thread_id);
+void sensorInputTask(void *argument);
+void sensor_init(void);
 void set_dac_out(uint32_t dacOut);
 
- #endif
+osThreadId_t sensor_task_get_handle(void);
+
+// Getters for processed sensor state (thread safe).
+float    sensor_get_throttle(void);
+bool     sensor_get_brake(void);
+uint32_t sensor_get_fault_flags(void);
