@@ -45,3 +45,30 @@ void buzzer_update(void) {
         _beep_active = false;
     }
 }
+
+// ---------------------------------------------------------------------------
+// CAN termination status
+// ---------------------------------------------------------------------------
+
+static CanTermConfig_t s_cfg; // defaults to {false, false} via static zero-init
+
+static void apply_gpio(const CanTermConfig_t *cfg) {
+    dio_write(CAN1_TERMINATION, cfg->can1_terminated);
+    dio_write(CAN2_TERMINATION, cfg->can2_terminated);
+}
+
+void can_term_init(void) {
+    apply_gpio(&s_cfg);
+}
+
+CanTermConfig_t can_term_get(void) {
+    return s_cfg;
+}
+
+bool can_term_set(const CanTermConfig_t *cfg) {
+    if (cfg == NULL) return false;
+
+    s_cfg = *cfg;
+    apply_gpio(&s_cfg);
+    return true;
+}

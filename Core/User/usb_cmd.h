@@ -14,9 +14,12 @@ typedef enum {
     CMD_STEP            = 0x05,
     CMD_FAULT_INJECT    = 0x06,
     CMD_RESET           = 0x07,
+    CMD_TERM_SET        = 0x08,
+    CMD_REQUEST_TERM    = 0x09,
     CMD_ECHO            = 0x45,
     CMD_REPLY_OUTPUT    = 0x83,
     CMD_REPLY_STATE     = 0x84,
+    CMD_REPLY_TERM      = 0x85,
 } UsbCmd_t;
 
 typedef enum {

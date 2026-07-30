@@ -81,6 +81,7 @@ void app_error_handler(BootStatus_t status) {
 uint32_t app_init(void) {
     board_outputs_init();
     dio_init();
+    can_term_init();
     buzzer_init();
 
     s_pre_boot_result = hardware_test_pre_boot();

@@ -18,6 +18,8 @@ static inline void dio_map(DIO_Channel_t ch,
         case MC_BRAKE_SW:       *port = GPIOD; *pin = GPIO_PIN_6; break;
         case DASH_SWITCH:       *port = GPIOD; *pin = GPIO_PIN_7; break;
         case BUZZER:            *port = GPIOE; *pin = GPIO_PIN_13; break;
+        case CAN1_TERMINATION:  *port = GPIOE; *pin = GPIO_PIN_7; break;
+        case CAN2_TERMINATION:  *port = GPIOE; *pin = GPIO_PIN_8; break;
         default:                *port = NULL;  *pin = 0; break;
     }
 }

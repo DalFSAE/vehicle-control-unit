@@ -3,10 +3,11 @@
 #include "vcu_io.h"
 #include "fsm_task.h"
 #include "string.h"
+#include "output_control.h"
 
 #define CMD_BUF_SIZE 64
 
-static uint8_t  s_cmd_buf[CMD_BUF_SIZE];
+static uint8_t s_cmd_buf[CMD_BUF_SIZE];
 static uint32_t s_cmd_buf_len = 0;
 
 // Handle a fully-assembled command frame. Called by usb_cmd_rx once a complete
@@ -56,6 +57,35 @@ uint32_t dispatch_cmd(const uint8_t cmd, const uint8_t *payload, uint32_t len) {
             g_fsm_reset_requested = true;
             vcu_clear_spoof();
             return 0;
+        case CMD_TERM_SET: {
+            if (len >= 2) {
+                CanTermConfig_t cfg = {
+                    .can1_terminated = payload[0] != 0u,
+                    .can2_terminated = payload[1] != 0u,
+                };
+                bool ok         = can_term_set(&cfg);
+                uint8_t resp[3] = {
+                    CMD_REPLY_TERM,
+                    1u,                 // payload length
+                    ok ? 0x00u : 0xFFu, // status
+                };
+                CDC_Transmit_FS(resp, sizeof(resp));
+                return 0;
+            }
+            return 0xFFFFFFFF;
+        }
+        case CMD_REQUEST_TERM: {
+            CanTermConfig_t cfg = can_term_get();
+            uint8_t resp[4]     = {
+                CMD_REPLY_TERM,
+                2u, // payload length
+                cfg.can1_terminated ? 1u : 0u,
+                cfg.can2_terminated ? 1u : 0u,
+            };
+            CDC_Transmit_FS(resp, sizeof(resp));
+            return 0;
+        }
+
         default:
             return 0xFFFFFFFF;
     }
