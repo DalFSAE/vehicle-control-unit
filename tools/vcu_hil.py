@@ -232,6 +232,7 @@ class VcuHil:
     def step(self) -> None:
         """Manually advance FSM one cycle (step mode)."""
         self.send_cmd(CMD_STEP, b'')
+        time.sleep(0.05)
 
     def fault_inject(self, flags: int) -> None:
         """

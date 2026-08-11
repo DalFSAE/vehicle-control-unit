@@ -31,11 +31,16 @@ void can_task(void *arg) {
     };
     dash_set_leds(&led_cmd);
 
+    bool handshake_done = false;
+
     for (;;) {
+
         MotorControllerCmd_t cmd;
         motor_controller_get_cmd(&cmd);
+        motor_controller_remove_lockout(handshake_done, &cmd);
         cmd.rolling_counter = rolling_counter++ & 0x0Fu;
         can_tx_send_inverter_cmd(&cmd);
+
         dash_tx_cmd();
 
         uint8_t  vsm    = mc_vsm_state();
