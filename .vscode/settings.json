@@ -78,7 +78,4 @@
         "--query-driver=/usr/bin/arm-none-eabi-gcc*",
         "--query-driver=/usr/bin/arm-none-eabi-g++*"
     ],
-    "cmake.configureArgs": [
-        "-DCMAKE_COMMAND=cube-cmake"
-    ],
 }
