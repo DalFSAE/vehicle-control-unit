@@ -54,7 +54,7 @@ typedef struct __attribute__((packed)) {
 static inline void outputs_default(VcuOutputs *out) {
     *out = (VcuOutputs){
         .relay_always_on  = true,
-        .relay_inverter   = false,
+        .relay_inverter   = true,
         .brake_light      = false,
         .mc_brake_sw      = false,
         .can_watchdog     = false,
