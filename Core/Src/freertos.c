@@ -116,8 +116,8 @@ void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
-  (void)argument;
   /* USER CODE BEGIN StartDefaultTask */
+  (void)argument;
   app_post_boot();
   app_create_tasks();
   /* Infinite loop */

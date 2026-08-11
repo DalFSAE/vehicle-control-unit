@@ -19,7 +19,7 @@
 #define ADC_BUFFER_LEN 8
 #define BRAKE_LIGHT_THRESHOLD 0.15f
 #define SENSOR_DEBUG_LOG_PERIOD_MS 100U
-#define VERBOSE false
+#define VERBOSE true
 
 extern ADC_HandleTypeDef hadc1;
 extern TIM_HandleTypeDef htim2;
@@ -35,8 +35,8 @@ static volatile bool     s_brake = false;
 static volatile uint32_t s_fault_flags = 0u;
 
 static SensorInfo_t g_sensors[NUM_SENSORS] = {
-    [APPS1] = {"APPS1", 1.0f, 2.0f, 0, 0.0f},
-    [APPS2] = {"APPS2", 1.0f, 2.0f, 0, 0.0f},
+    [APPS1] = {"APPS1", 1.17f, 2.39f, 0, 0.0f},
+    [APPS2] = {"APPS2", 1.32f, 0.59f, 0, 0.0f},
     [FBPS] = {"FBPS", 0.0f, 3.3f, 0, 0.0f},
     [RBPS] = {"RBPS", 0.0f, 3.3f, 0, 0.0f},
 };
@@ -90,10 +90,10 @@ void process_adc(SensorInfo_t *sensors) {
     sensors[FBPS].currentAdcValue = (int)pedal_denormalize(sensors[FBPS].normalizedValue, 0, ADC_RESOLUTION_MAX - 1);
     sensors[RBPS].currentAdcValue = (int)pedal_denormalize(sensors[RBPS].normalizedValue, 0, ADC_RESOLUTION_MAX - 1);
 #else
-    sensors[RBPS].currentAdcValue = adc_buf[0]; // todo: confirm channel mapping
-    sensors[FBPS].currentAdcValue = adc_buf[1];
-    sensors[APPS1].currentAdcValue = adc_buf[2];
-    sensors[APPS2].currentAdcValue = adc_buf[3];
+    sensors[APPS1].currentAdcValue = adc_buf[0];
+    sensors[APPS2].currentAdcValue = adc_buf[1];
+    sensors[RBPS].currentAdcValue = adc_buf[2]; // todo: confirm channel mapping
+    sensors[FBPS].currentAdcValue = adc_buf[3];
 
     sensors[RBPS].normalizedValue = pedal_adc_to_normalized(sensors[RBPS].currentAdcValue, sensors[RBPS].voltageMin,
                                                             sensors[RBPS].voltageMax, ADC_RESOLUTION_MAX);
