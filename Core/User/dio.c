@@ -8,7 +8,6 @@ static inline void dio_map(DIO_Channel_t ch,
     GPIO_TypeDef **port, uint16_t *pin) {
     switch (ch) {
         case PCB_USER_BUTTON:   *port = GPIOA; *pin = GPIO_PIN_0; break;
-        case CAN_WATCHDOG:      *port = GPIOB; *pin = GPIO_PIN_7; break; 
         case TSSI_EN:           *port = GPIOC; *pin = GPIO_PIN_10; break;
         case DASH_RTD_BUTTON:   *port = GPIOD; *pin = GPIO_PIN_0; break;
         case DIO_D1:            *port = GPIOD; *pin = GPIO_PIN_1; break;

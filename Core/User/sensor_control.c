@@ -19,7 +19,7 @@
 #define ADC_BUFFER_LEN 8
 #define BRAKE_LIGHT_THRESHOLD 0.15f
 #define SENSOR_DEBUG_LOG_PERIOD_MS 100U
-#define VERBOSE false
+#define VERBOSE true
 
 extern ADC_HandleTypeDef hadc1;
 extern TIM_HandleTypeDef htim2;

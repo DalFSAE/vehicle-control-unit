@@ -14,8 +14,7 @@ typedef enum {
     MC_REGEN_SW, 
     MC_BRAKE_SW, 
     DASH_SWITCH,
-    BUZZER, 
-    CAN_WATCHDOG
+    BUZZER
 } DIO_Channel_t;
 
 // helpers 
