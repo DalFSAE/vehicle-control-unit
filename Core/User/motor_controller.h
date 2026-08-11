@@ -32,6 +32,7 @@ void motor_controller_init(void);
 // Thread-safe command cache - written by FSM via vcu_apply_outputs().
 void motor_controller_set_cmd(const MotorControllerCmd_t *cmd);
 void motor_controller_get_cmd(MotorControllerCmd_t *out);
+void motor_controller_remove_lockout(bool handshake_done, MotorControllerCmd_t *cmd);
 
 // Transmit M192 command frame. rolling_counter must be set by caller (can_task).
 void can_tx_send_inverter_cmd(const MotorControllerCmd_t *cmd);

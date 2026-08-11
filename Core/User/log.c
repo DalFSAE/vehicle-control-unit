@@ -149,6 +149,8 @@ static const char *log_fault_flag_str(uint32_t flag) {
         case (1u << 1): return "PEDAL_PLAUS";
         case (1u << 2): return "SENSOR_RANGE";
         case (1u << 3): return "CAN_TIMEOUT";
+        case (1u << 4): return "BMS";
+        case (1u << 5): return "IMD";
         default: return "UNKNOWN_FAULT";
     }
 }
@@ -203,14 +205,14 @@ static int fmt_io_change(char *buf, size_t size, const LogEvent_t *event) {
         log_level_str(event->level),
         log_source_str(event->source),
         log_event_str(event->event_id),
-        (bits >> 0u) & 1u,
-        (bits >> 1u) & 1u,
-        (bits >> 2u) & 1u,
-        (bits >> 3u) & 1u,
-        (bits >> 4u) & 1u,
-        (bits >> 5u) & 1u,
+        (unsigned)((bits >> 0u) & 1u),
+        (unsigned)((bits >> 1u) & 1u),
+        (unsigned)((bits >> 2u) & 1u),
+        (unsigned)((bits >> 3u) & 1u),
+        (unsigned)((bits >> 4u) & 1u),
+        (unsigned)((bits >> 5u) & 1u),
         ((bits >> 6u) & 1u) ? "REV" : "FWD",
-        (bits >> 7u) & 1u,
+        (unsigned)((bits >> 7u) & 1u),
         (unsigned long)(thr_mpt / 10u),
         (unsigned long)(thr_mpt % 10u));
 }
