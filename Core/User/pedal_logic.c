@@ -29,7 +29,10 @@ float pedal_adc_to_normalized(int adcValue, float minVoltage, float maxVoltage, 
 // Fault checks
 
 PDP_StatusTypeDef apps_offset_check(float apps1, float apps2, float thresh) {
-    return (pedal_percent_difference(apps1, apps2) >= thresh) ? PDP_ERROR : PDP_OKAY;
+    if (fabsf(apps1 - apps2) >= thresh) {
+        return PDP_ERROR;
+    }
+    return PDP_OKAY;
 }
 
 PDP_StatusTypeDef pedal_plausibility_check(pedalStatus_t *pedal, float apps, float bps, float appsLatchThresh,

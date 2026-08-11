@@ -133,6 +133,10 @@ void vcu_gather_inputs(VcuInputs *in) {
     in->fwrd_switch = read_forward_switch();
     in->rvrs_switch = false; // no reverse switch wired yet
     in->ts_active   = mc_is_ready();
+
+    // TESTING 
+    in->ts_active = true;
+    in->brake_pressed = true;
 }
 
 // Apply outputs to hardware
