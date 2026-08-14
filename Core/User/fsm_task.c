@@ -6,6 +6,7 @@
 #include "dash.h"
 #include "cmsis_os2.h"
 #include "log.h"
+#include "iwdg.h"
 
 volatile FsmState_t g_fsm_state     = ST_ENTRY;
 volatile bool g_fsm_step_requested  = false;
@@ -73,6 +74,8 @@ void fsm_task(void *arg) {
         g_fsm_state    = state;
 
         vcu_apply_outputs(&out);
+
+        HAL_IWDG_Refresh(&hiwdg);
 
         if (g_fsm_step_requested) {
             g_fsm_step_requested = false;
