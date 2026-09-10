@@ -218,7 +218,8 @@ bool check_brake_light(float brakeLight){
 }
 
 void process_adc(SensorInfo_t *sensors){
-    
+    int now = osKernelGetTickCount();
+ 
     sensors[FBPS].currentAdcValue  = adc_buf[1];
     sensors[RBPS].currentAdcValue  = adc_buf[0];    // todo. fix
     // curr sensor = adc_buf[1]
@@ -234,6 +235,7 @@ void process_adc(SensorInfo_t *sensors){
 
     for (int i = 0; i < NUM_SENSORS; ++i){
         if (i == FLOW) continue; // FLOW is pulse-based, not ADC - handled by process_flow_sensor()
+        sensors[i].timestamp_ms = now;
         sensors[i].normalizedValue = adc_to_normalized(sensors[i].currentAdcValue, sensors[i].voltageMin, sensors[i].voltageMax, ADC_RESOLUTION_MAX);
     }
     // Do scaling and linear approximations as necessary 

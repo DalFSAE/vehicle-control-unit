@@ -1,10 +1,17 @@
 {
     "configurations": [
         {
-            "name": "STM32",
-            "configurationProvider": "ms-vscode.cmake-tools",
-            "intelliSenseMode": "${default}",
-            "compileCommands": "${workspaceFolder}/build/Debug/compile_commands.json"
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "STM32F407xx",
+                "USE_HAL_DRIVER"
+            ],
+            "compilerPath": "C:/ST/STM32CubeIDE_1.17.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.win32_1.1.0.202410251130/tools/bin/arm-none-eabi-gcc.exe",
+            "cStandard": "c11",
+            "intelliSenseMode": "gcc-arm"
         }
     ],
     "version": 4

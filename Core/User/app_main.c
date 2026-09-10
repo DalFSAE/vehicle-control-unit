@@ -77,6 +77,11 @@ void statusLedsTask(void *argument) {
         bool d7 = dio_read(DASH_SWITCH);
         bool sdc = dio_read(CAN_WATCHDOG);
 
+        float flow_rate = get_flow_rate();
+        float pressure = get_pressure();
+
+        dms_printf("FLOW:%.2f L/m, PRESS:%.2f PSI\r\n", flow_rate, pressure);
+
          HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
           osDelay(1000);
     }
@@ -86,6 +91,7 @@ void app_config(){
 	// HAL_TIM_Base_Start(&htim2);
 	// HAL_DAC_Start(&hdac, DAC1_CHANNEL_1);
     buzzer_init();
+    adc_init(); 
     return;
 }
 

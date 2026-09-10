@@ -26,6 +26,8 @@
 #include "tim.h"
 #include "usb_otg.h"
 #include "gpio.h"
+#include "stm32f4xx_hal_conf.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -50,7 +52,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+extern UART_HandleTypeDef huart 2; //active uart handle
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -174,7 +176,12 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+int _write(int file, char *ptr, int len)
+{
+    // Transmits via UART with a 100ms timeout
+    HAL_UART_Transmit(&huart2, (uint8_t*)ptr, len, 100); 
+    return len;
+}
 /* USER CODE END 4 */
 
 /**

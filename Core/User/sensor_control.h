@@ -26,6 +26,7 @@ typedef struct {
     float voltageMax;      /** Maximum nominal voltage */
     int currentAdcValue;   /** Current ADC value */
     float normalizedValue; /** Normalized value (0.0 - 1.0) */
+    int timestamp_ms; 
 } SensorInfo_t;
 
 
