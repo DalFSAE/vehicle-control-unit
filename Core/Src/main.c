@@ -52,7 +52,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-extern UART_HandleTypeDef huart 2; //active uart handle
+extern UART_HandleTypeDef huart2; //active uart handle
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -97,6 +97,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
+  MX_USART2_UART_Init(); //added
   MX_ADC1_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();

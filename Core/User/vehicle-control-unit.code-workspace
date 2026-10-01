@@ -1,0 +1,41 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"name": "MPLAB_project",
+			"path": "../../../../../../MPLABProjects/MPLAB_project"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"main.h": "c",
+			"app.h": "c",
+			"app_main.h": "c",
+			"stm32f4xx_hal.h": "c",
+			"gpio.h": "c",
+			"sensor_input.h": "c",
+			"cmsis_os.h": "c",
+			"adc.h": "c",
+			"cmsis_os2.h": "c",
+			"dma.h": "c",
+			"stdio.h": "c",
+			"compare": "c",
+			"freertos.h": "c",
+			"stdbool.h": "c",
+			"sensor_control.h": "c",
+			"usbd_cdc_if.h": "c",
+			"string.h": "c",
+			"usbd_def.h": "c",
+			"usbd_conf.h": "c",
+			"io_control.h": "c",
+			"tests.h": "c",
+			"dms_defines.h": "c",
+			"dms_logging.h": "c",
+			"xutility": "c",
+			"math.h": "c"
+		},
+		"mplab.clangd.compileCommandsDir": "c:\\Users\\eliza\\MPLABProjects\\MPLAB_project\\_build\\MPLAB_project\\default"
+	}
+}
